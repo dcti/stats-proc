@@ -57,7 +57,10 @@ for (my $i = 0; $i < @projectlist; $i++) {
     open SCP, "scp -Bv $server[0]:$fullfn $workdir 2> /dev/stdout |";
     while (<SCP>) {
       if ($_ =~ /Transferred: stdin (\d+), stdout (\d+), stderr (\d+) bytes in (\d+.\d) seconds/) {
-        print "Received $2 bytes in $4 seconds\n";
+        my $rate = rate_calc($2,$4);
+        my $size = num_format($2);
+        my $time = num_format($4);
+        print "Received $size bytes in $time seconds ($rate)\n";
       }
     }
     close SCP;
@@ -87,3 +90,50 @@ for (my $i = 0; $i < @projectlist; $i++) {
     print "\n";
   }
 }
+
+sub num_format {
+  my ($f_num) = @_;
+  my $f_outstr = "";
+  my $f_counter = 0;
+  my $f_dotspot = 0;
+  if($f_num =~ m/\./g) {
+    $f_dotspot = (pos $f_num)-1;
+  } else {
+    $f_dotspot = 999;
+  }
+  for(my $i=length($f_num)-1; $i>=0; $i--) {
+     my $f_char = substr($f_num,$i,1);
+     if( $f_counter == 3 ) {
+       $f_outstr = "$f_char,$f_outstr";
+       $f_counter = 0;
+     } else {
+       $f_outstr = "$f_char$f_outstr";
+     }
+     if($i < $f_dotspot) {
+       $f_counter++;
+     }
+  }
+  return $f_outstr;
+}
+
+sub rate_calc {
+  my ($bytes,$secs) = @_;
+  my @units = ('B/s','KB/s','MB/s');
+  my $work = $bytes/$secs;
+
+  my $i = 0;
+  my $unit = $units[0];
+  while($work>1000) {
+    $work = $work/1000;
+    $i++;
+    $unit = $units[$i];
+  }
+
+  $work = sprintf "%.1f", $work;
+
+  my $f_num = num_format($work);
+  my $f_outstr = "$f_num $unit";
+
+  return $f_outstr;
+}
+
