@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.12 2000/11/08 18:21:52 decibel Exp $
+# $Id: tm_update.sql,v 1.13 2000/11/08 18:30:02 decibel Exp $
 
 TM_RANK
 
@@ -206,41 +206,6 @@ insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_T
 			@max_rank, @max_rank, @max_rank, @max_rank, 0, 0, 0
 	from #TeamWork tw
 	where tw.IS_NEW = 1
-
-print " Update FIRST_DATE and WORK_TOTAL to reflect new additions to Team_Members"
-go
-
-# New members work for today will have already been added to WORK_TOTAL by the update above, so
-# don't include it in the amount of work to add to WORK_TOTAL.
-create table #TeamWorkUpdate (
-	TEAM_ID int,
-	FIRST_DATE smalldatetime,
-	WORK_TOTAL numeric(20,0)
-)
-go
-
-insert into #TeamWorkUpdate (TEAM_ID, FIRST_DATE, WORK_TOTAL)
-	select tm.TEAM_ID, min(tm.FIRST_DATE), sum(tm.WORK_TOTAL-tm.WORK_TODAY)
-	from Team_Members tm, #TeamMemberWork tmw
-	where tm.TEAM_ID = tmw.TEAM_ID
-		and tm.ID = tmw.ID
-		and tmw.IS_NEW = 1
-	group by tm.TEAM_ID
-go
-
-select sum(WORK_TOTAL) from #TeamWorkUpdate
-
-update Team_Rank
-	set WORK_TOTAL = Team_Rank.WORK_TOTAL + twu.WORK_TOTAL
-	from #TeamWorkUpdate twu
-	where Team_Rank.TEAM_ID = twu.TEAM_ID
-		and Team_Rank.PROJECT_ID = ${1}
-update Team_Rank
-	set FIRST_DATE = twu.FIRST_DATE
-	from #TeamWorkUpdate twu
-	where Team_Rank.TEAM_ID = twu.TEAM_ID
-		and twu.FIRST_DATE < Team_Rank.FIRST_DATE
-		and Team_Rank.PROJECT_ID = ${1}
 
 /*
 ** TODO: team join should log, so this script can refer to team membership
