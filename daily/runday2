@@ -5,5 +5,5 @@ if [ x$1 = x ]; then
 	exit 1
 fi
 
-sqsh -i clearday.sql $1
-sqsh -i backup.sql $1
+psql -v ProjectID=$1 -f clearday.sql
+psql -v ProjectID=$1 -f backup.sql
