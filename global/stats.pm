@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.28.2.9 2003/05/05 03:25:21 decibel Exp $
+# $Id: stats.pm,v 1.28.2.10 2003/05/05 14:20:16 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -176,21 +176,10 @@ sub lastday {
   #
   # lastday("ogr") will return lastday value for all ogr project_ids
 
-  my ($f_project) = @_;
+  my ($f_project_type) = @_;
 
-  if(!$statsconf::prids{$f_project}) {
-    return 99999999;
-  } else {
-    my $qs_update = "select to_char(max(DATE),'YYYYMMDD') from Daily_Summary where 2=1";
-  
-    my @pridlist = split /:/, $statsconf::prids{$f_project};
-    for (my $i = 0; $i < @pridlist; $i++) {
-      my $project_id = int $pridlist[$i];
-      $qs_update ="$qs_update or PROJECT_ID = $project_id";
-    }
-    my $lastdaynewval = `psql -d $statsconf::database -t -c "SELECT to_char(max(date), 'YYYYMMDD') FROM projects p, daily_summary d WHERE d.project_id = p.project_id AND lower(p.project_type)=lower('$f_project_type')"`;
-    $lastdaynewval =~ s/[^0123456789]//g;
-    chomp $lastdaynewval;
-    return $lastdaynewval;
-  }
+  $_ = `psql -d $statsconf::database -t -c "SELECT to_char(max(date), 'YYYYMMDD') FROM projects p, daily_summary d WHERE d.project_id = p.project_id AND lower(p.project_type)=lower('$f_project_type')"`;
+  s/[^0123456789]//g;
+  chomp;
+  return $_;
 }
