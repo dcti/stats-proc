@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.13 2000/11/08 18:30:02 decibel Exp $
+# $Id: tm_update.sql,v 1.14 2000/11/09 06:12:23 decibel Exp $
 
 TM_RANK
 
@@ -111,20 +111,47 @@ update Team_Members
 print " Insert records for members who have just joined a team"
 go
 /* Remember, Team_Members contains one record per ID for every team that ID has been on */
-declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
-	where PROJECT_ID = ${1}
-insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
-		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select ${1}, ec.ID, ec.TEAM_ID, min(ec.DATE), @stats_date, sum(tmw.WORK_TODAY), sum(ec.WORK_UNITS),
-		1000000, 1000000, 1000000, 1000000
+# Summarize work
+create table #Work_Summary (
+	ID int,
+	TEAM_ID int,
+	FIRST_DATE smalldatetime,
+	WORK_UNITS numeric(20,0)
+)
+go
+
+insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
+	select ec.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
 	from #TeamMemberWork tmw, Email_Contrib ec
 	where IS_NEW = 1
 		and ec.ID = tmw.ID
 		and ec.TEAM_ID = tmw.TEAM_ID
 		and ec.PROJECT_ID = ${1}
 	group by ec.ID, ec.TEAM_ID
+
+insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
+	select ec.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
+	from #TeamMemberWork tmw, Email_Contrib ec, STATS_Participant sp
+	where IS_NEW = 1
+		and sp.RETIRE_TO = tmw.ID
+		and ec.ID = sp.ID
+		and ec.TEAM_ID = tmw.TEAM_ID
+		and ec.PROJECT_ID = ${1}
+	group by ec.ID, ec.TEAM_ID
+
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
+		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
+	select ${1}, ws.ID, ws.TEAM_ID, min(ws.DATE), @stats_date, sum(tmw.WORK_TODAY), sum(ws.WORK_UNITS),
+		1000000, 1000000, 1000000, 1000000
+	from #TeamMemberWork tmw, #Work_Summary ws
+	where tmw.IS_NEW = 1
+		and tmw.ID = ws.ID
+		and tmw.TEAM_ID = ws.TEAM_ID
+	group by ws.ID, ws.TEAM_ID
 go
 
 /*
