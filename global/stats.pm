@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.28.2.3 2003/04/02 23:32:22 decibel Exp $
+# $Id: stats.pm,v 1.28.2.4 2003/04/04 00:38:32 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -165,7 +165,7 @@ sub lastlog ($) {
 
     my ($f_project_type) = @_;
 
-    `psql -d $statsconf::database -t -c "select to_char(max(log_timestamp), 'YYYYMMDD-HH') from Projects p, Log_Info l WHERE l.project_id = p.project_id AND p.project_type='$f_project_type'"`;
+    $_ = `psql -d $statsconf::database -t -c "select to_char(max(log_timestamp), 'YYYYMMDD-HH') from Projects p, Log_Info l WHERE l.project_id = p.project_id AND lcase(p.project_type)=lcase('$f_project_type')"`;
     chomp;
     return $_;
 }
