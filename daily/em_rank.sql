@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_rank.sql,v 1.16 2002/03/30 21:15:09 decibel Exp $
+# $Id: em_rank.sql,v 1.17 2002/03/30 21:16:25 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -39,6 +39,8 @@ go
 create index work_units on #rank_today(WORK_UNITS)
 go
 
+print ' Determine ties'
+go
 update #rank_today
 	set RANK = (select min(IDENT) from #rank_today rt2 where rt2.WORK_UNITS = #rank_today.WORK_UNITS)
 	where 1 = 1
@@ -64,6 +66,8 @@ go
 create index work_units on #rank_overall(WORK_UNITS)
 go
 
+print ' Determine ties'
+go
 update #rank_overall
 	set RANK = (select min(IDENT) from #rank_overall ro2 where ro2.WORK_UNITS = #rank_overall.WORK_UNITS)
 	where 1 = 1
