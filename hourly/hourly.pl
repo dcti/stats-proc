@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.99 2002/05/10 13:47:43 decibel Exp $
+# $Id: hourly.pl,v 1.100 2002/06/10 00:25:44 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -32,22 +32,13 @@ my $workdir = "./workdir/";
 
 RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
   my $project = $statsconf::projects[$i];
-  # This is a big-time kludge to make sure we don't walk on the RC5 run
-  if (-e '/home/incoming/newlogs-rc5/nologs.lck') {
-    stats::log($project,1,'/home/incoming/newlogs-rc5/nologs.lck exists; aborting.');
-    die;
-  }
-  if (-e '/home/statproc/statsrun/running.lck') {
-    stats::log($project,1,'/home/statproc/statsrun/running.lck exists; aborting.');
-    die;
-  }
   
   # Check to see if we're locked, but don't set it until it's time to actually do some work
   #
   # NOTE:
   # This means that anything that actually modifies data should not happen until after we set
   # the lock.
-  if ($_ = stats::semcheck($project)) {
+  if ($_ = stats::semcheck('hourly')) {
     stats::log($project,129,"Cannot obtain lock for hourly.pl!  [$_] still running!");
     #next RUNPROJECTS;
     die;
