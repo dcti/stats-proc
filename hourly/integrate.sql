@@ -1,11 +1,12 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.28 2002/12/06 16:45:33 decibel Exp $
+# $Id: integrate.sql,v 1.29 2003/03/26 22:59:19 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
 # Arguments:
 #       Project Type (OGR, RC5, etc.)
+#       Log Hour
 
 set flushmessage on
 go
@@ -16,7 +17,8 @@ go
 **	Email_Contrib_Today format but not import_bcp format.
 */
 print "Updating LAST_STATS_DATE for ${1}"
-select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK
+select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK,
+        count(*) as TOTAL_LINES
 	into #Projects
 	from import_bcp i, Projects p
 	where p.PROJECT_ID *= i.PROJECT_ID
@@ -291,6 +293,17 @@ insert Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 commit transaction
 
 drop table #Platform_Contrib_Today
+go
+
+/*
+  Store info in Log_Info table
+*/
+
+print "Adding data to Log_Info"
+insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
+    select PROJECT_ID, dateadd(hour, ${2}, STATS_DATE), TOTAL_WORK, TOTAL_LINES ,0
+    from #Projects
+    group by PROJECT_ID
 go
 
 print "Clearing import table"
