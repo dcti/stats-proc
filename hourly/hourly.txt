@@ -1,6 +1,6 @@
 # Design notes for hourly.pl
 #
-# $Id: hourly.txt,v 1.1 2000/02/17 17:17:17 nugget Exp $
+# $Id: hourly.txt,v 1.2 2000/02/21 23:22:45 nugget Exp $
 
 X = [last log we processed]
 Y = X + [most logs we can skip] - 1
@@ -28,8 +28,15 @@ wait for next scheduled run
 
 # Comments / Questions
 
-- Where do we intend to store "X"?  in sql or in a work file?
-  If we're placing it in sql, how should that be handled?  Is it time
-  for a projectinfo table?  (could possibly assume some of the work
-  being done by Stats.pm)
+OK, I basically scrubbed the above.  Since the logfiles live on another machine,
+on the other side of the net, it's much quicker and probably saner to just treat
+the "look at the logs dir" operation as atomic.
+
+Current code grabs a directory listing of the logs dir on the master and works
+from that.  loops from "lastlog+1" to "highest log present" and pulls the lowest
+qualifying log found.
+
+code assumes existence of ~/var/
+
+Only moderately tested at this point.  Handles obvious exceptions.
 
