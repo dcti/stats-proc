@@ -1,9 +1,18 @@
 #
-# $Id: README,v 1.4 2000/06/22 23:20:47 nugget Exp $
+# $Id: README,v 1.5 2000/07/14 00:14:54 decibel Exp $
 #
 # This tree is intended to be the homedirectory for the statproc user on
 # statsbox.
 #
+
+*** How to run daily stats ***
+You will want to run ~decibel/stats-proc/daily/runday, which is a dumb
+sh script. Take note of the output at the end from audit.sql!! If it flags
+any errors then something is definitely wrong! After you've verified that
+the run progressed as expected, you want to run
+~decibel/stats-proc/daily/clearday.sql. BE CAREFULL NOT TO RUN clearall.sql!
+It clears all OGR-24 data from sybase! :)
+
 
 *** NOTICE: IMPORTANT CHANGE  ***
 
