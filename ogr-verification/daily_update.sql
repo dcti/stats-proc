@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.19 2004/01/28 20:18:14 decibel Exp $
+-- $Id: daily_update.sql,v 1.20 2004/01/31 19:15:43 nerf Exp $
 
 select now();
 
@@ -82,6 +82,10 @@ INSERT INTO retire_today(email,id,stats_id)
   SELECT email, id, stats_id
   FROM import_id
   WHERE retire_date IS NOT NULL;
+
+CREATE INDEX rt_id ON retire_today (id);
+CREATE INDEX rt_stats_id ON retire_today (stats_id);
+CREATE INDEX rt_email ON retire_today (email);
 
 ----------------
 
@@ -250,7 +254,7 @@ SET enable_seqscan = false;
 --explain analyze
 INSERT INTO retired_stub_id
     -- Get the list of all work done by the IDs involved in retires
-    SELECT stub_id, nodecount, id
+    SELECT stub_id, nodecount, r.id
         FROM
             -- Build a list of all the IDs we might need. This removes the need for an OR so it should be faster
             (
@@ -262,7 +266,7 @@ INSERT INTO retired_stub_id
         WHERE r.id = ids.id
             -- But we only need work if it has been done by someone else in our retire chain
             AND EXISTS (SELECT *
-                        FROM OGR_results r2, ids
+                        FROM OGR_results r2
                         WHERE r2.id = ids.id
                             AND r2.stub_id = r.stub_id
                             AND r2.nodecount = r.nodecount
