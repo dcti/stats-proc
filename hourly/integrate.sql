@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.39 2003/12/02 17:46:26 decibel Exp $
+# $Id: integrate.sql,v 1.40 2004/11/02 20:14:11 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -50,6 +50,15 @@ SELECT raise_exception('ERROR! LogDate (' || log_date || ') doesn''t match stats
 update TEMP_Projects
     set STATS_DATE = (select min(STATS_DATE) from TEMP_Projects)
     where STATS_DATE is null
+;
+
+select p.PROJECT_ID
+        , count(i.*) as TOTAL_ROWS
+    into TEMP TEMP_closed_Projects
+    from import_bcp i JOIN Projects p ON p.PROJECT_ID = i.PROJECT_ID
+    where lower(p.PROJECT_TYPE) = lower(:ProjectType)
+        and p.STATUS != 'O'
+    group by p.PROJECT_ID
 ;
 
 insert into Project_statsrun (PROJECT_ID)
@@ -310,3 +319,5 @@ TRUNCATE import_bcp;
 
 -- Finally, report how many rows we handled
 SELECT 'Total rows: ' || sum(total_rows) FROM TEMP_Projects;
+SELECT 'Skipped ' || sum(total_rows) || ' rows from projects ' || ARRAY( SELECT project_id FROM
+TEMP_skipped_Projects ) FROM TEMP_skipped_Projects;

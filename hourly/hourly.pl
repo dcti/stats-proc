@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.117 2004/05/25 15:08:16 nerf Exp $
+# $Id: hourly.pl,v 1.118 2004/11/02 20:14:11 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -209,6 +209,7 @@ while ($respawn == 1 and not -e 'stop') {
         my $bufstorage = "";
         my $psqlsuccess = 0;
         my $sqlrows = 0;
+        my $skippedrows = 0;
         if(!open SQL, "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |") {
           stats::log($project,139,"Error launching psql, aborting hourly run.");
           die;
@@ -224,6 +225,11 @@ while ($respawn == 1 and not -e 'stop') {
             $psqlsuccess = 1;
           } elsif ( $_ =~ /^ Total rows: *(\d+)/ ) {
             $sqlrows = $1;
+          } elsif ( $_ =~ /^ Skipped *(\d+) rows from projects/ ) {
+            $skippedrows = $1;
+            if ( $skippedrows != 0 ) {
+              stats::log($project,1,$_);
+            }
           }
         }
         close SQL;
@@ -236,8 +242,8 @@ while ($respawn == 1 and not -e 'stop') {
         }
 
         # perform sanity checking here
-        if ( $sqlrows != $bcprows ) {
-    stats::log($project,139,"Row counts for BCP($bcprows) and SQL($sqlrows) do not match, aborting.");
+        if ( ( $sqlrows + $skippedrows ) != $bcprows ) {
+    stats::log($project,139,"Row counts for BCP($bcprows) and SQL( $sqlrows + $skippedrows ) do not match, aborting.");
     die;
         }
         stats::log($project,1,"$basefn successfully processed.");
