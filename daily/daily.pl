@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.6 2000/08/16 17:36:52 nugget Exp $
+# $Id: daily.pl,v 1.7 2000/08/16 17:46:31 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -52,6 +52,7 @@ sub sqsh {
 
   my $bufstorage = "";
   my $sqshsuccess = 0;
+  my $starttime = (gmtime);
   open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i $sqlfile |";
 
   if(!<SQL>) {
@@ -59,10 +60,13 @@ sub sqsh {
     die;
   }
   while (<SQL>) {
-    my $ts = sprintf("[%02s:%02s:%02s]",(localtime)[2],(localtime)[1],(localtime)[0]);
+    my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
     print "$ts $_";
     $bufstorage = "$bufstorage$ts $_";
     if( $_ =~ /^Msg/ ) {
+      $sqshsuccess = 1;
+    }
+    if( $_ =~ /ERROR/ ) {
       $sqshsuccess = 1;
     }
   }
