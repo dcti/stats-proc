@@ -1,8 +1,8 @@
-# $Id: dy_dailyblocks.sql,v 1.2 1999/07/27 21:37:27 nugget Exp $
+# $Id: dy_dailyblocks.sql,v 1.3 1999/07/28 15:23:53 nugget Exp $
 
 insert into STATS_dailies (date, blocks,
-                           participants, top_oparticipant, top_opblocks, top_yparticipant, top_yblocks,
-                           teams, top_oteam, top_otblocks, top_yteam, top_yblocks)
+                           participants, top_oparticipant, top_opblocks, top_yparticipant, top_ypblocks,
+                           teams, top_oteam, top_otblocks, top_yteam, top_ytblocks)
 select 
   (select max(date) from RC5_64_master) as date,
   (select sum(blocks) from RC5_64_master where date = (select max(date) from RC5_64_master)) as blocks,
