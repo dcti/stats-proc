@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.1 2000/07/17 11:37:30 decibel Exp $
+# $Id: retire.sql,v 1.2 2000/07/17 12:17:48 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -31,6 +31,16 @@ delete Email_Rank
 		and (STATS_Participant.RETIRE_TO >= 1
 			or STATS_Participant.listmode >= 10)
 		and PROJECT_ID = ${1}
+
+-- The following code should ensure that any 'retire_to chains' eventually get eliminated
+delete #NewRetiresER
+	from Email_Rank er
+	where #NewRetiresER.RETIRE_TO = er.ID
+
+insert into Email_Rank(PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
+	select ${1}, RETIRE_TO, getdate(), getdate(), WORK_TOTAL
+	from #NewRetiresER
+
 commit transaction
 go
 
@@ -55,5 +65,16 @@ delete Team_Members
 		and (sp.RETIRE_TO >= 1
 			or sp.LISTMODE >= 10)
 		and Team_Members.PROJECT_ID = ${1}
+
+-- This code *must* stay in order to handle retiring participants old team affiliations
+delete #NewRetiresTM
+	from Team_Members tm
+	where #NewRetiresTM.RETIRE_TO = tm.ID
+		and #NewRetiresTM.TEAM_ID = tm.TEAM_ID
+
+insert into Team_Members(PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
+	select ${1}, RETIRE_TO, TEAM_ID, getdate(), getdate(), WORK_TOTAL
+	from #NewRetiresTM
+
 commit transaction
 go
