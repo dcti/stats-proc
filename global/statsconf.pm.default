@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.13 2002/06/13 07:24:34 decibel Exp $
+# $Id: statsconf.pm.default,v 1.13.2.1 2003/03/26 04:16:41 decibel Exp $
 #
 # Stats global configuration
 #
@@ -78,7 +78,4 @@ $dctievent = "FQDN";
         "4:#distributed:998:PASS1:PASS2",
 );
 
-
-$sqllogin = "LOGIN";
-$sqlpasswd = "PASSWORD";
-$sqlserver = "SERVER";
+$database = "stats";
