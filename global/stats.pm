@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.31 2003/09/11 01:41:02 decibel Exp $
+# $Id: stats.pm,v 1.32 2004/02/19 21:27:53 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -28,6 +28,12 @@ BEGIN {
     }
 }
 
+sub debug ($$) {
+    my ($level, $s) = @_;
+    if ($statsconf::debug >= $level) {
+        print $s;
+    }
+}
 
 sub log {
 
@@ -56,12 +62,14 @@ sub log {
 
 	my $ts = sprintf("[%d-%s-%d %02s:%02s:%02s]",$dd,$mm,$yy,$hh,$mi,$sc);
 
-	if (open LOGFILE, ">>$logdir$project.log") {
+    debug(7,"stats::log logdir: $logdir\n");
+    debug(7,"stats::log project: $project\n");
+	if (open LOGFILE, ">>$logdir/$project.log") {
 		print LOGFILE $ts," ",@par,"\n";
 		close LOGFILE;
 	} else {
-		print "Unable to open [$logdir$project.log]!\n";
-		print STDERR "Unable to open [$logdir$project.log]!\n";
+		print "Unable to open [$logdir/$project.log]!\n";
+		print STDERR "Unable to open [$logdir/$project.log]!\n";
 	}
 
 	if ($dest & 64) {
@@ -165,10 +173,12 @@ sub semcheck {
 	$statsconf::lockfile ne '' or die 'lockfile undefined (empty)';
 
 	if(-e $statsconf::lockfile) {
+        debug (2,"lockfile: $statsconf::lockfile exists\n");
 		$_ = `cat $statsconf::lockfile`;
 		chomp;
 		return $_;
 	} else {
+        debug (2,"lockfile: $statsconf::lockfile does not exist\n");
 		return;
 	}
 }
@@ -207,5 +217,9 @@ sub lastday {
         die;
     }
 
-    return $result[0];
+    if(defined($result[0])) {
+        return $result[0];
+    } else {
+        return "";
+    }
 }
