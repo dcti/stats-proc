@@ -1,5 +1,5 @@
 /*
-# $Id: newjoin.sql,v 1.13.2.7 2003/04/27 20:53:07 decibel Exp $
+# $Id: newjoin.sql,v 1.13.2.8 2003/04/27 21:33:14 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -9,7 +9,6 @@
 \set ON_ERROR_STOP 1
 
 \echo :: Assigning old work to current team
-;
 
 -- This query will only get joins to teams (not to team 0) that have
 -- taken place on the day that we're running stats for.
