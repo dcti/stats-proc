@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.11 2000/09/13 07:06:23 decibel Exp $
+# $Id: stats.pm,v 1.12 2000/09/13 07:21:08 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -128,7 +128,9 @@ sub semcheck {
 	my $lockfile = "$statsconf::logdir{$project}$project.lck";
 
 	if(-e $lockfile) {
-		return `cat $lockfile`;
+		$_ = `cat $lockfile`;
+		chomp;
+		return $_;
 	} else {
 		return;
 	}
@@ -143,7 +145,9 @@ sub lastlog {
   my ($f_project, $f_action) = @_;
 
   if( $f_action =~ /get/i) {
-    return `cat ~/var/lastlog.$f_project`;
+    $_ = `cat ~/var/lastlog.$f_project`;
+    chomp;
+    return $_;
   } else {
     return `echo $f_action > ~/var/lastlog.$f_project`;
   }
