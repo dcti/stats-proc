@@ -1,14 +1,25 @@
--- $Id: id_lookup.sql,v 1.7 2003/09/09 20:16:03 nerf Exp $
+-- $Id: id_lookup.sql,v 1.8 2003/09/29 01:47:41 nerf Exp $
 \set ON_ERROR_STOP 1
 
 \connect stats
 
-CREATE TEMP TABLE id_export AS
-SELECT email, id, max(id,retire_to) AS stats_id,
-	retire_date,created
+CREATE TEMP TABLE id_export (
+  email character varying(64) NOT NULL,
+  id integer NOT NULL,
+  stats_id integer NOT NULL,
+  retire_date date,
+  created date
+) WITHOUT OIDS;
+
+INSERT into id_export
+SELECT email, id, CASE 
+                    WHEN retire_to = 0 THEN id
+                  ELSE retire_to
+                  END AS stats_id,
+       retire_date,created
 FROM STATS_participant
 WHERE retire_date = :RUNDATE ::DATE
-OR created = :RUNDATE ::DATE;
+  OR created = :RUNDATE ::DATE;
 
 \copy id_export TO '/tmp/id_import.out'
 
