@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.37 2000/08/14 20:48:31 nugget Exp $
+# $Id: hourly.pl,v 1.38 2000/08/14 20:54:43 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -210,6 +210,21 @@ sub lastlog {
     return `cat ~/var/lastlog.$f_project`;
   } else {
     return `echo $f_action > ~/var/lastlog.$f_project`;
+  }
+}
+
+sub lastday {
+  # This function will either return or store the lastlog value for the specified project.
+  #
+  # lastday("ogr","get") will return lastday value.
+  # lastday("ogr","20001231") will set lastday value to 31-Dec-2000
+
+  my ($f_project, $f_action) = @_;
+
+  if( $f_action =~ /get/i) {
+    return `cat ~/var/lastday.$f_project`;
+  } else {
+    return `echo $f_action > ~/var/lastday.$f_project`;
   }
 }
 
