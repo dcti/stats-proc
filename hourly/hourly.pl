@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.7 2003/04/04 04:21:17 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.8 2003/04/04 05:19:29 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -146,47 +146,21 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 	}
       }
 
-      open BCP, "cat $workdir$finalfn | psql -d $statsconf::database -c " . '"' . "copy import_bcp FROM stdin DELIMITER ','" . '"' . " |";
-      if(!<BCP>) {
+      my $bcprows = `cat $workdir$finalfn | wc -l`;
+
+      my $bcp = `time cat $workdir$finalfn | psql -d $statsconf::database -c "copy import_bcp FROM stdin DELIMITER ','"`;
+      if($? != 0) {
         stats::log($project,131,"Error launching BCP, aborting hourly run.");
         die;
       }
 
-      my $bcprows = 0;
-      my $rate = 0;
-      $| = 1;	# Unbuffered output
+      $bcp =~ /([0123456789.]+)/;
+      my $rate = $bcprows / $1;
 
-      while (<BCP>) {
-	my $buf = $_;
-        chomp $buf;
-
-        if ($buf =~ /(\d+) rows copied/) {
-          $bcprows = num_format($1);
-        } elsif ($buf =~ /(\d+\.\d+) rows per sec/) {
-	  $rate = num_format($1);
-	  print "\n";
 	  stats::log($project,1,"$finalfn successfully BCP'd; $bcprows rows at $rate rows/second.");
-	} elsif ($buf =~ /\d+ rows sent to SQL Server./) {
-	  print ".";
-	} elsif ($buf ne "") {
-	  print "$buf\n";
-	}
-      }
-      close BCP;
-
-      $bcprows =~ s/,//g;
 
       if($bcprows == 0) {
         stats::log($project,139,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
-      }
-
-      opendir WD, "$workdir" or die;
-      my @wdcontents = grep /bcp_errors/, readdir WD;
-      closedir WD;
-
-      if(@wdcontents > 0) {
-        stats::log($project,139,"Errors encountered during BCP!  Check bcp_errors file.  Aborting.");
-        die;
       }
 
       my $bufstorage = "";
