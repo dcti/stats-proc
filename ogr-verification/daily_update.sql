@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.21 2004/02/27 15:45:47 nerf Exp $
+-- $Id: daily_update.sql,v 1.22 2004/03/11 17:30:48 nerf Exp $
 
 select now();
 
@@ -351,11 +351,12 @@ UPDATE OGR_summary
 -- If it's not there, add it
 -- Note that most of the stubs will fall under this category
 --explain analyze
-INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
-    SELECT stub_id, nodecount, ids, max_version
-    FROM day_summary ds
+
+INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client,project_id)
+    SELECT ds.stub_id, ds.nodecount, ds.ids, ds.max_version, s.project_id
+    FROM day_summary ds, ogr_stubs s
     WHERE NOT ds.in_OGR_summary
-;
+    AND ds.stub_id = s.stub_id
 
 UPDATE ogr_summary
 SET max_client = p.version
