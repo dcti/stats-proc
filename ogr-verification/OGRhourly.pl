@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.14 2003/09/01 15:34:05 nerf Exp $
+# $Id: OGRhourly.pl,v 1.15 2003/09/07 05:27:37 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -177,7 +177,7 @@ sub spawn_daily {
   my ($f_rundate) = @_[1];
 
   stats::log($f_project,1,"Spawning daily.sh");
-  if (($_=system("./daily.sh $statsconf::syblogin $statsconf::sybpasswd $statsconf::pglogin $statsconf::pgpasswd $f_rundate"))!=0) {
+  if (($_=system("./daily.sh $f_rundate"))!=0) {
     stats::log($f_project,1,"daily.sh generated an error code of $_, \"$!\"!");
     die;
   }
