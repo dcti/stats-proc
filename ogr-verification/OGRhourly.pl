@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.6 2003/02/03 05:51:17 nerf Exp $
+# $Id: OGRhourly.pl,v 1.7 2003/02/16 19:15:05 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -86,7 +86,7 @@ if( $qualcount > 0 ) {
 
   if($qualcount > 1) {
      # We should respawn at the end to catch up...
-     $respawn = 1;
+     $respawn = $qualcount;
   }
 
   my $fullfn = "$server[1]ogr$logtoload$logext";
@@ -152,9 +152,7 @@ if( $qualcount > 0 ) {
 	}
     }
 
-    print "$workdir$finalfn $workdir$rawfn", "\n";
-
-    if ( ($_ = system ("psql ogr -U nerf -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" ")) != 0 )
+    if ( ($_ = system ("psql ogr -U $sqllogin -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" ")) != 0 )
     {
       stats::log($project,131,"Copy from generated error code of $_, aborting OGRhourly run.");
       die;
@@ -169,7 +167,11 @@ if( $qualcount > 0 ) {
         if(stats::lastday($project) < $yyyymmdd) {
           # Note -- CWD is not clean after calling spawn_daily.  Always use absolute
           # Paths after calling this.  (yeah, I know that's ugly)
-          spawn_daily($project);
+	  if ($respawn < 24) {
+	     # If we're more than a day behind, no need to run it for
+	     # each day
+             spawn_daily($project);
+	  }
         }
       }
     }
@@ -189,7 +191,7 @@ sub spawn_daily {
   my ($f_project) = @_;
 
   stats::log($f_project,1,"Spawning daily.sh");
-  if ( ($_ = system("./daily.sh")) != 0 ) {
+  if ( ($_ = system("./daily.sh $sqluser $sqlpasswd")) != 0 ) {
     stats::log($f_project,1,"daily.sh generated an error code of $_, \"$!\"!");
     die;
   }
