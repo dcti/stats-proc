@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.91 2002/02/24 06:11:23 decibel Exp $
+# $Id: hourly.pl,v 1.92 2002/02/24 06:16:26 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -68,7 +68,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 
   my ($logtoload,$qualcount) = findlog($project);
 
-  if( $logtoload ne "" ) {
+  if( $qualcount > 0 ) {
     my ($yyyymmdd, $hh) = split /-/, $logtoload;
 
     my $lastday = stats::lastday($project);
