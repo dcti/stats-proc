@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.3 2002/03/28 06:38:15 gregh Exp $
+ * $Id: logmod.cpp,v 1.4 2002/10/08 01:55:06 decibel Exp $
  */
 
 #include <stdio.h>
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         char *projectid;
         switch (project) {
         case RC5:
-            projectid = "5";
+            projectid = "205";
             break;
         case OGR:
             projectid = q+1;
