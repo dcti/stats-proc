@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.13 2003/08/21 18:39:07 nerf Exp $
+# $Id: OGRhourly.pl,v 1.14 2003/09/01 15:34:05 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -302,7 +302,8 @@ sub num_format {
 sub rate_calc {
   my ($bytes,$secs) = @_;
   my @units = ('B/s','KB/s','MB/s');
-  my $work = $bytes/$secs;
+if ($secs == 0) { $secs = 0.1 };
+  my $work = $bytes/$secs ;
 
   my $i = 0;
   my $unit = $units[0];
