@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.38 2000/08/14 20:54:43 nugget Exp $
+# $Id: hourly.pl,v 1.39 2000/08/14 21:13:02 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -77,6 +77,14 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
   if( $logtoload le $datestr ) {
     stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
+
+    my ($yyyymmdd, $hh) = split /-/, $logtoload;
+
+    my $lastday = lastday($project,"get");
+    if( $lastday ne ($yyyymmdd - 1)) {
+      stats::log($project,131,"I'm supposed to load a log from $yyyymmdd, but I haven't done a daily update since $lastday!");
+      die;
+    }
 
     if($qualcount > 1) {
        # We should respawn at the end to catch up...
@@ -174,17 +182,16 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       # perform sanity checking here
       stats::log($project,1,"$basefn successfully processed.");
 
-      # If hour = 23 or day > lastlog(day)
-      # queue daily processing for this project
-
       # It's always good to clean up after ourselves for the next run.
       unlink $finalfn, $rawfn;
 
       lastlog($project,$logtoload);
 
-      # if($qualcount > 1) {
-      #  
-      # }
+      if($hh == 23) {
+        if(lastday($project,"get") < $yyyymmdd) {
+          spawn_daily($project);
+        }
+      }
     }
     close GZIP;
   }
@@ -196,6 +203,13 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
 if ($respawn > 0) {
   exec "./hourly.pl";
+}
+
+sub spawn_daily {
+
+  my ($f_project) = @_;
+
+  die;
 }
 
 sub lastlog {
