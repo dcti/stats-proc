@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.31.2.1 2003/04/27 20:47:04 decibel Exp $
+# $Id: daily.pl,v 1.31.2.2 2003/04/27 22:38:36 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -48,27 +48,27 @@ if(!$statsconf::prids{$project}) {
   for (my $i = 0; $i < @pridlist; $i++) {
     my $project_id = int $pridlist[$i];
   
-    psql("retire.sql");
-    psql("newjoin.sql");
-    psql("dy_appendday.sql");
-    psql("em_update.sql");
-    psql("em_rank.sql");
-    psql("tm_update.sql");
-    psql("tm_rank.sql");
-    psql("platform.sql");
-    psql("dy_dailyblocks.sql");
+    psql("retire.sql", $project_id);
+    psql("newjoin.sql", $project_id);
+    psql("dy_appendday.sql", $project_id);
+    psql("em_update.sql", $project_id);
+    psql("em_rank.sql", $project_id);
+    psql("tm_update.sql", $project_id);
+    psql("tm_rank.sql", $project_id);
+    psql("platform.sql", $project_id);
+    psql("dy_dailyblocks.sql", $project_id);
     system "sudo pcpages $project_id";
-    psql("audit.sql");
+    psql("audit.sql", $project_id);
 
-    psql("clearday.sql");
-    psql("backup.sql");
+    psql("clearday.sql", $project_id);
+    psql("backup.sql", $project_id);
   }
   my $newlastday = stats::lastday($project);
   stats::log($project,5,"Daily processing for $newlastday has completed");
 }
 
 sub psql {
-  my ($sqlfile) = @_;
+  my ($sqlfile, $project_id) = @_;
 
   my $bufstorage = "";
   my $psqlsuccess = 0;
