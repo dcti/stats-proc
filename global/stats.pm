@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.28.2.1 2003/03/23 23:16:00 decibel Exp $
+# $Id: stats.pm,v 1.28.2.2 2003/03/26 04:17:08 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -184,7 +184,7 @@ sub lastday {
   if(!$statsconf::prids{$f_project}) {
     return 99999999;
   } else {
-    my $qs_update = "select convert(char(8),max(DATE),112) from Daily_Summary where 2=1";
+    my $qs_update = "select to_char(max(DATE),'YYYYMMDD') from Daily_Summary where 2=1";
   
     my @pridlist = split /:/, $statsconf::prids{$f_project};
     for (my $i = 0; $i < @pridlist; $i++) {
@@ -194,7 +194,7 @@ sub lastday {
     open TMP, ">/tmp/sqsh.tmp.$f_project";
     print TMP "$qs_update\ngo";
     close TMP;
-    my $lastdaynewval = `sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -w 999 -h -i /tmp/sqsh.tmp.$f_project`;
+    my $lastdaynewval = `psql -d $statsconf::database -t -c "$qs_update"`;
     $lastdaynewval =~ s/[^0123456789]//g;
     chomp $lastdaynewval;
     return $lastdaynewval;
