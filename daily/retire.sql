@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.23 2002/04/11 06:20:09 decibel Exp $
+# $Id: retire.sql,v 1.24 2002/06/22 21:16:36 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -124,6 +124,7 @@ delete Email_Rank
 delete Email_Rank
 	from STATS_Participant_Blocked spb
 	where spb.ID = Email_Rank.ID
+		and Email_Rank.PROJECT_ID = ${1}
 
 -- The following code should ensure that any "retire_to chains" eventually get eliminated
 -- It is also needed in case someone retires to an address that hasnt done any work in
