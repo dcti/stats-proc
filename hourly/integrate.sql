@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.13 2003/04/07 02:34:09 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.14 2003/04/07 02:44:50 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -342,7 +342,7 @@ insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
 */
 
 delete from import_bcp
-	where (project_id, time_stamp) IN (SELECT project_id, last_hourly_date
-                                                FROM TEMP_Projects p
-                                            )
+	where project_id IN (SELECT project_id
+                            FROM TEMP_Projects p
+                        )
 ;
