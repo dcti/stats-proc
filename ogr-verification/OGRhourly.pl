@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.18 2004/04/13 17:39:57 nerf Exp $
+# $Id: OGRhourly.pl,v 1.19 2004/05/25 15:08:16 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -222,7 +222,8 @@ sub findlog {
 
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
-  if( !open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1] | grep ogr\"'|" ) {
+  if( !open LS, "tcsh -c 'ssh -n $server[0] \"ls -l $server[1] | grep ogr\"'|" )
+  {
     stats::log($project,131,"Unable to contact log source!");
     return "",0;
   } 
