@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # 11/28/2002 - Joel Von Holdt for distributed.net
-# $Id: filter.pl,v 1.2 2002/12/20 23:55:45 nerf Exp $
+# $Id: filter.pl,v 1.3 2002/12/21 19:12:36 joel Exp $
 
 use strict;
 my ( $var, $fn, $fn24, $fn25, $reject, $numargs, $i );
@@ -71,7 +71,5 @@ $timedone = time();
 $tasktime = ($timedone - $timenow);
 print "$tasktime seconds to complete filtering of $numargs files.\n";
 
-print "Zipping rejects...";
+print "Zipping rejects...\n";
 system "bzip2 $reject";
-
-
