@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.19 2000/11/24 19:02:21 decibel Exp $
+# $Id: stats.pm,v 1.20 2000/11/24 19:18:24 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -88,10 +88,10 @@ sub DCTIeventsay {
 	my $project = shift;
 	my $message = shift;
 
-	$SIG(ALRM) = sub { die "timeout" };
+	local $SIG{ALRM} = sub { die "timeout" };
 
 	eval {
-		alarm(15);
+		alarm 15;
 		my $iaddr = gethostbyname( $statsconf::dctievent ); 
 		my $proto = getprotobyname('tcp') || die "getproto: $!\n";
 		my $paddr = Socket::sockaddr_in($port, $iaddr);
@@ -102,13 +102,13 @@ sub DCTIeventsay {
 		} else {
 			print "Could not reach $paddr";
 		}
-		alarm(0);
+		alarm 0;
 	};
 
-	if ($@) {
+	if($@) {
 		print "Connect to $statsconf::dctievent timed out\n";
 	} else {
-		alarm(0);
+		alarm 0;
 		die;
 	}
 }
