@@ -1,5 +1,12 @@
-# $Id: stats.pm,v 1.1 2000/02/17 17:19:17 nugget Exp $
+#
+# $Id: stats.pm,v 1.2 2000/06/20 17:11:08 nugget Exp $
+#
 # Stats global perl definitions/routines
+#
+# This should be world-readible from the production directory
+# and symlinked someplace like /usr/lib/perl5 where it'll
+# get caught in the perl include path.
+#
 
 package stats;
 
