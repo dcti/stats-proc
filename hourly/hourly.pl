@@ -46,7 +46,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
 
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
-  
+ 
   open LS, "tcsh -c 'ssh $server[0] \"ls $server[1]$project*\"'|";
   my $linecount = 0;
   my $qualcount = 0;
@@ -64,6 +64,11 @@ for (my $i = 0; $i < @projectlist; $i++) {
     }
     $linecount++;
   }
+
+  if($linecount == 0) {
+    stats::log($project,131,"Unable to contact log source!");
+  }
+
   if( $logtoload lt $datestr ) {
     stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
     my $fullfn = "$server[1]$project$logtoload.log.gz";
@@ -101,7 +106,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
         `cat $rawfn | $prefilter[$i] > $finalfn`;
         stats::log($project,1,"$basefn successfully filtered through $prefilter[$i].");
       }
-      #$retcode = system "bcp", "$project" . "_import", "in", $finalfn, "-ebcp_errors", $sqlserver, $sqllogin, $sqlpasswd, "-c", "-t,";
+
       open BCP, "bcp import_bcp in $finalfn -ebcp_errors $sqlserver $sqllogin $sqlpasswd -c -t, 2> /dev/stderr |";
 
       my $rows = 0;
@@ -118,7 +123,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
 
 	if ($buf =~ /(\d+\.\d+) rows per sec/) {
 	  $rate = num_format($1);
-	  stats::log($project,1,"$finalfn successfully BCP in; $rows rows at $rate rows/second.");
+	  stats::log($project,1,"$finalfn successfully BCP'd; $rows rows at $rate rows/second.");
 	}
       }
       close BCP;
