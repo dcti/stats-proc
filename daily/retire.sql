@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.5 2000/07/18 10:06:03 decibel Exp $
+# $Id: retire.sql,v 1.6 2000/07/18 10:46:58 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -47,7 +47,9 @@ delete Email_Rank
 			or STATS_Participant.listmode >= 10)
 		and Email_Rank.PROJECT_ID = ${1}
 
--- The following code should ensure that any 'retire_to chains' eventually get eliminated
+-- The following code should ensure that any "retire_to chains" eventually get eliminated
+-- It is also needed in case someone retires to an address that hasnt done any work in
+-- this contest.
 delete #NewRetiresER
 	from Email_Rank er
 	where #NewRetiresER.RETIRE_TO = er.ID
