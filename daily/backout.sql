@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: backout.sql,v 1.8 2001/12/29 08:50:50 decibel Exp $
+# $Id: backout.sql,v 1.9 2003/09/04 11:16:50 decibel Exp $
 #
 # This script will back out all stats data to a given date
 #
@@ -43,6 +43,10 @@ begin
 	
 	print "Deleting from Team_Members"
 	delete from Team_Members where PROJECT_ID = ${1}
+	print ""
+	
+	print "Deleting from Log_Info"
+	delete from Log_Info where PROJECT_ID = ${1} and LOG_TIMESTAMP >= dateadd(dd, 1, "${2}")
 	print ""
 	
 	print "Inserting into Email_Rank"
