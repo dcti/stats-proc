@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.56 2000/09/11 15:42:42 nugget Exp $
+# $Id: hourly.pl,v 1.57 2000/09/11 15:44:15 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -144,8 +144,6 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
     }
     close SCP;
     stats::log($project,1,$outbuf);
-
-    die;
 
     open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
     my $rawfn = "";
