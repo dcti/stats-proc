@@ -1,4 +1,4 @@
--- $Id: query3.sql,v 1.13 2003/01/08 02:28:11 joel Exp $ --
+-- $Id: query3.sql,v 1.14 2003/01/14 22:11:01 nerf Exp $ --
 
 create table donestubs
 (
@@ -9,6 +9,6 @@ create table donestubs
 
 insert into donestubs
 	select stub_id, nodecount, count(distinct p.stats_id)
-	from stubsB, id_lookup p
+	from stubs B, id_lookup p
 	where p.id = B.id
 	group by stub_id, nodecount;
