@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.24 2002/06/22 21:16:36 decibel Exp $
+# $Id: retire.sql,v 1.25 2002/06/22 21:22:45 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -116,7 +116,7 @@ select @stats_date = LAST_HOURLY_DATE
 
 delete Email_Rank
 	from STATS_Participant
-	where STATS_Participant.ID = Email_Rank.ID
+	where convert(int, STATS_Participant.ID) = Email_Rank.ID
 		and STATS_Participant.RETIRE_TO >= 1
 		and STATS_Participant.RETIRE_DATE = @stats_date
 		and Email_Rank.PROJECT_ID = ${1}
