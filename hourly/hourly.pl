@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.51 2000/09/01 05:05:47 nugget Exp $
+# $Id: hourly.pl,v 1.52 2000/09/07 18:46:19 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -27,6 +27,12 @@ use statsconf;
 use stats;
 
 use Time::Local;
+
+# This is a big-time kludge to make sure we don't walk on the RC5 run
+if (-e /home/incoming/newlogs-rc5/nologs.lck) {
+  stats::log($project,1,"/usr/home/incoming/newlogs-rc5/nologs.lck exists; aborting.");
+  die;
+}
 
 my $yyyy = (gmtime(time-3600))[5]+1900;
 my $mm = (gmtime(time-3600))[4]+1;

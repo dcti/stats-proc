@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.11 2000/08/16 21:26:03 nugget Exp $
+# $Id: daily.pl,v 1.12 2000/09/07 18:46:18 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -12,6 +12,12 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
 
 use statsconf;
 use stats;
+
+# This is a big-time kludge to make sure we don't walk on the RC5 run
+if (-e /home/incoming/newlogs-rc5/nologs.lck) {
+  stats::log($project,131,"/usr/home/incoming/newlogs-rc5/nologs.lck exists; aborting.");
+  die;
+}
 
 my $yyyy = (gmtime(time-3600))[5]+1900;
 my $mm = (gmtime(time-3600))[4]+1;
