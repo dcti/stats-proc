@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: backup.sql,v 1.9 2000/10/26 20:19:33 decibel Exp $
+# $Id: backup.sql,v 1.10 2000/10/26 20:53:31 decibel Exp $
 #
 # Makes backup copies of Email_Rank, Team_Rank, and Team_Members
 # Arguments:
@@ -31,7 +31,7 @@ select @stats_date = LAST_STATS_DATE
 	from Projects
 	where PROJECT_ID = ${1}
 delete statproc.Team_Members_Backup
-	where PROJECT_ID = ${1} and (BACKUP_DATE = @stats_date or BACKUP_DATE < dateadd(dd, -7, @stats_date)
+	where PROJECT_ID = ${1} and (BACKUP_DATE = @stats_date or BACKUP_DATE < dateadd(dd, -7, @stats_date))
 go
 
 print "Backing up Email_Rank"
