@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.12 2000/09/19 22:39:46 decibel Exp $
+# $Id: retire.sql,v 1.13 2000/10/09 05:35:16 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -27,7 +27,7 @@ select RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, 
 	group by RETIRE_TO
 go
 drop table #temp
-select * from #NewRetiresER
+--select * from #NewRetiresER
 go
 
 begin transaction
@@ -68,7 +68,7 @@ insert into Email_Rank(PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
 	select ${1}, RETIRE_TO, FIRST_DATE, LAST_DATE, WORK_TOTAL
 	from #NewRetiresER
 
-select * from #NewRetiresER
+--select * from #NewRetiresER
 
 commit transaction
 go
@@ -89,7 +89,7 @@ select RETIRE_TO, TEAM_ID, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIR
 	group by RETIRE_TO, TEAM_ID
 go
 drop table #temp
-select * from #NewRetiresTM
+--select * from #NewRetiresTM
 go
 
 begin transaction
@@ -132,7 +132,7 @@ insert into Team_Members(PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TO
 	select ${1}, RETIRE_TO, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL
 	from #NewRetiresTM
 
-select * from #NewRetiresTM
+--select * from #NewRetiresTM
 
 commit transaction
 go
