@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.28.2.8 2003/04/07 02:17:37 decibel Exp $
+# $Id: stats.pm,v 1.28.2.9 2003/05/05 03:25:21 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -188,10 +188,7 @@ sub lastday {
       my $project_id = int $pridlist[$i];
       $qs_update ="$qs_update or PROJECT_ID = $project_id";
     }
-    open TMP, ">/tmp/sqsh.tmp.$f_project";
-    print TMP "$qs_update\ngo";
-    close TMP;
-    my $lastdaynewval = `psql -d $statsconf::database -t -c "$qs_update"`;
+    my $lastdaynewval = `psql -d $statsconf::database -t -c "SELECT to_char(max(date), 'YYYYMMDD') FROM projects p, daily_summary d WHERE d.project_id = p.project_id AND lower(p.project_type)=lower('$f_project_type')"`;
     $lastdaynewval =~ s/[^0123456789]//g;
     chomp $lastdaynewval;
     return $lastdaynewval;
