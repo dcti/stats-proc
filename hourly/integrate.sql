@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.3 2003/04/04 20:47:01 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.4 2003/04/04 21:03:43 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -16,7 +16,7 @@
 **	Email_Contrib_Today format but not import_bcp format.
 */
 \echo Updating LAST_STATS_DATE for :ProjectType
-select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK,
+select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, coalesce(sum(WORK_UNITS),0) as TOTAL_WORK,
         count(*) as TOTAL_ROWS
 	into TEMP TEMP_Projects
 	from import_bcp i, Projects p
@@ -69,7 +69,7 @@ insert into Project_statsrun (PROJECT_ID)
 
 /* Store the stats date here, instead of in every row of Email_Contrib_Today and Platform_Contrib_Today */
 update Project_statsrun
-	set LAST_HOURLY_DATE = isnull(p.STATS_DATE, LAST_HOURLY_DATE),
+	set LAST_HOURLY_DATE = coalesce(p.STATS_DATE, LAST_HOURLY_DATE),
 		LOGS_FOR_DAY = LOGS_FOR_DAY + 1,
 		WORK_FOR_DAY = WORK_FOR_DAY + p.TOTAL_WORK
 	from TEMP_Projects p
