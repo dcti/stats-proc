@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.100 2002/06/10 00:25:44 decibel Exp $
+# $Id: hourly.pl,v 1.101 2002/06/10 05:46:10 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -87,7 +87,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     my $basefn = "$project$logtoload.log.gz";
 
     # Go ahead and set the lock now
-    if($_ = stats::semflag($project,"hourly.pl") ne "OK") {
+    if($_ = stats::semflag('hourly',"hourly.pl") ne "OK") {
       stats::log($project,129,"Cannot obtain lock for hourly.pl!  [$_] still running!");
       die;
     }
@@ -235,7 +235,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     }
     close GZIP;
   }
-  if(stats::semflag($project) ne "OK") {
+  if(stats::semflag('hourly') ne "OK") {
     stats::log($project,139,"Error clearing hourly.pl lock");
     die;
   }
