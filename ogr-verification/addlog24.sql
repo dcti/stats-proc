@@ -1,4 +1,4 @@
--- $Id: addlog24.sql,v 1.3 2002/12/23 18:44:06 nerf Exp $ --
+-- $Id: addlog24.sql,v 1.4 2002/12/24 19:06:48 nerf Exp $ --
 
 DROP TABLE logdata;
 
@@ -13,6 +13,6 @@ version INT);
 
 COPY logdata FROM '/home/joel/ogr/scripts/ogr24.filtered' USING DELIMITERS ',';
 
-CREATE INDEX log_id_idx ON logdata (id);
+CREATE INDEX log_email_idx ON logdata (email);
 CREATE INDEX log_nodecount_idx ON logdata (nodecount);
 CREATE INDEX log_stubmark_idx ON logdata (stub_marks);
