@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.6 2000/11/08 17:46:43 decibel Exp $
+# $Id: newjoin.sql,v 1.7 2000/11/08 17:56:57 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -33,7 +33,6 @@ declare ids cursor for
 		or (sp.retire_to = nj.id and sp.retire_to > 0)
 go
 
-begin transaction
 declare @id int, @retire_to int, @team_id int
 declare @work numeric(20,0), @first smalldatetime, @last smalldatetime
 declare @eff_id int, @curfirst smalldatetime, @curlast smalldatetime
@@ -55,6 +54,7 @@ begin
 # Don't do the update if there's no work for this person
 	if @work > 0
 	begin
+		begin transaction
 
 # Update Email_Contrib
 		update Email_Contrib set Email_Contrib.TEAM_ID = @team_id
@@ -137,6 +137,7 @@ begin
 				@day_rank, 0, @overall_rank, 0, 0, 0, 0 )
 		end
 
+		commit transaction
 		print "  %1! rows processed for ID %2!, TEAM_ID %3!", @idrows, @id, @team_id
 	end
 
@@ -150,6 +151,5 @@ if (@@sqlstatus = 1)
 close ids
 deallocate cursor ids
 print "%1! of %2! IDs updated; %3! rows total", @update_ids, @total_ids, @total_rows
-commit transaction
 go -f
 
