@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.8 2003/02/23 00:41:23 nerf Exp $
+# $Id: OGRhourly.pl,v 1.9 2003/02/24 22:15:04 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -149,7 +149,6 @@ if( $qualcount > 0 ) {
       stats::lastlog($project,$logtoload);
 
       if($hh == 23) {
-        if(stats::lastday($project) < $yyyymmdd) {
           # Note -- CWD is not clean after calling spawn_daily.  Always use absolute
           # Paths after calling this.  (yeah, I know that's ugly)
 	  if ($respawn < 24) {
@@ -157,7 +156,6 @@ if( $qualcount > 0 ) {
 	     # each day
              spawn_daily($project);
 	  }
-        }
       }
     }
     close GZIP;
@@ -176,7 +174,7 @@ sub spawn_daily {
   my ($f_project) = @_;
 
   stats::log($f_project,1,"Spawning daily.sh");
-  if (($_=system("./daily.sh $statsconf::sqluser $statsconf::sqlpasswd"))!=0) {
+  if (($_=system("./daily.sh $statsconf::sqllogin $statsconf::sqlpasswd"))!=0) {
     stats::log($f_project,1,"daily.sh generated an error code of $_, \"$!\"!");
     die;
   }
