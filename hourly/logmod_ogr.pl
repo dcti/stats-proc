@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: logmod_ogr.pl,v 1.9 2000/08/16 19:15:08 nugget Exp $
+# $Id: logmod_ogr.pl,v 1.10 2001/03/02 23:40:58 statproc Exp $
 #
 #
 # ogr logfile sample:
@@ -62,6 +62,9 @@ while(<>) {
 #    print ERR "$buf\n";
     next;
   }
+if ($projectid == 26) {
+	$projectid=25;
+}
 
   # Precision on smalldatetime is 1 minute.  This doesn't prevent us from
   # bcp'ing the full timestamps into a smalldatetime field, though.  The

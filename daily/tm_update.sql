@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.17 2000/11/09 06:37:33 decibel Exp $
+# $Id: tm_update.sql,v 1.18 2001/03/02 23:40:58 statproc Exp $
 
 TM_RANK
 
@@ -66,6 +66,7 @@ create table #TeamMemberWork
 )
 go
 
+-- WARNING! #TeamMemberWork must be unique by ID and TEAM_ID. See the note below for more info
 insert #TeamMemberWork (ID, TEAM_ID, WORK_TODAY, IS_NEW)
 	select CREDIT_ID, TEAM_ID, sum(WORK_UNITS) as WORK_UNITS, 1
 	from #TeamMembers
@@ -143,9 +144,13 @@ declare @stats_date smalldatetime
 select @stats_date = LAST_STATS_DATE
 	from Projects
 	where PROJECT_ID = ${1}
+/*
+# We're doing min(tmw.WORK_TODAY) because there can be more than one record in #Work_Summary. Any time
+# there is, the row from tmw will be included multiple times. (tmw is already summarized)
+*/
 insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select ${1}, ws.ID, ws.TEAM_ID, min(ws.FIRST_DATE), @stats_date, sum(tmw.WORK_TODAY), sum(ws.WORK_UNITS),
+	select ${1}, ws.ID, ws.TEAM_ID, min(ws.FIRST_DATE), @stats_date, min(tmw.WORK_TODAY), sum(ws.WORK_UNITS),
 		1000000, 1000000, 1000000, 1000000
 	from #TeamMemberWork tmw, #Work_Summary ws
 	where tmw.IS_NEW = 1
