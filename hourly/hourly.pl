@@ -96,7 +96,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         stats::log($project,1,"$basefn successfully filtered through $prefilter.");
       }
 
-      open BCP, "bcp import_bcp in $finalfn -e$workdir\bcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, 2> /dev/stderr |";
+      open BCP, "bcp import_bcp in $finalfn -e$workdir\\bcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, 2> /dev/stderr |";
 
       my $rows = 0;
       my $rate = 0;
