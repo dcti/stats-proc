@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.22 2003/04/28 20:54:10 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.23 2003/04/28 20:55:06 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -292,4 +292,4 @@ TRUNCATE import_bcp;
 
 -- Finally, report how many rows we handled
 \t
-SELECT 'Total rows: ' || total_rows FROM TEMP_Projects;
+SELECT 'Total rows: ' || sum(total_rows) FROM TEMP_Projects;
