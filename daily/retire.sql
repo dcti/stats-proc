@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.2 2000/07/17 12:17:48 decibel Exp $
+# $Id: retire.sql,v 1.3 2000/07/17 12:42:31 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -14,23 +14,37 @@ go
 print 'Remove retired or hidden participants from Email_Rank'
 go
 begin transaction
-select RETIRE_TO, WORK_TOTAL
+select RETIRE_TO, WORK_TOTAL, FIRST_DATE, LAST_DATE
 	into #NewRetiresER
 	from Email_Rank er, STATS_Participant sp
 	where sp.ID = er.ID
 		and sp.RETIRE_TO >= 1
+		and er.PROJECT_ID = ${1}
 
 update Email_Rank
 	set Email_Rank.WORK_TOTAL = Email_Rank.WORK_TOTAL + nr.WORK_TOTAL
 	from #NewRetiresER nr
 	where Email_Rank.ID = nr.RETIRE_TO
+		and Email_Rank.PROJECT_ID = ${1}
+update Email_Rank
+	set Email_Rank.FIRST_DATE = nr.FIRST_DATE
+	from #NewRetiresER nr
+	where Email_Rank.ID = nr.RETIRE_TO
+		and Email_Rank.FIRST_DATE > nr.FIRST_DATE
+		and Email_Rank.PROJECT_ID = ${1}
+update Email_Rank
+	set Email_Rank.LAST_DATE = nr.LAST_DATE
+	from #NewRetiresER nr
+	where Email_Rank.ID = nr.RETIRE_TO
+		and Email_Rank.LAST_DATE < nr.LAST_DATE
+		and Email_Rank.PROJECT_ID = ${1}
 
 delete Email_Rank
 	from STATS_Participant
 	where STATS_Participant.ID = Email_Rank.ID
 		and (STATS_Participant.RETIRE_TO >= 1
 			or STATS_Participant.listmode >= 10)
-		and PROJECT_ID = ${1}
+		and Email_Rank.PROJECT_ID = ${1}
 
 -- The following code should ensure that any 'retire_to chains' eventually get eliminated
 delete #NewRetiresER
@@ -38,7 +52,7 @@ delete #NewRetiresER
 	where #NewRetiresER.RETIRE_TO = er.ID
 
 insert into Email_Rank(PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
-	select ${1}, RETIRE_TO, getdate(), getdate(), WORK_TOTAL
+	select ${1}, RETIRE_TO, FIRST_DATE, LAST_DATE, WORK_TOTAL
 	from #NewRetiresER
 
 commit transaction
@@ -47,17 +61,33 @@ go
 print 'Remove retired or hidden participants from Email_Rank'
 go
 begin transaction
-select RETIRE_TO, TEAM_ID, WORK_TOTAL
+select RETIRE_TO, TEAM_ID, WORK_TOTAL, FIRST_DATE, LAST_DATE
 	into #NewRetiresTM
-	from Team_Members er, STATS_Participant sp
-	where sp.ID = er.ID
+	from Team_Members tm, STATS_Participant sp
+	where sp.ID = tm.ID
 		and sp.RETIRE_TO >= 1
+		and tm.PROJECT_ID = ${1}
 
 update Team_Members
 	set Team_Members.WORK_TOTAL = Team_Members.WORK_TOTAL + nr.WORK_TOTAL
 	from #NewRetiresTM nr
 	where Team_Members.ID = nr.RETIRE_TO
 		and Team_Members.TEAM_ID = nr.TEAM_ID
+		and Team_Members.PROJECT_ID = ${1}
+update Team_Members
+	set Team_Members.FIRST_DATE = nr.FIRST_DATE
+	from #NewRetiresTM nr
+	where Team_Members.ID = nr.RETIRE_TO
+		and Team_Members.TEAM_ID = nr.TEAM_ID
+		and Team_Members.PROJECT_ID = ${1}
+		and Team_Members.FIRST_DATE > nr.FIRST_DATE
+update Team_Members
+	set Team_Members.LAST_DATE = nr.LAST_DATE
+	from #NewRetiresTM nr
+	where Team_Members.ID = nr.RETIRE_TO
+		and Team_Members.TEAM_ID = nr.TEAM_ID
+		and Team_Members.PROJECT_ID = ${1}
+		and Team_Members.LAST_DATE < nr.LAST_DATE
 
 delete Team_Members
 	from STATS_Participant sp
@@ -73,7 +103,7 @@ delete #NewRetiresTM
 		and #NewRetiresTM.TEAM_ID = tm.TEAM_ID
 
 insert into Team_Members(PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
-	select ${1}, RETIRE_TO, TEAM_ID, getdate(), getdate(), WORK_TOTAL
+	select ${1}, RETIRE_TO, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL
 	from #NewRetiresTM
 
 commit transaction
