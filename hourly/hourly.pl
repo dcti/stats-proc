@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106 2002/08/11 23:36:38 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.1 2003/03/25 00:03:52 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -146,7 +146,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 	}
       }
 
-      open BCP, "bcp import_bcp in $workdir$finalfn -e$workdir\\bcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, |";
+      open BCP, "psql -d $statsconf::database '\\copy bcp_import FROM $workdir$finalfn DELIMITER '','' |";
       if(!<BCP>) {
         stats::log($project,131,"Error launching BCP, aborting hourly run.");
         die;
@@ -193,7 +193,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       my $sqshsuccess = 0;
       my $rowsnext = 0;
       my $sqlrows = 0;
-      if(!open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -a 1 -i integrate.sql $project 2> /dev/stdout |") {
+      if(!open SQL, "psql -f integrate.sql -v ProjectType=$project $statsconf::database 2> /dev/stdout |") {
         stats::log($project,139,"Error launching sqsh, aborting hourly run.");
         die;
       }
