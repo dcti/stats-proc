@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.20 2000/11/24 19:18:24 decibel Exp $
+# $Id: stats.pm,v 1.21 2000/11/24 19:21:53 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -106,10 +106,12 @@ sub DCTIeventsay {
 	};
 
 	if($@) {
-		print "Connect to $statsconf::dctievent timed out\n";
-	} else {
-		alarm 0;
-		die;
+		if ($@ =~ /timeout/) {
+			print "Connect to $statsconf::dctievent timed out\n";
+		} else {
+			alarm 0;
+			die;
+		}
 	}
 }
 
