@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.7 2000/08/14 20:47:20 nugget Exp $
+# $Id: stats.pm,v 1.8 2000/08/16 17:40:26 nugget Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -35,8 +35,9 @@ sub log {
 	my $yy = (localtime)[5]+1900;
 	my $hh = (localtime)[2];
 	my $mi = (localtime)[1];
+	my $sc = (localtime)[0];
 
-	my $ts = sprintf("[%d-%s-%d %02s:%02s]",$dd,$mm,$yy,$hh,$mi);
+	my $ts = sprintf("[%d-%s-%d %02s:%02s:%02s]",$dd,$mm,$yy,$hh,$mi,$sc);
 
 	open LOGFILE, ">>$logdir$project.log";
 	print LOGFILE $ts," ",@par,"\n";
