@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.25.2.5 2003/04/27 20:54:50 decibel Exp $
+# $Id: retire.sql,v 1.25.2.6 2003/04/27 21:12:34 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -9,65 +9,64 @@
 \set ON_ERROR_STOP 1
 
 \echo Build a list of blocked participants
-;
-select ID into TEMP Blocked
-	from STATS_Participant
-	where LISTMODE >= 10
-;
-insert into Blocked(ID)
-	select sp.ID
-	from STATS_Participant sp, Blocked b
-	where sp.RETIRE_TO > 0
-		and sp.RETIRE_TO = b.ID
+SELECT id
+    INTO TEMP blocked
+    FROM stats_participant
+    WHERE listmode >= 10
 ;
 
-\echo Update STATS_Participant_Blocked
-
-insert into STATS_Participant_Blocked(ID)
-	select distinct ID
-	from Blocked b
-	where not exists (select *
-				from STATS_Participant_Blocked spb
-				where spb.ID = b.ID)
+INSERT INTO blocked(id)
+    SELECT sp.id
+    FROM stats_participant sp, blocked b
+    WHERE sp.retire_to > 0
+        AND sp.retire_to = b.id
 ;
-delete from STATS_Participant_Blocked
-	where ID not in (select ID from Blocked)
+
+\echo Update stats_participant_blocked
+
+INSERT INTO stats_participant_blocked(id)
+    SELECT distinct id
+        FROM blocked b
+        WHERE NOT EXISTS (SELECT *
+                    FROM stats_participant_blocked spb
+                    WHERE spb.id = b.id)
+;
+DELETE FROM stats_participant_blocked
+    WHERE id NOT IN (SELECT id FROM blocked)
 ;
 
 
 \echo Update STATS_Team_Blocked
-
 insert into STATS_Team_Blocked(TEAM_ID)
-	select TEAM
-	from STATS_Team st
-	where st.LISTMODE >= 10
-		and TEAM not in (select TEAM_ID
-					from STATS_Team_Blocked stb
-					where stb.TEAM_ID = st.TEAM
-				)
+    select TEAM
+    from STATS_Team st
+    where st.LISTMODE >= 10
+        and TEAM not in (select TEAM_ID
+                    from STATS_Team_Blocked stb
+                    where stb.TEAM_ID = st.TEAM
+                )
 ;
 delete from STATS_Team_Blocked
-	where not exists (select *
-				from STATS_Team
-				where LISTMODE >= 10
-			)
+    where not exists (select *
+                from STATS_Team
+                where LISTMODE >= 10
+            )
 ;
 
 \echo Remove retired or hidden participants from Email_Rank
-;
 select RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, max(LAST_DATE) as LAST_DATE
-	into TEMP NewRetiresER
-	from Email_Rank er, STATS_Participant sp
-	where sp.ID = er.ID
-		and sp.RETIRE_TO >= 1
-		and sp.RETIRE_DATE = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
-		and not exists (select *
-					from STATS_Participant_Blocked spb
-					where spb.ID = sp.ID
-						and spb.ID = er.ID
-				)
-		and er.PROJECT_ID = :ProjectID
-	group by RETIRE_TO
+    into TEMP NewRetiresER
+    from Email_Rank er, STATS_Participant sp
+    where sp.ID = er.ID
+        and sp.RETIRE_TO >= 1
+        and sp.RETIRE_DATE = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
+        and not exists (select *
+                    from STATS_Participant_Blocked spb
+                    where spb.ID = sp.ID
+                        and spb.ID = er.ID
+                )
+        and er.PROJECT_ID = :ProjectID
+    group by RETIRE_TO
 ;
 
 \echo Begin update
@@ -133,18 +132,18 @@ COMMIT;
 
 \echo Select new retires
 SELECT retire_to, team_id, sum(work_total) as work_total, min(first_date) as first_date, max(last_date) as last_date
-	INTO TEMP NewRetiresTM
-	FROM Team_Members tm, STATS_Participant sp
-	WHERE sp.ID = tm.ID
-		and sp.RETIRE_TO >= 1
-		and sp.RETIRE_DATE = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
-		and not exists (select *
-					from STATS_Participant_Blocked spb
-					where spb.ID = sp.ID
-						and spb.ID = tm.ID
-				)
-		and tm.PROJECT_ID = :ProjectID
-	group by RETIRE_TO, TEAM_ID
+    INTO TEMP NewRetiresTM
+    FROM Team_Members tm, STATS_Participant sp
+    WHERE sp.ID = tm.ID
+        and sp.RETIRE_TO >= 1
+        and sp.RETIRE_DATE = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
+        and not exists (select *
+                    from STATS_Participant_Blocked spb
+                    where spb.ID = sp.ID
+                        and spb.ID = tm.ID
+                )
+        and tm.PROJECT_ID = :ProjectID
+    group by RETIRE_TO, TEAM_ID
 ;
 
 \echo Begin update
@@ -206,19 +205,19 @@ COMMIT;
 
 \echo Select IDs to remove
 SELECT DISTINCT spb.ID
-	INTO TEMP BadIDs
-	FROM Team_Members tm, STATS_Participant_Blocked spb
-	WHERE tm.ID = spb.ID
-		and PROJECT_ID = :ProjectID
+    INTO TEMP BadIDs
+    FROM Team_Members tm, STATS_Participant_Blocked spb
+    WHERE tm.ID = spb.ID
+        and PROJECT_ID = :ProjectID
 ;
 
 \echo Summarize team work to be removed
 SELECT TEAM_ID, sum(WORK_TOTAL) as BAD_WORK_TOTAL
-	INTO TEMP BadWork
-	FROM Team_Members tm, BadIDs b
-	WHERE tm.ID = b.ID
-		and PROJECT_ID = :ProjectID
-	GROUP BY TEAM_ID
+    INTO TEMP BadWork
+    FROM Team_Members tm, BadIDs b
+    WHERE tm.ID = b.ID
+        and PROJECT_ID = :ProjectID
+    GROUP BY TEAM_ID
 ;
 
 BEGIN;
