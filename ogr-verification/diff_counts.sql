@@ -1,17 +1,18 @@
--- $Id: diff_counts.sql,v 1.2 2002/12/27 04:54:58 nerf Exp $
+-- $Id: diff_counts.sql,v 1.3 2002/12/30 06:46:49 nerf Exp $
 
 -- find stubs that have different nodecounts
 
-create temp diff_counts as
-select stub_id, count(distinct nodecount) as counts
-from stubs
-group by stub_id
-having count(distinct nodecount) >1;
+CREATE TEMP TABLE tmp_diff_nodecounts AS
+	SELECT stub_id, count(distinct nodecount) AS counts
+	FROM stubs
+	GROUP by stub_id
+	HAVING count(distinct nodecount) >1;
 
-SELECT I.email, A.stub_marks, S.nodecount, S.os_type,
-	S.cpu_type, S.version
-FROM stubs S, id_lookup I, all_stubs A, diff_counts C
-WHERE S.email = I.email AND
-	S.stub_marks = A.stub_marks AND
-	S.stub_id = C.stub_id
-ORDER BY A.stub_marks;
+CREATE table diff_counts as
+	SELECT I.email, A.stub_marks, S.nodecount, S.os_type,
+		S.cpu_type, S.version
+	FROM stubs S, id_lookup I, all_stubs A, tmp_diff_nodecounts C
+	WHERE S.id = I.id AND
+		S.stub_id = A.stub_id AND
+		S.stub_id = C.stub_id
+	ORDER BY A.stub_marks;
