@@ -1,22 +1,21 @@
-#!/usr/local/bin/sqsh -i
--- $Id: clearday.sql,v 1.5 2002/01/09 20:07:21 decibel Exp $
+-- $Id: clearday.sql,v 1.6 2003/09/11 01:41:02 decibel Exp $
+\set ON_ERROR_STOP 1
+set sort_mem=128000;
 
-print "Dropping indexes"
-go
---drop index Email_Contrib_Today.iID
---drop index Email_Contrib_Today.iTEAM_ID
---go
+\echo Dropping indexes
+--drop index email_contrib_today.iid
+--drop index email_contrib_today.iteam_id
+--;
 
-print "Deleting data"
-go
-delete Email_Contrib_Today where project_id=${1}
-delete Platform_Contrib_Today where project_id=${1}
-go
+\echo Deleting data
+DELETE FROM email_contrib_today WHERE project_id=:ProjectID;
+--VACUUM email_contrib_today;
+DELETE FROM platform_contrib_today WHERE project_id=:ProjectID;
+--VACUUM platform_contrib_today;
 
-print "Updating Project_statsrun"
-go
-update Project_statsrun
-	set LOGS_FOR_DAY = 0,
-		WORK_FOR_DAY = 0
-	where PROJECT_ID=${1}
-go
+\echo Updating Project_statsrun
+UPDATE project_statsrun
+    SET logs_for_day = 0,
+        work_for_day = 0
+    WHERE project_id=:ProjectID
+;

@@ -1,98 +1,70 @@
-#!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_update.sql,v 1.8 2002/12/17 00:49:35 decibel Exp $
+# $Id: em_update.sql,v 1.9 2003/09/11 01:41:02 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
 # Arguments:
-#       Project_id
+#       ProjectID
 */
+\set ON_ERROR_STOP 1
+set sort_mem=128000;
 
-use stats
-set rowcount 0
-set flushmessage on
-go
-print '!! Begin e-mail ranking'
-print ' Drop indexes on Email_Rank'
-go
+\echo !! Begin e-mail ranking
+\echo  Drop indexes on Email_Rank
 --drop index Email_Rank.iDAY_RANK
 --drop index Email_Rank.iOVERALL_RANK
---go
+--;
 
 /*
 ** TODO: Assign earlier date if others are retired into
 ** Should not attempt to do it here.  It should happen one-up during a retire.
 */
 
-go
-print 'Build temporary table'
-go
-create table #retired_work
-(
-	ID		int,
-	WORK_TODAY	numeric(20, 0)
-)
-go
-insert #retired_work
-	select CREDIT_ID, sum(ect.WORK_UNITS)
-	from Email_Contrib_Today ect
-	where ect.PROJECT_ID = ${1}
-	group by ect.CREDIT_ID
-go
+\echo Build temporary tables
+SELECT credit_id, sum(ect.work_units) AS work_today INTO TEMP retired_work
+    FROM email_contrib_today ect
+    WHERE ect.project_id = :ProjectID
+        AND NOT EXISTS (SELECT *
+                    FROM stats_participant_blocked spb
+                    WHERE spb.id = ect.credit_id
+                )
+    GROUP by ect.CREDIT_ID
+;
 
-print ' Insert new participants'
-go
-exec p_set_lastupdate_e ${1}, NULL
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-declare @max_rank int
-select @max_rank = count(*)+1 from STATS_Participant
+\echo  Insert new participants
+;
 
-insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
-		OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select distinct ${1}, ect.CREDIT_ID, @stats_date, @stats_date, 0, 0, @max_rank, @max_rank, @max_rank, @max_rank
-	from Email_Contrib_Today ect, STATS_Participant sp
-	where ect.CREDIT_ID = sp.ID
-		and (sp.RETIRE_TO = 0 or sp.RETIRE_DATE > @stats_date)
-		and ect.CREDIT_ID not in (select ID from Email_Rank where PROJECT_ID=${1})
-		and not exists (select *
-					from STATS_Participant_Blocked spb
-					where spb.ID = ect.CREDIT_ID
-						and spb.ID = sp.ID
-				)
-		and ect.PROJECT_ID = ${1}
-go
+BEGIN;
+    \set LOCAL enable_seqscan=off
+    SELECT stats_set_last_update(:ProjectID, 'e', NULL);
 
-print ' Remove or move "today" info '
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-declare @max_rank int
-select @max_rank = count(*)+1 from STATS_Participant
+    INSERT INTO email_rank (project_id, id, first_date, last_date)
+        SELECT :ProjectID, rw.credit_id, stats_get_last_update(:ProjectID, 's'), stats_get_last_update(:ProjectID, 's')
+        FROM retired_work rw
+        WHERE NOT EXISTS (SELECT 1 FROM email_rank er WHERE project_id=:ProjectID AND er.id = rw.credit_id)
+    ;
 
-update Email_Rank
-	set DAY_RANK_PREVIOUS = DAY_RANK,
-		DAY_RANK = @max_rank,
-		OVERALL_RANK_PREVIOUS = OVERALL_RANK,
-		OVERALL_RANK = @max_rank,
-		WORK_TODAY = 0
-	where Email_Rank.PROJECT_ID = ${1}
+    \echo  Remove or move "today" info 
 
-print ""
-print ""
-print ' Update with new info'
-update Email_Rank
-	set WORK_TODAY = rw.WORK_TODAY,
-		WORK_TOTAL = WORK_TOTAL + rw.WORK_TODAY,
-		LAST_DATE = @stats_date
-	from #retired_work rw
-	where rw.ID = Email_Rank.ID
-		and Email_Rank.PROJECT_ID = ${1}
-go
-drop table #retired_work
-go
+    UPDATE email_rank
+        SET day_rank_previous = day_rank,
+            overall_rank_previous = overall_rank,
+            work_today = 0
+        WHERE email_rank.project_id = :ProjectID
+    ;
+
+    \echo 
+    \echo
+    \echo  Update with new info
+    UPDATE email_rank
+        SET work_today = rw.work_today,
+            work_total = work_total + rw.work_today,
+            last_date = stats_get_last_update(:ProjectID, 's')
+        FROM retired_work rw
+        WHERE rw.credit_id = email_rank.id
+            AND email_rank.project_id = :ProjectID
+    ;
+COMMIT;
+drop table retired_work
+;

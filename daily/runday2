@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/sh -e
 
 if [ x$1 = x ]; then
 	echo "I need to know what project to work on!!"
 	exit 1
 fi
 
-sqsh -i clearday.sql $1 || exit 1
-sqsh -i backup.sql $1 || exit 1
+psql -d stats -f clearday.sql -v ProjectID=$1
+psql -d stats -f backup.sql -v ProjectID=$1

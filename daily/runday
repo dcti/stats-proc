@@ -1,18 +1,18 @@
-#!/bin/sh
+#!/bin/sh -e
 
 if [ x$1 = x ]; then
 	echo "I need to know what project to work on!!"
 	exit 1
 fi
 
-sqsh -i retire.sql $1 || exit 1
-sqsh -i newjoin.sql $1 || exit 1
-sqsh -i dy_appendday.sql $1 || exit 1
-sqsh -i em_update.sql $1 || exit 1
-sqsh -i em_rank.sql $1 || exit 1
-sqsh -i tm_update.sql $1 || exit 1
-sqsh -i tm_rank.sql $1 || exit 1
-sqsh -i platform.sql $1 || exit 1
-sqsh -i dy_dailyblocks.sql $1 || exit 1
+psql -d stats -f retire.sql -v ProjectID=$1
+psql -d stats -f newjoin.sql -v ProjectID=$1
+psql -d stats -f dy_appendday.sql -v ProjectID=$1
+psql -d stats -f em_update.sql -v ProjectID=$1
+psql -d stats -f em_rank.sql -v ProjectID=$1
+psql -d stats -f tm_update.sql -v ProjectID=$1
+psql -d stats -f tm_rank.sql -v ProjectID=$1
+psql -d stats -f platform.sql -v ProjectID=$1
+psql -d stats -f dy_dailyblocks.sql -v ProjectID=$1
 sudo pcpages $1
-sqsh -i audit.sql $1 || exit 1
+psql -d stats -f audit.sql -v ProjectID=$1

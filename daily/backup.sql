@@ -1,84 +1,63 @@
-#!/usr/bin/sqsh -i
-#
-# $Id: backup.sql,v 1.14 2002/05/15 06:17:54 decibel Exp $
+/*
+# $Id: backup.sql,v 1.15 2003/09/11 01:41:02 decibel Exp $
 #
 # Makes backup copies of Email_Rank, Team_Rank, and Team_Members
 # Arguments:
-#	Project
+#    ProjectID
+*/
+\set ON_ERROR_STOP 1
+set sort_mem=128000;
 
-print "Deleting old data and any previous data for today."
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-delete statproc.Email_Rank_Backup
-	where PROJECT_ID = ${1} and BACKUP_DATE = @stats_date
-delete statproc.Email_Rank_Backup
-	where PROJECT_ID = ${1} and BACKUP_DATE < dateadd(dd, -4, @stats_date)
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-delete statproc.Team_Rank_Backup
-	where PROJECT_ID = ${1} and BACKUP_DATE = @stats_date
-delete statproc.Team_Rank_Backup
-	where PROJECT_ID = ${1} and BACKUP_DATE < dateadd(dd, -4, @stats_date)
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-delete statproc.Team_Members_Backup
-	where PROJECT_ID = ${1} and (BACKUP_DATE = @stats_date or BACKUP_DATE < dateadd(dd, -4, @stats_date))
-go
+SELECT last_date, last_date - interval '4 days' AS keep_date
+    INTO TEMP Tdates
+    FROM project_statsrun
+    WHERE project_id = :ProjectID
+;
 
-print "Backing up Email_Rank"
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
+\echo Deleting old data and any previous data for today.
+DELETE FROM email_rank_backup
+    WHERE project_id = :ProjectID
+        AND (backup_date = (SELECT last_date FROM Tdates)
+            OR backup_date < (SELECT keep_date FROM Tdates) )
+;
+DELETE FROM team_rank_backup
+    WHERE project_id = :ProjectID
+        AND (backup_date = (SELECT last_date FROM Tdates)
+            OR backup_date < (SELECT keep_date FROM Tdates) )
+;
+DELETE FROM team_members_backup
+    WHERE project_id = :ProjectID
+        AND (backup_date = (SELECT last_date FROM Tdates)
+            OR backup_date < (SELECT keep_date FROM Tdates) )
+;
 
-insert into statproc.Email_Rank_Backup (BACKUP_DATE, PROJECT_ID, ID, FIRST_DATE, LAST_DATE,
-		WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
-		OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select @stats_date, ${1}, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
-		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS
-	from Email_Rank
-	where PROJECT_ID = ${1}
-go
-print "Backing up Team_Rank"
-go
+\echo Backing up Email_Rank
+INSERT INTO email_rank_backup (backup_date, project_id, id, first_date, last_date,
+        work_today, work_total, day_rank, day_rank_previous,
+        overall_rank, overall_rank_previous)
+    SELECT td.last_date, :ProjectID, id, first_date, er.last_date, work_today, work_total,
+        day_rank, day_rank_previous, overall_rank, overall_rank_previous
+        FROM email_rank er, Tdates td
+        WHERE project_id = :ProjectID
+;
 
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
+\echo Backing up Team_Rank
+INSERT INTO team_rank_backup (backup_date, project_id, team_id, first_date, last_date,
+        work_today, work_total, day_rank, day_rank_previous,
+        overall_rank, overall_rank_previous, members_today, members_overall, members_current)
+    SELECT td.last_date, :ProjectID, team_id, first_date, tr.last_date, work_today, work_total,
+        day_rank, day_rank_previous, overall_rank, overall_rank_previous,
+        members_today, members_overall, members_current
+    FROM team_rank tr, Tdates td
+    WHERE project_id = :ProjectID
+;
 
-insert into statproc.Team_Rank_Backup (BACKUP_DATE, PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE,
-		WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
-		OVERALL_RANK, OVERALL_RANK_PREVIOUS, MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
-	select @stats_date, ${1}, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
-		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
-		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT
-	from Team_Rank
-	where PROJECT_ID = ${1}
-go
-
-print "Backing up Team_Members"
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
-insert into statproc.Team_Members_Backup (BACKUP_DATE, PROJECT_ID, ID, TEAM_ID,  FIRST_DATE, LAST_DATE,
-		WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
-		OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select @stats_date, ${1}, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
-		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS
-	from Team_Members
-	where PROJECT_ID = ${1}
-go
+\echo Backing up Team_Members
+INSERT INTO team_members_backup (backup_date, project_id, id, team_id,  first_date, last_date,
+        work_today, work_total, day_rank, day_rank_previous,
+        overall_rank, overall_rank_previous)
+    SELECT td.last_date, :ProjectID, id, team_id, first_date, tm.last_date, work_today, work_total,
+        day_rank, day_rank_previous, overall_rank, overall_rank_previous
+    FROM team_members tm, Tdates td
+    WHERE project_id = :ProjectID
+;

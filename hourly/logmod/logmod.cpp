@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.11 2003/08/25 19:30:01 gregh Exp $
+ * $Id: logmod.cpp,v 1.12 2003/09/11 01:41:02 decibel Exp $
  */
 
 #include <assert.h>

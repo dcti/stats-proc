@@ -1,61 +1,66 @@
-#!/usr/local/bin/sqsh -i
-#
-# $Id: audit.sql,v 1.32 2002/10/05 17:42:00 decibel Exp $
+-- $Id: audit.sql,v 1.33 2003/09/11 01:41:02 decibel Exp $
+\set ON_ERROR_STOP 1
+set sort_mem=128000;
+\t
 
-create table #audit (
-	ECTsum		numeric(20),
-	ECTblcksum	numeric(20),
-	ECTteamsum	numeric(20),
-	PCTsum		numeric(20),
-	PCsum		numeric(20),
-	PCsumtoday	numeric(20),
-	DSsum 		numeric(20),
-	DSunits		numeric(20),
-	DSusers		int,
-	ECsum		numeric(20),
-	ECsumtoday	numeric(20),
-	ECblcksumtdy	numeric(20),
-	ECblcksum	numeric(20),
-	ECteamsum	numeric(20),
-	ERsumtoday	numeric(20),
-	ERsum		numeric(20),
-	TMsumtoday	numeric(20),
-	TMsum		numeric(20),
-	TRsumtoday	numeric(20),
-	TRsum		numeric(20)
-)
-go -f -h
-insert into #audit values(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-go -f -h
-
+CREATE TEMP TABLE audit (
+    date        date,
+    ECTsum        numeric(20) default 0,
+    ECTblcksum    numeric(20) default 0,
+    ECTteamsum    numeric(20) default 0,
+    PCTsum        numeric(20) default 0,
+    PCsum        numeric(20) default 0,
+    PCsumtoday    numeric(20) default 0,
+    DSsum         numeric(20) default 0,
+    DSunits        numeric(20) default 0,
+    DSusers        int default 0,
+    ECsum        numeric(20) default 0,
+    ECsumtoday    numeric(20) default 0,
+    ECblcksumtdy    numeric(20) default 0,
+    ECblcksum    numeric(20) default 0,
+    ECteamsum    numeric(20) default 0,
+    ERsumtoday    numeric(20) default 0,
+    ERsum        numeric(20) default 0,
+    TMsumtoday    numeric(20) default 0,
+    TMsum        numeric(20) default 0,
+    TRsumtoday    numeric(20) default 0,
+    TRsum        numeric(20) default 0
+) WITHOUT OIDs
+;
+INSERT INTO audit (date)
+    SELECT last_date
+    FROM project_statsrun
+    WHERE project_id = :ProjectID
+;
+ANALYZE audit;
 
 -- **************************
 --   ECTsum
 -- **************************
-print "Sum of work in Email_Contrib_Today for project id %1!", ${1}
-go -f -h
-update	#audit
-	set ECTsum = (select isnull(sum(WORK_UNITS), 0)
-		from Email_Contrib_Today
-		where PROJECT_ID = ${1})
-select ECTsum from #audit
-go -f -h
+\echo Sum of work in email_contrib_today for project id :ProjectID
+UPDATE audit
+    SET ECTsum = (SELECT coalesce(sum(work_units), 0)
+        FROM email_contrib_today
+        WHERE project_id = :ProjectID)
+;
+SELECT ECTsum FROM audit
+;
 
 
 
 -- **************************
 --   ECTblcksum
 -- **************************
-print "Total work units ignored today (listmode >= 10)"
-go -f -h
-update	#audit
-	set ECTblcksum = (select isnull(sum(d.WORK_UNITS), 0)
-			    from Email_Contrib_Today d, STATS_Participant_Blocked spb
-			    where PROJECT_ID = ${1}
-				    and d.CREDIT_ID = spb.ID
-			)
-select ECTblcksum from #audit
-go -f -h
+\echo Total work units ignored today (listmode >= 10)
+UPDATE audit
+    SET ECTblcksum = (SELECT coalesce(sum(d.work_units), 0)
+                FROM email_contrib_today d, stats_participant_blocked spb
+                WHERE project_id = :ProjectID
+                    AND d.credit_id = spb.ID
+            )
+;
+SELECT ECTblcksum FROM audit
+;
 
 
 
@@ -63,117 +68,99 @@ go -f -h
 -- **************************
 --   ECTteamsum
 -- **************************
-print "Sum of team work in Email_Contrib_Today"
-go -f -h
-update #audit
-	set ECTteamsum = (select isnull(sum(d.WORK_UNITS), 0)
-		from Email_Contrib_Today d
-		where PROJECT_ID = ${1}
-			and d.CREDIT_ID not in (select ID
-						from STATS_Participant_Blocked spb
-						where spb.ID = d.CREDIT_ID
-					)
-			and d.TEAM_ID > 0
-			and d.TEAM_ID not in (select TEAM_ID
-						from STATS_Team_Blocked stb
-						where stb.TEAM_ID = d.TEAM_ID
-					)
-		)
-select ECTteamsum from #audit
-go -f -h
+\echo Sum of team work in email_contrib_today
+UPDATE audit
+    SET ECTteamsum = (SELECT coalesce(sum(d.work_units), 0)
+        FROM email_contrib_today d
+        WHERE project_id = :ProjectID
+            AND d.credit_id NOT IN (SELECT ID
+                        FROM stats_participant_blocked spb
+                        WHERE spb.ID = d.credit_id
+                    )
+            AND d.TEAM_ID > 0
+            AND d.TEAM_ID NOT IN (SELECT TEAM_ID
+                        FROM STATS_Team_Blocked stb
+                        WHERE stb.TEAM_ID = d.TEAM_ID
+                    )
+        )
+;
+SELECT ECTteamsum FROM audit
+;
 
 
 
 -- **************************
 --   PCTsum
 -- **************************
-print "Sum of work in Platform_Contrib_Today for project id %1!", ${1}
-go -f -h
-update	#audit
-	set PCTsum = (select isnull(sum(WORK_UNITS), 0)
-		from Platform_Contrib_Today
-		where PROJECT_ID = ${1})
-select PCTsum from #audit
-go -f -h
+\echo Sum of work in Platform_Contrib_Today for project id %1!, :ProjectID
+UPDATE audit
+    SET PCTsum = (SELECT coalesce(sum(work_units), 0)
+        FROM platform_contrib_today
+        WHERE project_id = :ProjectID)
+;
+SELECT PCTsum FROM audit
+;
 
 
 
 -- **************************
 --   PCsumtoday
 -- **************************
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-print "Sum of work in Platform_Contrib for today (%1!)", @proj_date
-go -f -h
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
-update	#audit
-	set PCsumtoday = (select isnull(sum(WORK_UNITS), 0)
-		from Platform_Contrib
-		where PROJECT_ID = ${1}
-			and DATE = @proj_date)
-select PCsumtoday from #audit
-go -f -h
+SELECT 'Sum of work in Platform_Contrib for today (' || date || ')' FROM audit
+;
+UPDATE audit
+    SET PCsumtoday = (select coalesce(sum(work_units), 0)
+        FROM platform_contrib
+        WHERE project_id = :ProjectID
+            AND date = audit.date)
+;
+SELECT PCsumtoday FROM audit
+;
 
 
 
 -- **************************
 --   PCsum
 -- **************************
-print "Total work units in Platform_Contrib"
-go -f -h
-update 	#audit
-	set PCsum = (select sum(WORK_UNITS)
-		from Platform_Contrib
-		where PROJECT_ID = ${1})
-select PCsum from #audit
-go -f -h
+\echo Total work units in Platform_Contrib
+UPDATE audit
+    SET PCsum = (SELECT coalesce(sum(work_units),0)
+        FROM Platform_Contrib
+        WHERE project_id = :ProjectID)
+;
+SELECT PCsum FROM audit
+;
 
 
 
 -- **************************
 --   DSsum
 -- **************************
-print "Total work units in Daily_Summary"
-go -f -h
-update	#audit
-	set DSsum = (select sum(WORK_UNITS)
-		from Daily_Summary
-		where PROJECT_ID = ${1})
-select DSsum from #audit
-go -f -h
+\echo Total work units in Daily_Summary
+UPDATE audit
+    SET DSsum = (SELECT coalesce(sum(work_units),0)
+        FROM Daily_Summary
+        WHERE project_id = :ProjectID)
+;
+SELECT DSsum FROM audit
+;
 
 
 
 -- **************************
 --   DSunits, DSusers
 -- **************************
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-print "Work Units, Participants in Daily_Summary for today (%1!)", @proj_date
-go -f -h
-declare @proj_date smalldatetime
-declare @units numeric(20)
-declare @participants int
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
-select	@units = WORK_UNITS, @participants = PARTICIPANTS
-	from Daily_Summary
-	where DATE = @proj_date
-		and PROJECT_ID = ${1}
-update	#audit
-	set DSunits = @units, DSusers = @participants
-select @units, @participants
-go -f -h
+SELECT 'Work Units, Participants in Daily_Summary for today (' || date || ')' FROM audit
+;
+update audit
+    SET DSunits = work_units
+            , DSusers = participants
+    FROM daily_summary ds
+    WHERE audit.date = ds.date
+        AND project_id = :ProjectID
+;
+SELECT DSunits, DSusers FROM audit
+;
 
 
 
@@ -181,250 +168,212 @@ go -f -h
 --   ECsum, ECblcksum, ECteamsum
 -- **************************
 -- Build a summary table, which dramatically cuts down the time needed for this
-print "Building Email_Contrib summary"
-go -f -h
-select id, team_id, sum(work_units) as work_units into #EmailContribSummary
-	from email_contrib
-	where project_id=${1}
-	group by id, team_id
-go
+\echo Building Email_Contrib summary
+BEGIN;
+    SET LOCAL enable_seqscan = off;
+    SELECT id, team_id, sum(work_units) AS work_units
+        INTO TEMP email_contrib_summary
+        FROM email_contrib
+        WHERE project_id = :ProjectID
+        GROUP by id, team_id
+    ;
+COMMIT;
+ANALYZE email_contrib_summary;
 
 -- Handle retire-to's
-print "Updating retires"
-go -f -h
-update #EmailContribSummary
-	set id = sp.retire_to
-	from STATS_Participant sp
-	where sp.id = #EmailContribSummary.id
-		and sp.retire_to > 0
-go
+\echo Updating retires
+UPDATE email_contrib_summary
+    SET id = sp.retire_to
+    FROM stats_participant sp
+    WHERE sp.id = email_contrib_summary.id
+        AND sp.retire_to >= 1
+        AND (sp.retire_date >= (SELECT ps.last_date FROM project_statsrun ps WHERE ps.project_id = :ProjectID)
+                OR sp.retire_date IS NULL)
+;
 
-print "Total work units, ignored work, team work in Email_Contrib"
-go -f -h
+\echo Total work units, ignored work, team work in Email_Contrib
+;
 
-declare @ECsum numeric (20)
-declare @ECblcksum numeric (20)
-declare @ECteamsum numeric (20)
-select @ECsum = sum(work_units), @ECblcksum = sum( sign(isnull(spb.ID,0)) * work_units ),
-		@ECteamsum = isnull(
-			    sum( ( 1-sign(isnull(spb.ID,0)) )
-				* sign(ws.TEAM_ID) * ( 1-sign(isnull(stb.TEAM_ID,0)) )
-				* ws.WORK_UNITS )
-			, 0)
-	from #EmailContribSummary ws , STATS_Participant_Blocked spb, STATS_Team_Blocked stb
-	where ws.ID *= spb.ID
-		and ws.TEAM_ID *= stb.TEAM_ID
+UPDATE audit
+    SET ECsum = sum(work_units)
+            , ECblcksum = sum(CASE WHEN spb.id IS NOT NULL THEN work_units END)
+            , ECteamsum = sum(CASE WHEN ws.team_id >= 1
+                                        AND spb.id IS NULL
+                                        AND stb.team_id IS NULL
+                                    THEN ws.work_units
+                                END)
+    FROM email_contrib_summary ws
+        LEFT JOIN stats_participant_blocked spb ON ws.id = spb.id
+        LEFT JOIN stats_team_blocked stb ON ws.team_id = stb.team_id
+;
+SELECT ECsum, ECblcksum, ECteamsum FROM audit
+;
 
-update	#audit
-	set ECsum = @ECsum, ECblcksum = @ECblcksum, ECteamsum = @ECteamsum
-
-select ECsum, ECblcksum, ECteamsum from #audit
-go -f -h
-
-drop table #EmailContribSummary
-go
+drop table email_contrib_summary
+;
 
 
 -- **************************
 --   ECsumtoday
 -- **************************
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-print "Sum of work in Email_Contrib for today (%1!)", @proj_date
-go -f -h
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
-update	#audit
-	set ECsumtoday = (select isnull(sum(WORK_UNITS), 0)
-		from Email_Contrib
-		where PROJECT_ID = ${1}
-			and DATE = @proj_date)
-select ECsumtoday from #audit
-go -f -h
+SELECT 'Sum of work in Email_Contrib for today (' || date || ')' FROM audit
+;
+BEGIN;
+    SET LOCAL enable_seqscan = off;
+    UPDATE audit
+        SET ECsumtoday = (SELECT coalesce(sum(work_units), 0)
+            FROM email_contrib ec
+            WHERE project_id = :ProjectID
+                AND audit.date = ec.date
+                            )
+    ;
+COMMIT;
+SELECT ECsumtoday FROM audit
+;
 
 
 
 -- **************************
 --   ECblcksumtdy
 -- **************************
-print "Total work units ignored in Email_Contrib for today (listmode >= 10)"
-go -f -h
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
+\echo Total work units ignored in Email_Contrib for today (listmode >= 10)
+;
 
 -- This will find all work for participants who are blocked, EXCEPT FOR the work of people
 -- who are retired into them
-update	#audit
-	set ECblcksumtdy = (select isnull(sum(e.WORK_UNITS), 0)
-		from Email_Contrib e, STATS_Participant p, STATS_Participant_Blocked spb
-		where PROJECT_ID = ${1}
-			and e.DATE = @proj_date
-			and e.ID = p.ID
-			and e.ID = spb.ID
-			and p.ID = spb.ID
-			and (p.RETIRE_TO = 0 or p.RETIRE_DATE > @proj_date)
-		)
+UPDATE audit
+    SET ECblcksumtdy = (SELECT coalesce(sum(e.work_units), 0)
+        FROM email_contrib e, stats_participant p, stats_participant_blocked spb
+        WHERE project_id = :ProjectID
+            AND e.date = (SELECT last_date FROM project_statsrun WHERE project_id = :ProjectID)
+            AND e.id = p.id
+            AND e.id = spb.id
+            AND p.id = spb.id
+            AND (p.retire_to = 0 or p.retire_date > audit.date)
+        )
+;
 
 -- This will find all work for participants who are retired into a participant that is blocked
-update	#audit
-	set ECblcksumtdy = ECblcksumtdy + (select isnull(sum(e.WORK_UNITS), 0)
-		from Email_Contrib e, STATS_Participant p, STATS_Participant_Blocked spb
-		where PROJECT_ID = ${1}
-			and e.DATE = @proj_date
-			and e.ID = p.ID
-			and p.RETIRE_TO > 0
-			and (p.RETIRE_DATE <= @proj_date or p.RETIRE_DATE is null)
-			and spb.ID = p.RETIRE_TO
-		)
+UPDATE audit
+    SET ECblcksumtdy = ECblcksumtdy + (select coalesce(sum(e.work_units), 0)
+        FROM Email_Contrib e, STATS_Participant p, stats_participant_blocked spb
+        WHERE project_id = :ProjectID
+            AND e.date = audit.date
+            AND e.id = p.id
+            AND p.retire_to > 0
+            AND (p.retire_date <= audit.date or p.retire_date IS NULL)
+            AND spb.id = p.retire_to
+        )
+;
 
-select ECblcksumtdy from #audit
-go -f -h
+SELECT ECblcksumtdy FROM audit
+;
 
 
 
 -- **************************
 --   ERsumtoday, ERsum
 -- **************************
-print "Total work reported in Email_Rank for Today, Overall"
-go -f -h
-declare @ERsumtoday numeric(20)
-declare @ERsum numeric(20)
-select	@ERsumtoday = sum(WORK_TODAY), @ERsum = sum(WORK_TOTAL)
-	from Email_Rank
-	where PROJECT_ID = ${1}
-update	#audit
-	set ERsumtoday = @ERsumtoday, ERsum = @ERsum
-select @ERsumtoday, @ERsum
-go -f -h
+\echo Total work reported in Email_Rank for Today, Overall
+UPDATE audit
+    SET ERsumtoday = sum(WORK_TODAY)
+        , ERsum = sum(WORK_TOTAL)
+    FROM email_rank
+    WHERE project_id = :ProjectID
+;
+SELECT ERsumtoday, ERsum FROM audit
+;
 
 
 
 -- **************************
 --   TMsumtoday, TMsum
 -- **************************
-print "Total work reported in Team_Members for Today, Overall"
-go -f -h
-declare @TMsumtoday numeric(20)
-declare @TMsum numeric(20)
-select	@TMsumtoday = isnull(sum(WORK_TODAY), 0), @TMsum = isnull(sum(WORK_TOTAL), 0)
-	from Team_Members
-	where PROJECT_ID = ${1}
-update	#audit
-	set TMsumtoday = @TMsumtoday, TMsum = @TMsum
-select @TMsumtoday, @TMsum
-go -f -h
+\echo Total work reported in Team_Members for Today, Overall
+UPDATE audit
+    SET TMsumtoday = coalesce(sum(WORK_TODAY), 0)
+        , TMsum = coalesce(sum(WORK_TOTAL), 0)
+    FROM team_members
+    WHERE project_id = :ProjectID
+;
+SELECT TMsumtoday, TMsum FROM audit
+;
 
 
 -- **************************
 --   TRsumtoday, TRsum
 -- **************************
-print "Total work reported in Team_Rank for Today, Overall"
-go -f -h
-declare @TRsumtoday numeric(20)
-declare @TRsum numeric(20)
-select	@TRsumtoday = isnull(sum(WORK_TODAY), 0), @TRsum = isnull(sum(WORK_TOTAL), 0)
-	from Team_Rank
-	where PROJECT_ID = ${1}
-update	#audit
-	set TRsumtoday = @TRsumtoday, TRsum = @TRsum
-select @TRsumtoday, @TRsum
-go -f -h
+\echo Total work reported in Team_Rank for Today, Overall
+UPDATE audit
+    SET TRsumtoday = coalesce(sum(WORK_TODAY), 0)
+        , TRsum = coalesce(sum(WORK_TOTAL), 0)
+    FROM Team_Rank
+    WHERE project_id = :ProjectID
+;
+SELECT TRsumtoday, TRsum FROM audit
+;
 
 
 
 
-print "!! begin sanity checks !!"
-go
+\echo !! begin sanity checks !!
+;
 
 /* ECTsum, ECsumtoday, PCTsum, PCsumtoday, and DSunits should all match */
-print "checking total work units submitted today...."
-declare @ECTsum numeric(20)
-declare @ECsumtoday numeric(20)
-declare @PCTsum numeric(20)
-declare @PCsumtoday numeric(20)
-declare @DSunits numeric(20)
-select	@ECTsum = ECTsum, @ECsumtoday = ECsumtoday,
-	@PCTsum = PCTsum, @PCsumtoday = PCsumtoday,
-	@DSunits = DSunits
-	from #audit
-if (@ECTsum <> @ECsumtoday)
-	print "ERROR! Email_Contrib_Today sum (ECTsum=%1!) != Email_Contrib sum for today (ECsumtoday=%2!)", @ECTsum, @ECsumtoday
-if (@ECTsum <> @PCTsum)
-	print "ERROR! Email_Contrib_Today sum (ECTsum=%1!) != Platform_Contrib_Today sum (PCTsum=%2!)", @ECTsum, @PCTsum
-if (@ECTsum <> @PCsumtoday)
-	print "ERROR! Email_Contrib_Today sum (ECTsum=%1!) != Platform_Contrib sum for today (PCsumtoday=%2!)", @ECTsum, @PCsumtoday
-if (@ECTsum <> @DSunits)
-	print "ERROR! Email_Contrib_Today sum (ECTsum=%1!) != Daily_Summary for today (DSunits=%2!)", @ECTsum, @DSunits
-go -f -h
+\echo checking total work units submitted today....
+SELECT 'ERROR! email_contrib_today sum (ECTsum=' || ECTsum
+        || ') != Email_Contrib sum for today (ECsumtoday=' || ECsumtoday || ')'
+    FROM audit WHERE ECTsum <> ECsumtoday;
+SELECT 'ERROR! email_contrib_today sum (ECTsum=' || ECTsum
+        || ') != Platform_Contrib_Today sum (PCTsum=' || PCTsum || ')'
+    FROM audit WHERE ECTsum <> PCTsum;
+SELECT 'ERROR! email_contrib_today sum (ECTsum=' || ECTsum
+        || ') != Platform_Contrib sum for today (PCsumtoday=' || PCsumtoday || ')'
+    FROM audit WHERE ECTsum <> PCsumtoday;
+SELECT 'ERROR! email_contrib_today sum (ECTsum=' || ECTsum
+        || ') != Daily_Summary for today (DSunits=' || DSunits || ')'
+    FROM audit WHERE ECTsum <> DSunits;
 
 /* ECsum, PCsum, and DSsum should all match, ERsum + ECblcksum should equal ECsum */
-print "checking total work units submitted...."
-declare @ECsum numeric(20)
-declare @PCsum numeric(20)
-declare @DSsum numeric(20)
-select	@ECsum = ECsum, @PCsum = PCsum, @DSsum = DSsum
-	from #audit
-if (@ECsum <> @PCsum)
-	print "ERROR! Email_Contrib sum (ECsum=%1!) != Platform_Contrib sum (PCsum=%2!)", @ECsum, @PCsum
-if (@ECsum <> @DSsum)
-	print "ERROR! Email_Contrib sum (ECsum=%1!) != Daily_Summary sum (DSsum=%2!)", @ECsum, @DSsum
-go -f -h
+\echo checking total work units submitted....
+SELECT 'ERROR! Email_Contrib sum (ECsum=' || ECsum
+        || ') != Platform_Contrib sum (PCsum=' || PCsum || ')'
+    FROM audit WHERE ECsum <> PCsum;
+SELECT 'ERROR! Email_Contrib sum (ECsum=' || ECsum
+        || ') != Daily_Summary sum (DSsum=' || DSsum || ')'
+    FROM audit WHERE ECsum <> DSsum;
 
 /* ECTblcksum should equal ECblcksumtdy */
-print "checking total units blocked today..."
-declare @ECTblcksum numeric(20)
-declare @ECblcksumtdy numeric(20)
-declare @ERsumtoday numeric(20)
-declare @ECTsum numeric(20)
-select @ECTblcksum = ECTblcksum, @ECblcksumtdy = ECblcksumtdy,
-	@ERsumtoday = ERsumtoday, @ECTsum = ECTsum
-	from #audit
-if (@ECTblcksum <> @ECblcksumtdy)
-	print "ERROR! EMail_Contrib_Today blocked sum (ECTblcksum=%1!) != Email_Contrib blocked sum for today (ECblcksumtdy=%2!)", @ECTblcksum, @ECblcksumtdy
+\echo checking total units blocked today...
+SELECT 'ERROR! EMail_Contrib_Today blocked sum (ECTblcksum=' || ECTblcksum
+        || ') != Email_Contrib blocked sum for today (ECblcksumtdy=' || ECblcksumtdy || ')'
+    FROM audit WHERE ECTblcksum <> ECblcksumtdy;
 
 /* ECTblcksum + ERsumtoday should equal ECTsum */
-if ( (@ECTblcksum + @ERsumtoday) <> @ECTsum )
-	print "ERROR! Email_Contrib_Today blocked sum (ECTblcksum=%1!) + Email_Rank sum today (ERsumtoday=%2!) != Email_Contrib_Today sum (ECTsum=%3!)", @ECTblcksum, @ERsumtoday, @ECTsum
-go -f -h
+SELECT 'ERROR! email_contrib_today blocked sum (ECTblcksum=' || ECTblcksum
+        || ') + Email_Rank sum today (ERsumtoday=' || ERsumtoday
+        || ') != email_contrib_today sum (ECTsum=' || ECTsum || ')'
+    FROM audit WHERE  (ECTblcksum + ERsumtoday) <> ECTsum ;
 
 /* ECblcksum + ERsum should equal ECsum */
-declare @ECblcksum numeric(20)
-declare @ERsum numeric(20)
-declare @ECsum numeric(20)
-select	@ECblcksum = ECblcksum, @ERsum = ERsum, @ECsum = ECsum
-	from #audit
-if ( (@ECblcksum + @ERsum) <> @ECsum)
-	print "ERROR! Email_Contrib blocked sum (ECblcksum=%1!) + Email_Rank sum (ERsum=%2!) != Email_Contrib sum (ECsum=%3!)", @ECblcksum, @ERsum, @ECsum
-go -f -h
+SELECT 'ERROR! Email_Contrib blocked sum (ECblcksum=' || ECblcksum
+        || ') + Email_Rank sum (ERsum=' || ERsum
+        || ') != Email_Contrib sum (ECsum=' || ECsum || ')'
+    FROM audit WHERE  (ECblcksum + ERsum) <> ECsum;
 
 /* ECteamsum, TMsum, and TRsum should all match */
-print "checking team information..."
-declare @ECteamsum numeric(20)
-declare @TMsum numeric(20)
-declare @TRsum numeric(20)
-select @ECteamsum = ECteamsum, @TMsum = TMsum, @TRsum = TRsum
-	from #audit
-if (@ECteamsum <> @TMsum)
-	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Members sum (TMsum=%2!)", @ECteamsum, @TMsum
-if (@ECteamsum <> @TRsum)
-	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Rank sum (TRsum=%2!)", @ECteamsum, @TRsum
---go -f -h
+\echo checking team information...
+SELECT 'ERROR! Email_Contrib team sum (ECteamsum=' || ECteamsum
+        || ') != Team_Members sum (TMsum=' || TMsum || ')'
+    FROM audit WHERE ECteamsum <> TMsum;
+SELECT 'ERROR! Email_Contrib team sum (ECteamsum=' || ECteamsum
+        || ') != Team_Rank sum (TRsum=' || TRsum || ')'
+    FROM audit WHERE ECteamsum <> TRsum;
 
 /* ECTteamsum, TMsumtoday, and TRsumtoday should all match */
-declare @ECTteamsum numeric(20)
-declare @TMsumtoday numeric(20)
-declare @TRsumtoday numeric(20)
-select @ECTteamsum = ECTteamsum, @TMsumtoday = TMsumtoday, @TRsumtoday = TRsumtoday
-	from #audit
-if (@ECTteamsum <> @TMsumtoday)
-	print "ERROR! Email_Contrib_Today team sum (ECTteamsum=%1!) != Team_Members sum today (TMsumtoday=%2!)", @ECTteamsum, @TMsumtoday
-if (@ECTteamsum <> @TRsumtoday)
-	print "ERROR! Email_Contrib_Today team sum (ECTteamsum=%1!) != Team_Rank sum today (TRsumtoday=%2!)", @ECTteamsum, @TRsumtoday
-go -f -h
+SELECT 'ERROR! email_contrib_today team sum (ECTteamsum=' || ECTteamsum
+        || ') != Team_Members sum today (TMsumtoday=' || TMsumtoday || ')'
+    FROM audit WHERE ECTteamsum <> TMsumtoday;
+SELECT 'ERROR! email_contrib_today team sum (ECTteamsum=' || ECTteamsum
+        || ') != Team_Rank sum today (TRsumtoday=' || TRsumtoday || ')'
+    FROM audit WHERE ECTteamsum <> TRsumtoday;

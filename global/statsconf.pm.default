@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.13 2002/06/13 07:24:34 decibel Exp $
+# $Id: statsconf.pm.default,v 1.14 2003/09/11 01:41:02 decibel Exp $
 #
 # Stats global configuration
 #
@@ -8,9 +8,9 @@ package statsconf;
 
 $homedir = @{[getpwuid $<]}[7];
 $logtag = "statsbox-iii";
-@projects = ("ogr","rc5");
+@projects = ("r72", "ogr");
 %prids = (
-        "rc5"   => "5",
+        "r72"   => "8",
         "ogr"   => "24:25",
 );
 $lockfile = "$homedir/log/statsrun.lck";
@@ -78,7 +78,4 @@ $dctievent = "FQDN";
         "4:#distributed:998:PASS1:PASS2",
 );
 
-
-$sqllogin = "LOGIN";
-$sqlpasswd = "PASSWORD";
-$sqlserver = "SERVER";
+$database = "stats";

@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.30 2003/03/23 23:08:21 decibel Exp $
+# $Id: stats.pm,v 1.31 2003/09/11 01:41:02 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -12,6 +12,22 @@ package stats;
 
 require IO::Socket;
 require statsconf;
+use DBI;
+#use Data::Dumper;
+
+BEGIN {
+    # Connect to sybase
+    if (not ($dbh = DBI->connect("DBI:Pg:dbname=$statsconf::database", $statsconf::sqllogin)) ) {
+        stats::log($project,131,"Unable to connect to database '$statsconf::database' using login '$statsconf::sqllogin'!");
+        die;
+    }
+
+    $dbh->{HandleError} = sub {
+        stats::log($project,131,"Database error: $_[0], $_[1]");
+        die;
+    }
+}
+
 
 sub log {
 
@@ -49,9 +65,9 @@ sub log {
 	}
 
 	if ($dest & 64) {
-		print STDERR $ts," ",@par,"\n";
+		print STDERR $ts," $project: ",@par,"\n";
 	} else {
-		print $ts," ",@par,"\n";
+		print $ts," $project: ",@par,"\n";
 	}
 
 
@@ -157,46 +173,39 @@ sub semcheck {
 	}
 }
 
-sub lastlog {
-  # This function will either return or store the lastlog value for the specified project.
-  #
-  # lastlog("ogr","get") will return lastlog value.
-  # lastlog("ogr","20001231-01") will set lastlog value to 31-Dec-2000 01:00 UTC
+sub lastlog ($) {
+    # This function will either return or store the lastlog value for the specified project.
+    #
+    # lastlog("ogr","get") will return lastlog value.
+    # lastlog("ogr","20001231-01") will set lastlog value to 31-Dec-2000 01:00 UTC
 
-  my ($f_project, $f_action) = @_;
+    my ($f_project_type) = @_;
+    my @result;
 
-  if( $f_action =~ /get/i) {
-    $_ = `cat ~/var/lastlog.$f_project`;
-    chomp;
-    return $_;
-  } else {
-    return `echo $f_action > ~/var/lastlog.$f_project`;
-  }
+    my $stmt = $stats::dbh->prepare("SELECT to_char(max(log_timestamp), 'YYYYMMDD-HH24') FROM Projects p, Log_Info l WHERE l.project_id = p.project_id AND lower(p.project_type)=lower(?)");
+    $stmt->execute($f_project_type);
+    if (! (@result = $stmt->fetchrow_array) ) {
+        stats::log($project,131,'Unable to retrieve lastlog information from database!');
+        die;
+    }
+
+    return $result[0];
 }
 
 sub lastday {
-  # This function will either return or store the lastlog value for the specified project.
-  #
-  # lastday("ogr") will return lastday value for all ogr project_ids
+    # This function will either return or store the lastlog value for the specified project.
+    #
+    # lastday("ogr") will return lastday value for all ogr project_ids
 
-  my ($f_project) = @_;
+    my ($f_project_type) = @_;
+    my @result;
 
-  if(!$statsconf::prids{$f_project}) {
-    return 99999999;
-  } else {
-    my $qs_update = "select convert(char(8),max(DATE),112) from Daily_Summary where 2=1";
-  
-    my @pridlist = split /:/, $statsconf::prids{$f_project};
-    for (my $i = 0; $i < @pridlist; $i++) {
-      my $project_id = int $pridlist[$i];
-      $qs_update ="$qs_update or PROJECT_ID = $project_id";
+    my $stmt = $stats::dbh->prepare("SELECT to_char(max(date), 'YYYYMMDD') FROM projects p, daily_summary d WHERE d.project_id = p.project_id AND lower(p.project_type)=lower(?)");
+    $stmt->execute($f_project_type);
+    if (! (@result = $stmt->fetchrow_array ) ) {
+        stats::log($project,131,'Unable to retrieve lastday information from database!');
+        die;
     }
-    open TMP, ">/tmp/sqsh.tmp.$f_project";
-    print TMP "$qs_update\ngo";
-    close TMP;
-    my $lastdaynewval = `sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -w 999 -h -i /tmp/sqsh.tmp.$f_project`;
-    $lastdaynewval =~ s/[^0123456789]//g;
-    chomp $lastdaynewval;
-    return $lastdaynewval;
-  }
+
+    return $result[0];
 }
