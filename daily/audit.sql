@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.18 2002/01/07 23:29:30 decibel Exp $
+# $Id: audit.sql,v 1.19 2002/03/28 00:22:17 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -173,17 +173,33 @@ go -f -h
 
 
 -- **************************
---   ECsum
+--   ECsum, ECblcksum, ECteamsum
 -- **************************
-print "Total work units in Email_Contrib"
-go -f -h
-update	#audit
-	set ECsum = (select sum(WORK_UNITS)
-		from Email_Contrib
-		where PROJECT_ID = ${1})
-select ECsum from #audit
+print "Total work units, ignored work, team work in Email_Contrib"
 go -f -h
 
+select id, team_id, sum(work_units) as work_units into #WorkSummary
+	from email_contrib
+	where project_id=${1}
+	group by id, team_id
+go
+
+declare @ECsum numeric (20)
+declare @ECblcksum numeric (20)
+declare @ECteamsum numeric (20)
+select @ECsum = sum(work_units), @ECblcksum = sum( convert(int, p.LISTMODE/10) * work_units ), 
+		@ECteamsum = sum( abs(1-convert(int, p.LISTMODE/10))
+			* sign(e.TEAM_ID) * abs(1-convert(int, t.LISTMODE/10))
+			* e.WORK_UNITS ) 
+	from #WorkSummary ws , STATS_Participant p, STATS_Team t
+	where ws.ID = p.ID
+		and ws.TEAM_ID *= t.TEAM
+
+update	#audit
+	set ECsum = @ECsum, ECblcksum = @ECblcksum, ECteamsum = @ECteamsum
+
+select ECsum, ECblcksum, ECteamsum from #audit
+go -f -h
 
 
 -- **************************
@@ -233,36 +249,201 @@ go -f -h
 
 
 -- **************************
---   ECblcksum
+--   ERsumtoday, ERsum
 -- **************************
-print "Total work units ignored overall (listmode >= 10)"
+print "Total work reported in Email_Rank for Today, Overall"
 go -f -h
+declare @ERsumtoday numeric(20)
+declare @ERsum numeric(20)
+select	@ERsumtoday = sum(WORK_TODAY), @ERsum = sum(WORK_TOTAL)
+	from Email_Rank
+	where PROJECT_ID = ${1}
 update	#audit
-	set ECblcksum = (select isnull(sum(e.WORK_UNITS), 0)
+	set ERsumtoday = @ERsumtoday, ERsum = @ERsum
+select @ERsumtoday, @ERsum
+go -f -h
+
+
+
+-- **************************
+--   TMsumtoday, TMsum
+-- **************************
+print "Total work reported in Team_Members for Today, Overall"
+go -f -h
+declare @TMsumtoday numeric(20)
+declare @TMsum numeric(20)
+select	@TMsumtoday = isnull(sum(WORK_TODAY), 0), @TMsum = isnull(sum(WORK_TOTAL), 0)
+	from Team_Members
+	where PROJECT_ID = ${1}
+update	#audit
+	set TMsumtoday = @TMsumtoday, TMsum = @TMsum
+select @TMsumtoday, @TMsum
+go -f -h
+
+
+-- **************************
+--   TRsumtoday, TRsum
+-- **************************
+print "Total work reported in Team_Rank for Today, Overall"
+go -f -h
+declare @TRsumtoday numeric(20)
+declare @TRsum numeric(20)
+select	@TRsumtoday = isnull(sum(WORK_TODAY), 0), @TRsum = isnull(sum(WORK_TOTAL), 0)
+	from Team_Rank
+	where PROJECT_ID = ${1}
+update	#audit
+	set TRsumtoday = @TRsumtoday, TRsum = @TRsum
+select @TRsumtoday, @TRsum
+go -f -h
+
+
+
+
+print "!! begin sanity checks !!"
+go
+
+/* ECTsum, ECsumtoday, PCTsum, PCsumtoday, and DSunits should all match */
+print "checking total work units submitted today...."
+declare @ECTsum numeric(20)
+declare @ECsumtoday numeric(20)
+declare @PCTsum numeric(20)
+declare @PCsumtoday numeric(20)
+declare @DSunits numeric(20)
+select	@ECTsum = ECTsum, @ECsumtoday = ECsumtoday,
+	@PCTsum = PCTsum, @PCsumtoday = PCsumtoday,
+	@DSunits = DSunits
+	from #audit
+if (@ECTsum <> @ECsumtoday)
+	print "ERROR! Email_Contrib_Today sum (ECTsum=%1!) != Email_Contrib sum for today (ECsumtoday=%2!)", @ECTsum, @ECsumtoday
+if (@ECTsum <> @PCTsum)
+	print "ERROR! Email_Contrib_Today sum (ECTsum=%1!) != Platform_Contrib_Today sum (PCTsum=%2!)", @ECTsum, @PCTsum
+if (@ECTsum <> @PCsumtoday)
+	print "ERROR! Email_Contrib_Today sum (ECTsum=%1!) != Platform_Contrib sum for today (PCsumtoday=%2!)", @ECTsum, @PCsumtoday
+if (@ECTsum <> @DSunits)
+	print "ERROR! Email_Contrib_Today sum (ECTsum=%1!) != Daily_Summary for today (DSunits=%2!)", @ECTsum, @DSunits
+go -f -h
+
+/* ECsum, PCsum, and DSsum should all match, ERsum + ECblcksum should equal ECsum */
+print "checking total work units submitted...."
+declare @ECsum numeric(20)
+declare @PCsum numeric(20)
+declare @DSsum numeric(20)
+select	@ECsum = ECsum, @PCsum = PCsum, @DSsum = DSsum
+	from #audit
+if (@ECsum <> @PCsum)
+	print "ERROR! Email_Contrib sum (ECsum=%1!) != Platform_Contrib sum (PCsum=%2!)", @ECsum, @PCsum
+if (@ECsum <> @DSsum)
+	print "ERROR! Email_Contrib sum (ECsum=%1!) != Daily_Summary sum (DSsum=%2!)", @ECsum, @DSsum
+go -f -h
+
+/* ECTblcksum should equal ECblcksumtdy */
+print "checking total units blocked today..."
+declare @ECTblcksum numeric(20)
+declare @ECblcksumtdy numeric(20)
+declare @ERsumtoday numeric(20)
+declare @ECTsum numeric(20)
+select @ECTblcksum = ECTblcksum, @ECblcksumtdy = ECblcksumtdy,
+	@ERsumtoday = ERsumtoday, @ECTsum = ECTsum
+	from #audit
+if (@ECTblcksum <> @ECblcksumtdy)
+	print "ERROR! EMail_Contrib_Today blocked sum (ECTblcksum=%1!) != Email_Contrib blocked sum for today (ECblcksumtdy=%2!)", @ECTblcksum, @ECblcksumtdy
+
+/* ECTblcksum + ERsumtoday should equal ECTsum */
+if ( (@ECTblcksum + @ERsumtoday) <> @ECTsum )
+	print "ERROR! Email_Contrib_Today blocked sum (ECTblcksum=%1!) + Email_Rank sum today (ERsumtoday=%2!) != Email_Contrib_Today sum (ECTsum=%3!)", @ECTblcksum, @ERsumtoday, @ECTsum
+go -f -h
+
+/* ECblcksum + ERsum should equal ECsum */
+declare @ECblcksum numeric(20)
+declare @ERsum numeric(20)
+declare @ECsum numeric(20)
+select	@ECblcksum = ECblcksum, @ERsum = ERsum, @ECsum = ECsum
+	from #audit
+if ( (@ECblcksum + @ERsum) <> @ECsum)
+	print "ERROR! Email_Contrib blocked sum (ECblcksum=%1!) + Email_Rank sum (ERsum=%2!) != Email_Contrib sum (ECsum=%3!)", @ECblcksum, @ERsum, @ECsum
+go -f -h
+
+/* ECteamsum, TMsum, and TRsum should all match */
+print "checking team information..."
+declare @ECteamsum numeric(20)
+declare @TMsum numeric(20)
+declare @TRsum numeric(20)
+select @ECteamsum = ECteamsum, @TMsum = TMsum, @TRsum = TRsum
+	from #audit
+if (@ECteamsum <> @TMsum)
+	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Members sum (TMsum=%2!)", @ECteamsum, @TMsum
+if (@ECteamsum <> @TRsum)
+	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Rank sum (TRsum=%2!)", @ECteamsum, @TRsum
+--go -f -h
+
+/* ECTteamsum, TMsumtoday, and TRsumtoday should all match */
+declare @ECTteamsum numeric(20)
+declare @TMsumtoday numeric(20)
+declare @TRsumtoday numeric(20)
+select @ECTteamsum = ECTteamsum, @TMsumtoday = TMsumtoday, @TRsumtoday = TRsumtoday
+	from #audit
+if (@ECTteamsum <> @TMsumtoday)
+	print "ERROR! Email_Contrib_Today team sum (ECTteamsum=%1!) != Team_Members sum today (TMsumtoday=%2!)", @ECTteamsum, @TMsumtoday
+if (@ECTteamsum <> @TRsumtoday)
+	print "ERROR! Email_Contrib_Today team sum (ECTteamsum=%1!) != Team_Rank sum today (TRsumtoday=%2!)", @ECTteamsum, @TRsumtoday
+go -f -h
+
+select id, team_id, sum(work_units) as work_units into #WorkSummary
+	from email_contrib
+	where project_id=${1}
+	group by id, team_id
+go
+
+update	#audit
+	set ECsum = (select sum(WORK_UNITS)
+		from Email_Contrib
+		where PROJECT_ID = ${1})
+select ECsum from #audit
+go -f -h
+
+
+-- **************************
+--   ECsumtoday
+-- **************************
+declare @proj_date smalldatetime
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
+	where PROJECT_ID = ${1}
+print "Sum of work in Email_Contrib for today (%1!)", @proj_date
+go -f -h
+declare @proj_date smalldatetime
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
+	where PROJECT_ID = ${1}
+
+update	#audit
+	set ECsumtoday = (select sum(WORK_UNITS)
+		from Email_Contrib
+		where PROJECT_ID = ${1}
+			and DATE = @proj_date)
+select ECsumtoday from #audit
+go -f -h
+
+
+
+-- **************************
+--   ECblcksumtdy
+-- **************************
+print "Total work units ignored in Email_Contrib for today (listmode >= 10)"
+go -f -h
+declare @proj_date smalldatetime
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
+	where PROJECT_ID = ${1}
+
+update	#audit
+	set ECblcksumtdy = (select isnull(sum(e.WORK_UNITS), 0)
 		from Email_Contrib e, STATS_Participant p
 		where PROJECT_ID = ${1}
+			and e.DATE = @proj_date
 			and e.ID = p.ID
 			and p.LISTMODE >= 10)
-select ECblcksum from #audit
-go -f -h
-
-
-
--- **************************
---   ECteamsum
--- **************************
-print "Sum of team work in Email_Contrib"
-go -f -h
-update #audit
-	set ECteamsum = (select isnull(sum(e.WORK_UNITS), 0)
-		from Email_Contrib e, STATS_Participant p, STATS_Team t
-		where PROJECT_ID = ${1}
-			and e.ID = p.ID
-			and p.LISTMODE < 10
-			and e.TEAM_ID>0
-			and t.TEAM=e.TEAM_ID
-			and t.LISTMODE < 10)
-select ECteamsum from #audit
+select ECblcksumtdy from #audit
 go -f -h
 
 
