@@ -5,14 +5,14 @@ if [ x$1 = x ]; then
 	exit 1
 fi
 
-sqsh -i retire.sql $1
-sqsh -i newjoin.sql $1
-sqsh -i dy_appendday.sql $1
-sqsh -i em_update.sql $1
-sqsh -i em_rank.sql $1
-sqsh -i tm_update.sql $1
-sqsh -i tm_rank.sql $1
-sqsh -i platform.sql $1
-sqsh -i dy_dailyblocks.sql $1
+sqsh -i retire.sql $1 || exit 1
+sqsh -i newjoin.sql $1 || exit 1
+sqsh -i dy_appendday.sql $1 || exit 1
+sqsh -i em_update.sql $1 || exit 1
+sqsh -i em_rank.sql $1 || exit 1
+sqsh -i tm_update.sql $1 || exit 1
+sqsh -i tm_rank.sql $1 || exit 1
+sqsh -i platform.sql $1 || exit 1
+sqsh -i dy_dailyblocks.sql $1 || exit 1
 sudo pcpages $1
-sqsh -i audit.sql $1
+sqsh -i audit.sql $1 || exit 1
