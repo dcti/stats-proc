@@ -1,5 +1,5 @@
 #
-# $Id: README,v 1.6 2000/07/14 06:19:35 decibel Exp $
+# $Id: README,v 1.7 2000/07/15 11:12:32 decibel Exp $
 #
 # This tree is intended to be the homedirectory for the statproc user on
 # statsbox.
@@ -10,11 +10,7 @@ You will want to run ~decibel/stats-proc/daily/runday, which is a dumb
 sh script. Take note of the output at the end from audit.sql!! If it flags
 any errors then something is definitely wrong! After you've verified that
 the run progressed as expected, you want to run
-~decibel/stats-proc/daily/clearday.sql. BE CAREFULL NOT TO RUN clearall.sql!
-It clears all OGR-24 data from sybase! :) Also, don't forget to update the
-static pages with sudo pcpages_ogr. This can be done any time after runday,
-but of course if audit.sql finds errors you probably will want to fix them
-first. :P
+~decibel/stats-proc/daily/runday2
 
 
 *** NOTICE: IMPORTANT CHANGE  ***
