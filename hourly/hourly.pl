@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.41 2000/08/15 22:28:41 nugget Exp $
+# $Id: hourly.pl,v 1.42 2000/08/15 22:30:14 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -173,6 +173,11 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       my $bufstorage = "";
       my $sqshsuccess = 0;
       open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 2> /dev/stderr |";
+
+      if(!<SQL>) {
+        stats::log($project,131,"Error launching sqsh, aborting hourly run.";
+        die;
+      }
       while (<SQL>) {
 	my $ts = sprintf("[%02s:%02s:%02s]",(localtime)[2],(localtime)[1],(localtime)[0]);
         print "$ts $_";
