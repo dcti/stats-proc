@@ -17,14 +17,8 @@ my $workdir = "./workdir/";
 
 #my @projectlist = ("ogr",
 #                   "rc5");
-#my @sourcelist  = ("LOGS-SOURCE.FQDN:/home/master/logs/",
-#                   "LOGS-SOURCE.FQDN:/home/master/logs/");
-#my @prefilter   = ("./logmod_ogr.pl",
-#                   "./logmod_rc5.pl");
 
 my @projectlist = ("ogr");
-my @sourcelist  = ("n0:/home/decibel/logs/");
-my @prefilter   = ("./logmod_ogr.pl");
 
 # Insert code here to look for droppings in $workdir
 
@@ -32,10 +26,12 @@ my @prefilter   = ("./logmod_ogr.pl");
 
 for (my $i = 0; $i < @projectlist; $i++) {
   my $project = $projectlist[$i];
+  my $sourcelist = $statsconf::logsource{$project};
+  my $prefilter = $statsconf::prefilter{$project};
   my $lastlog = lastlog($project,"get");
   my $logtoload = "29991231-23";
   my $outbuf = "";
-  my @server = split /:/, $sourcelist[$i];
+  my @server = split /:/, $sourcelist;
   chomp($lastlog);
 
   stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
@@ -95,12 +91,12 @@ for (my $i = 0; $i < @projectlist; $i++) {
       stats::log($project,130,"$basefn failed decompression!");
     } else {
       my $finalfn = "$rawfn.filtered";
-      if( $prefilter[$i] eq "" ) {
+      if( $prefilter eq "" ) {
         stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
         $finalfn = $rawfn;
       } else {
-        `cat $rawfn | $prefilter[$i] > $finalfn`;
-        stats::log($project,1,"$basefn successfully filtered through $prefilter[$i].");
+        `cat $rawfn | $prefilter > $finalfn`;
+        stats::log($project,1,"$basefn successfully filtered through $prefilter.");
       }
 
       open BCP, "bcp import_bcp in $finalfn -ebcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, 2> /dev/stderr |";
