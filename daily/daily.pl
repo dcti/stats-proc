@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.33 2003/09/11 01:41:02 decibel Exp $
+# $Id: daily.pl,v 1.34 2004/04/08 16:26:07 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -21,7 +21,7 @@ my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my $respawn = 0;
 
-my $workdir = "./workdir/";
+my $workdir = $ENV{'HOME'} . '/workdir/daily/';
 if(! -d $workdir) {
   stats::log("stats",131,"Hey! Someone needs to mkdir $workdir!");
   die;

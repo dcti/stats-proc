@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.15 2003/09/07 05:27:37 nerf Exp $
+# $Id: OGRhourly.pl,v 1.16 2004/04/08 16:26:07 nugget Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -35,7 +35,8 @@ use stats;
 
 my $respawn = 0;
 
-my $workdir = "./workdir/";
+my $workdir = $ENV{'HOME'} . '/workdir/OGR/';
+
 
 my $project = "ogr-verification";
   
