@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.13 2003/10/18 20:23:20 nerf Exp $
+-- $Id: daily_update.sql,v 1.14 2003/11/05 14:19:56 nerf Exp $
 
 select now();
 
@@ -219,6 +219,22 @@ FROM (
 WHERE OGR_summary.stub_id = dw.stub_id
   AND OGR_summary.nodecount = dw.nodecount;
 
+-- update day_results.in_results for stubs that were done by someone
+-- under a different id, but that we now know is the same person (due
+-- to retires)
+
+UPDATE day_results
+SET in_results = true
+WHERE exists
+(SELECT * FROM OGR_results, ogr_idlookup i1, ogr_idlookup i2
+    WHERE i1.stats_id = i2.stats_id AND
+    i1.id = day_results.id AND i2.id = ogr_results.id AND
+    day_results.id != ogr_results.id AND
+    day_results.stub_id = OGR_results.stub_id AND
+    day_results.nodecount = OGR_results.nodecount AND
+    day_results.platform_id = OGR_results.platform_id);
+select now();
+
 -- Create a summary, like OGR_summary, but just with today's data
 CREATE TEMP TABLE day_summary (
   stub_id     integer  NOT NULL,
@@ -288,3 +304,4 @@ COMMIT;
 TRUNCATE logdata;
 
 select now();
+select 'daily_update complete for ',:RUNDATE as rundate ,now() as current_time ;
