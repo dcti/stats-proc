@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.54 2000/09/07 19:00:07 decibel Exp $
+# $Id: hourly.pl,v 1.55 2000/09/11 15:16:51 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -184,6 +184,8 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 	}
       }
       close BCP;
+
+      $rows =~ s/,//g;
 
       if($rows == 0) {
         stats::log($project,131,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
