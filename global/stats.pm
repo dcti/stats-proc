@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.33 2004/11/03 20:42:58 decibel Exp $
+# $Id: stats.pm,v 1.34 2004/11/05 05:17:55 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -120,6 +120,7 @@ sub DCTIeventsay {
 		socket(S, &Socket::PF_INET, &Socket::SOCK_STREAM, $proto) || die "socket: $!";
 		if(connect(S, $paddr)) {
 			print S "$password: ($statsconf::logtag/$project) $message\n";
+			debug (9,"DCTIeventsay: $paddr $password: ($statsconf::logtag/$project) $message\n");
 			close S;	
 		} else {
 			print "Could not reach $paddr";
