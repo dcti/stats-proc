@@ -14,5 +14,5 @@ psql -d stats -v ProjectID=$1 -f tm_update.sql
 psql -d stats -v ProjectID=$1 -f tm_rank.sql
 psql -d stats -v ProjectID=$1 -f platform.sql
 psql -d stats -v ProjectID=$1 -f dy_dailyblocks.sql
-sudo pcpages
+sudo pcpages $1
 psql -d stats -v ProjectID=$1 -f audit.sql
