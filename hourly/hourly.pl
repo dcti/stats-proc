@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.6 2003/04/04 00:52:07 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.7 2003/04/04 04:21:17 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -125,7 +125,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 	if ($? == 0) {
 	    $rawfn = $basefn;
 	    $rawfn =~ s/.bz2//i;
-	    my $newsize=(stat "$workdir$project$rawfn")[7];
+	    my $newsize=(stat "$workdir$rawfn")[7];
 	    stats::log($project,1,"$basefn successfully decompressed (" . int($newsize/$orgsize*100) . "% compression)");
 	}
     }
@@ -146,7 +146,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 	}
       }
 
-      open BCP, "psql -d $statsconf::database -c '\\copy bcp_import FROM $workdir$finalfn DELIMITER '','' |";
+      open BCP, "cat $workdir$finalfn | psql -d $statsconf::database -c " . '"' . "copy import_bcp FROM stdin DELIMITER ','" . '"' . " |";
       if(!<BCP>) {
         stats::log($project,131,"Error launching BCP, aborting hourly run.");
         die;
