@@ -1,11 +1,14 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.12 2000/07/21 14:06:05 bwilson Exp $
+# $Id: integrate.sql,v 1.13 2000/10/04 06:06:30 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
 # Arguments:
 #       PROJECT_ID
+
+set flushmessage on
+go
 
 /*
 **	Moved e-mail cleanup here, to aggregate the data more quickly
@@ -91,7 +94,6 @@ create table #dayemails
 go
 /* Put EMAIL data into temp table */
 print "Moving data to temp table"
-go
 /* First, put the latest set of logs in */
 insert #Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 	select PROJECT_ID, EMAIL, 0, sum(WORK_UNITS)
@@ -101,7 +103,6 @@ go
 
 /* Assign ID's for everyone who has an ID */
 print "Assigning IDs"
-go
 -- NOTE: At some point we might want to set TEAM_ID and CREDIT_ID here as well
 -- [BW] No, because it shouldn't take effect until the end of day.  No sense
 --	doing it 24 times when once will do.  The same would apply here, except
@@ -114,7 +115,6 @@ go
 
 /* Add new participants to STATS_Participant */
 print "Adding new participants"
-go
 
 /* First, copy all new participants to #dayemails to do the identity assignment */
 insert #dayemails (EMAIL)
@@ -145,23 +145,21 @@ update #Email_Contrib_Today
 	where sp.EMAIL = #Email_Contrib_Today.EMAIL
 		and sp.EMAIL = de.EMAIL
 		and de.EMAIL = #Email_Contrib_Today.EMAIL
-go
 
 /* Now, add the stuff from the previous hourly runs */
 print "Copying Email_Contrib_Today into temptable"
-go
 
 -- JCN: Removed sum() and group by.. data in Email_Contrib_Today should be summed already
 insert #Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 	select ect.PROJECT_ID, "", ect.ID, ect.WORK_UNITS
 	from Email_Contrib_Today ect, #Projects p
 	where ect.PROJECT_ID = p.PROJECT_ID
+go
 
 /* Finally, remove the previous records from Email_Contrib_Today and insert the new
 ** data from the temp table. (It seems there should be a better way to do this...)
 */
 print "Moving data from temptable to Email_Contrib_Today"
-go
 begin transaction
 delete Email_Contrib_Today
 	from #Projects p
@@ -202,7 +200,6 @@ insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 go
 
 print "Moving data from temptable to Platform_Contrib_Today"
-go
 begin transaction
 delete Platform_Contrib_Today
 	from #Projects p
@@ -218,7 +215,6 @@ drop table #Platform_Contrib_Today
 go
 
 print "Clearing import table"
-go
 
 print "Total rows in import table:"
 delete import_bcp
