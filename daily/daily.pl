@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.10 2000/08/16 19:42:50 nugget Exp $
+# $Id: daily.pl,v 1.11 2000/08/16 21:26:03 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -24,7 +24,7 @@ my $respawn = 0;
 my $workdir = "./workdir/";
 
 if(!$ARGV[0]) {
-  stats::log("stats",132,"Some darwin just called hourly.pl without supplying a project code!");
+  stats::log("stats",132,"Some darwin just called daily.pl without supplying a project code!");
   die;
 }
 my $project = $ARGV[0];
