@@ -1,16 +1,16 @@
 #
-# $Id: README,v 1.7 2000/07/15 11:12:32 decibel Exp $
+# $Id: README,v 1.8 2000/08/12 16:58:51 decibel Exp $
 #
 # This tree is intended to be the homedirectory for the statproc user on
 # statsbox.
 #
 
 *** How to run daily stats ***
-You will want to run ~decibel/stats-proc/daily/runday, which is a dumb
-sh script. Take note of the output at the end from audit.sql!! If it flags
-any errors then something is definitely wrong! After you've verified that
-the run progressed as expected, you want to run
-~decibel/stats-proc/daily/runday2
+You will want to run ~decibel/stats-proc/daily/runday *project_id*, which
+is a dumb sh script. Take note of the output at the end from audit.sql!!
+If it flags any errors then something is definitely wrong! After you've
+verified that the run progressed as expected, you want to run
+~decibel/stats-proc/daily/runday2 *project_id*
 
 
 *** NOTICE: IMPORTANT CHANGE  ***
