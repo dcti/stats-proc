@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.25 2002/04/10 16:49:04 decibel Exp $
+# $Id: audit.sql,v 1.26 2002/04/11 07:13:11 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -78,6 +78,7 @@ update #audit
 						from STATS_Team_Blocked stb
 						where stb.TEAM_ID = d.TEAM_ID
 					)
+		)
 select ECTteamsum from #audit
 go -f -h
 
@@ -200,10 +201,10 @@ go
 declare @ECsum numeric (20)
 declare @ECblcksum numeric (20)
 declare @ECteamsum numeric (20)
-select @ECsum = sum(work_units), @ECblcksum = sum( sign(isnull(spb.ID,0) * work_units ),
+select @ECsum = sum(work_units), @ECblcksum = sum( sign(isnull(spb.ID,0)) * work_units ),
 		@ECteamsum = isnull(
-			    sum( ( 1-sign(isnull(spb.ID,0) )
-				* sign(ws.TEAM_ID) * sign(isnull(stb.TEAM_ID,0))
+			    sum( ( 1-sign(isnull(spb.ID,0)) )
+				* sign(ws.TEAM_ID) * ( 1-sign(isnull(stb.TEAM_ID,0)) )
 				* ws.WORK_UNITS )
 			, 0)
 	from #EmailContribSummary ws , STATS_Participant_Blocked spb, STATS_Team_Blocked stb
