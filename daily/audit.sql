@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.39 2004/11/08 06:00:37 decibel Exp $
+-- $Id: audit.sql,v 1.40 2004/11/09 04:54:45 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -250,31 +250,13 @@ SELECT ECsumtoday FROM audit
 \echo Total work units ignored in Email_Contrib for today (listmode >= 10)
 ;
 
--- This will find all work for participants who are blocked, EXCEPT FOR the work of people
--- who are retired into them
+-- This will find all work for participants who are blocked, including people retired to them
 UPDATE audit
     SET ECblcksumtdy = (SELECT coalesce(sum(e.work_units), 0)
-        FROM email_contrib e, stats_participant p, stats_participant_blocked spb
+        FROM email_contrib e, stats_participant_blocked spb
         WHERE project_id = :ProjectID
             AND e.date = (SELECT last_date FROM project_statsrun WHERE project_id = :ProjectID)
-            AND e.id = p.id
             AND e.id = spb.id
-            AND p.id = spb.id
-            AND (p.retire_to = 0 or p.retire_date > audit.date)
-            AND spb.block_date <= audit.date
-        )
-;
-
--- This will find all work for participants who are retired into a participant that is blocked
-UPDATE audit
-    SET ECblcksumtdy = ECblcksumtdy + (select coalesce(sum(e.work_units), 0)
-        FROM Email_Contrib e, STATS_Participant p, stats_participant_blocked spb
-        WHERE project_id = :ProjectID
-            AND e.date <= audit.date
-            AND e.id = p.id
-            AND p.retire_to > 0
-            AND (p.retire_date <= audit.date or p.retire_date IS NULL)
-            AND spb.id = p.retire_to
             AND spb.block_date <= audit.date
         )
 ;
