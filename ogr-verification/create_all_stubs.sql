@@ -1,12 +1,14 @@
--- $Id: create_all_stubs.sql,v 1.3 2003/01/04 21:42:37 nerf Exp $
+-- $Id: create_all_stubs.sql,v 1.4 2003/01/07 00:56:49 nerf Exp $
 -- set infile='/home/nerf/all_stubs'
 
-CREATE TEMPORARY TABLE all_stubs_import:projnum (
+CREATE TEMPORARY TABLE all_stubs_import(
 stub_marks VARCHAR(22) not null);
 
-COPY all_stubs_import:projnum FROM :infile;
+COPY all_stubs_import FROM '/home/nerf/all_stubs';
 
-CREATE TABLE all_stubs:projnum (
+DROP SEQUENCE all_stubs_stub_id_seq;
+
+CREATE TABLE all_stubs (
 	stub_marks VARCHAR(22) not null,
 	stub_id SERIAL,
 	nodecount BIGINT,
@@ -14,11 +16,11 @@ CREATE TABLE all_stubs:projnum (
 	pass2_id INT
 );
 
-INSERT INTO all_stubs:projnum
-        SELECT stub_marks, NEXTVAL('stub_id'), 0
-FROM all_stubs_import:projnum ;
+INSERT INTO all_stubs
+        SELECT stub_marks, NEXTVAL('all_stubs_stub_id_seq'), 0, NULL, NULL
+FROM all_stubs_import ;
 
---DROP TABLE all_stubs_import:projnum ;
+DROP TABLE all_stubs_import ;
 
-CREATE INDEX all_marks_:projnum ON all_stubs:projnum (stub_marks);
-ALTER TABLE all_stubs:projnum ADD PRIMARY KEY (stub_id);
+CREATE UNIQUE INDEX all_marks ON all_stubs (stub_marks);
+ALTER TABLE all_stubs ADD PRIMARY KEY (stub_id);
