@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.20 2002/01/13 19:34:03 decibel Exp $
+# $Id: tm_update.sql,v 1.21 2002/03/26 08:09:32 decibel Exp $
 
 TM_RANK
 
@@ -120,30 +120,40 @@ create table #Work_Summary (
 	WORK_UNITS numeric(20,0)
 )
 go
+create table #NewTeamMembers (
+	EC_ID int,
+	PROJECT_ID tinyint,
+	CREDIT_ID int,
+	TEAM_ID int
+)
+go
 
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun
 	where PROJECT_ID = ${1}
-insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
-	select ec.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
-	from #TeamMemberWork tmw, Email_Contrib ec
-	where IS_NEW = 1
-		and ec.ID = tmw.ID
-		and ec.TEAM_ID = tmw.TEAM_ID
-		and ec.PROJECT_ID = ${1}
-	group by ec.ID, ec.TEAM_ID
-
-insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
-	select tmw.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
-	from #TeamMemberWork tmw, Email_Contrib ec, STATS_Participant sp
+insert into #NewTeamMembers(EC_ID, PROJECT_ID, CREDIT_ID, TEAM_ID)
+	select sp.ID, 5, tmw.ID, tmw.TEAM_ID
+	from #TeamMemberWork tmw, STATS_Participant sp
 	where IS_NEW = 1
 		and sp.RETIRE_TO = tmw.ID
 		and (sp.RETIRE_DATE <= @stats_date or sp.RETIRE_DATE is NULL)
-		and ec.ID = sp.ID
-		and ec.TEAM_ID = tmw.TEAM_ID
+go
+insert into #NewTeamMembers(EC_ID, PROJECT_ID, CREDIT_ID, TEAM_ID)
+	select tmw.ID, 5, tmw.ID, tmw.TEAM_ID
+	from #TeamMemberWork tmw
+	where IS_NEW = 1
+go
+create clustered index id_project on #NewTeamMembers(EC_ID, PROJECT_ID)
+go
+
+insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
+	select ec.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
+	from #NewTeamMembers ntm, Email_Contrib ec
+	where ec.ID = ntm.EC_ID
+		and ec.TEAM_ID = ntm.TEAM_ID
 		and ec.PROJECT_ID = ${1}
-	group by tmw.ID, ec.TEAM_ID
+	group by ec.ID, ec.TEAM_ID
 
 /*
 # We're doing min(tmw.WORK_TODAY) because there can be more than one record in #Work_Summary. Any time
