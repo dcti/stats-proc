@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.10 2000/11/09 04:16:01 decibel Exp $
+# $Id: newjoin.sql,v 1.11 2000/11/09 06:42:32 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -25,12 +25,24 @@ select id, team_id
 		and (LAST_DATE = NULL or LAST_DATE >= @proj_date)
 go
 
--- Dont forget to check for any retired emails that have blocks on team 0
-declare ids cursor for
-	select distinct sp.id, sp.retire_to, nj.team_id
+select sp.id, sp_retire_to, nj.team_id
+	into #nj_ids
+	from STATS_Participant sp, #newjoins nj
+	where sp.retire_to = nj.id
+		and sp.retire_to > 0
+		and nj.id > 0
+go
+
+insert into #nj_ids (id, retire_to, team_id)
+	select sp.id, 0, nj.team_id
 	from STATS_Participant sp, #newjoins nj
 	where sp.id = nj.id
-		or (sp.retire_to = nj.id and sp.retire_to > 0)
+go
+
+-- Dont forget to check for any retired emails that have blocks on team 0
+declare ids cursor for
+	select distinct id, retire_to, team_id
+	from #nj_ids
 go
 
 declare @id int, @retire_to int, @team_id int
