@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.40 2004/11/09 04:54:45 decibel Exp $
+-- $Id: audit.sql,v 1.41 2004/11/09 08:09:11 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -171,56 +171,32 @@ SELECT DSunits, DSusers FROM audit
 --   ECsum, ECblcksum, ECteamsum
 -- **************************
 -- Build a summary table, which dramatically cuts down the time needed for this
-\echo Building Email_Contrib summary
-BEGIN;
-    --SET LOCAL enable_seqscan = off;
-    SELECT id, team_id, sum(work_units) AS work_units
-        INTO TEMP email_contrib_summary
-        FROM email_contrib
-        WHERE project_id = :ProjectID
-        GROUP by id, team_id
-    ;
-COMMIT;
-ANALYZE email_contrib_summary;
-
--- Handle retire-to's
-\echo Updating retires
-UPDATE email_contrib_summary
-    SET id = sp.retire_to
-    FROM stats_participant sp
-    WHERE sp.id = email_contrib_summary.id
-        AND sp.retire_to >= 1
-        AND (sp.retire_date >= (SELECT ps.last_date FROM project_statsrun ps WHERE ps.project_id = :ProjectID)
-                OR sp.retire_date IS NULL)
-;
-
 \echo Total work units, ignored work, team work in Email_Contrib
-;
-
 UPDATE audit
     SET ECsum = sum_workunits
             , ECblcksum = sum_blocked
             , ECteamsum = sum_team
     FROM (
             SELECT sum(work_units) AS sum_workunits
-                    , sum(CASE WHEN spb.id IS NOT NULL THEN work_units END) AS sum_blocked
+                    , sum(CASE WHEN spb.id IS NOT NULL
+                                        AND spb.block_date <= a.date
+                                THEN work_units
+                            END) AS sum_blocked
                     ,  sum(CASE WHEN ws.team_id >= 1
-                                                AND spb.id IS NULL
-                                                AND stb.team_id IS NULL
-                                            THEN ws.work_units
-                                        END) AS sum_team
+                                    AND spb.id IS NULL
+                                    AND stb.team_id IS NULL
+                                    AND stb.block_date <= a.date
+                                THEN ws.work_units
+                            END) AS sum_team
             FROM audit a
-		, email_contrib_summary ws
-                LEFT JOIN stats_participant_blocked spb ON ws.id = spb.id
-                LEFT JOIN stats_team_blocked stb ON ws.team_id = stb.team_id
-            WHERE spb.block_date <= a.date
-                AND stb.block_date <= a.date
+                , email_contrib ws
+                LEFT JOIN stats_participant_blocked spb ON (ws.id = spb.id)
+                LEFT JOIN stats_team_blocked stb ON (ws.team_id = stb.team_id)
+            WHERE ws.project_id = :ProjectID
         ) b
 ;
-SELECT ECsum, ECblcksum, ECteamsum FROM audit
-;
 
-drop table email_contrib_summary
+SELECT ECsum, ECblcksum, ECteamsum FROM audit
 ;
 
 
