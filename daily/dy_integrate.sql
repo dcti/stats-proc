@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_integrate.sql,v 1.8 2000/04/14 21:32:55 bwilson Exp $
+# $Id: dy_integrate.sql,v 1.9 2000/05/29 22:01:36 bwilson Exp $
 #
 # Move data from the ${1}_import table to the daytables
 #
@@ -17,6 +17,10 @@
 update ${1}_import
 	set EMAIL = ltrim(EMAIL)
 	where EMAIL <> ltrim(EMAIL)
+
+/*
+** TODO: Strip out any text in <brackets>, per the RFC for email addresses
+*/
 
 /*
 **	Correct some common garbage combinations
