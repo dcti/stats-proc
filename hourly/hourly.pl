@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.16 2003/04/07 02:45:09 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.17 2003/04/24 05:24:06 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -47,6 +47,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
   my $prefilter = $statsconf::prefilter{$project};
   my $outbuf = "";
   my @server = split /:/, $sourcelist;
+  $server[1] .= "/";
 
   # Check to see if workdir is empty
   opendir WD, "$workdir" or die;
