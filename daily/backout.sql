@@ -1,12 +1,12 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: backout.sql,v 1.4 2000/07/18 10:46:58 decibel Exp $
+# $Id: backout.sql,v 1.5 2000/08/03 03:02:56 decibel Exp $
 #
 # This script will back out all stats data to a given date
 #
 # Arguments
 #	Project ID
-#	The date to back out *to*. The data specified will *remain* in the database.
+#	The date to back out *to*. The date specified will *remain* in the database.
 
 use stats
 go
