@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.3 2003/09/10 18:47:48 nerf Exp $
+-- $Id: daily_update.sql,v 1.4 2003/09/10 19:11:21 nerf Exp $
 
 select now();
 
@@ -8,7 +8,15 @@ select now();
 -- retired or was created today
 \connect stats
 
-CREATE TEMP TABLE id_export AS
+CREATE TEMP TABLE id_export (
+ email        character varying(64) NOT NULL,
+ id           integer NOT NULL,
+ stats_id     integer NOT NULL,
+ retire_date  date,
+ created      date
+) WITHOUT OIDS;
+
+INSERT into id_export
 SELECT email, id, CASE 
                    WHEN retire_to = 0 THEN id
                    ELSE retire_to
@@ -30,7 +38,7 @@ id INTEGER,
 stats_id INTEGER,
 retire_date     date,
 created         date
-);
+) WITHOUT OIDS;
 
 \copy import_id FROM '/tmp/id_import.out'
 
@@ -50,7 +58,10 @@ UPDATE OGR_idlookup
 	SET stats_id = import_id.stats_id
 	FROM import_id
 	WHERE import_id.retire_date IS NOT NULL
-	AND OGR_idlookup.id = import_id.id;
+	AND OGR_idlookup.id = import_id.id
+	AND OGR_idlookup.stats_id != import_id.stats_id;
+-- The last clause is not needed (we could just update everything), but it's
+-- nice to know how many records have really changed.
 
 COMMIT;
 
