@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.12 2003/09/11 01:41:02 decibel Exp $
+ * $Id: logmod.cpp,v 1.13 2004/05/14 17:37:06 decibel Exp $
  */
 
 #include <assert.h>
@@ -284,8 +284,8 @@ int main(int argc, char *argv[])
         }
 
         int nstatus = atoi(status);
-        if (nstatus != 0 && nstatus != 2) {
-            error(line, "status not in {0,2}", buf, len);
+        if ( !(nstatus >= -5 && nstatus <= 5) ) {
+            error(line, "status not between -5 and 5", buf, len);
             goto next;
         }
 
