@@ -1,5 +1,5 @@
 /*
- $Id: tm_update.sql,v 1.32.2.3 2003/09/03 23:02:58 decibel Exp $
+ $Id: tm_update.sql,v 1.32.2.4 2003/09/08 23:27:54 decibel Exp $
 
 TM_RANK
 
@@ -158,12 +158,9 @@ BEGIN;
     \echo  Remove or move "today"" info"
     UPDATE team_rank
         SET day_rank_previous = day_rank,
-            day_rank = max_rank,
             overall_rank_previous = overall_rank,
-            overall_rank = max_rank,
             work_today = 0,
             members_today = 0
-        FROM max_rank
         WHERE project_id = :ProjectID
     ;
 
