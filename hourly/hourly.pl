@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.96 2002/04/15 16:26:19 jlawson Exp $
+# $Id: hourly.pl,v 1.97 2002/04/16 05:42:25 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -168,7 +168,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       $bcprows =~ s/,//g;
 
       if($bcprows == 0) {
-        stats::log($project,137,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+        stats::log($project,139,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
       }
 
       opendir WD, "$workdir" or die;
