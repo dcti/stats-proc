@@ -11,6 +11,9 @@ my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my $workdir = "./workdir/";
 
+# This could easily be populated from somewhere else.
+# I don't see a big downside to simply hard-coding, however.
+
 my @projectlist = ("ogr",
                    "rc5");
 my @sourcelist  = ("LOGS-SOURCE-FQDN:/home/master/logs/",
@@ -26,10 +29,11 @@ for (my $i = 0; $i < @projectlist; $i++) {
   my $project = $projectlist[$i];
   my $lastlog = `cat ~/var/lastlog.$project`;
   my $logtoload = "29991231-23";
+  my $outbuf = "";
   my @server = split /:/, $sourcelist[$i];
   chomp($lastlog);
 
-  print "Project $i is $project.\nMy last log was $lastlog\n";
+  stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
 
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
@@ -52,45 +56,44 @@ for (my $i = 0; $i < @projectlist; $i++) {
     $linecount++;
   }
   if( $logtoload lt $datestr ) {
-    print "Of $linecount logs available, $qualcount need to be loaded.  Next up is $logtoload.\n";
+    stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
     my $fullfn = "$server[1]$project$logtoload.log.gz";
     my $basefn = "$project$logtoload.log.gz";
 
-    print "Retrieving $fullfn: ";
+    $outbuf = "";
     open SCP, "scp -Bv $server[0]:$fullfn $workdir 2> /dev/stdout |";
     while (<SCP>) {
       if ($_ =~ /Transferred: stdin (\d+), stdout (\d+), stderr (\d+) bytes in (\d+.\d) seconds/) {
         my $rate = rate_calc($2,$4);
         my $size = num_format($2);
         my $time = num_format($4);
-        print "Received $size bytes in $time seconds ($rate)\n";
+        $outbuf = "$fullfn received: $size bytes in $time seconds ($rate)\n";
       }
     }
     close SCP;
+    stats::log($project,1,$outbuf);
 
-    print "Decompressing $basefn";
     open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
     my $rawfn = "";
     while (<GZIP>) {
       if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
-        print "-->$2 ($1% compression)\n";
         $rawfn = $2;
+        stats::log($project,1,"$rawfn successfully decompressed ($1% compression)");
       }
     }
     if( $rawfn eq "" ) {
-      print ": gzip failed!\n";
+      stats::log($project,130,"$basefn failed decompression!");
     } else {
       my $finalfn = "$rawfn.filtered";
       if( $prefilter[$i] eq "" ) {
-        print "There is no log filter for this project, proceeding to bcp.\n";
+        stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
         $finalfn = $rawfn;
       } else {
-        print "Filtering log through $prefilter[$i]\n";
         `cat $rawfn | $prefilter[$i] > $finalfn`;
+        stats::log($project,1,"$rawfn successfully filtered through $prefilter[$i].");
       }
       # bcp goes here
     }
-    print "\n";
   }
 }
 
@@ -139,4 +142,3 @@ sub rate_calc {
 
   return $f_outstr;
 }
-
