@@ -1,7 +1,8 @@
-$Id: TODO,v 1.3 2002/12/23 16:58:51 bwilson Exp $
+$Id: TODO,v 1.4 2002/12/24 19:53:27 nerf Exp $
 
 write script to get id_lookup from Sybase
 normalize out stub_id
 rename query3.sql
 make sure indexes are correct
 modify scripts that create tables to delete them if they already exist
+clean up temp tables when done with them
