@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.36 2000/08/14 20:47:20 nugget Exp $
+# $Id: hourly.pl,v 1.37 2000/08/14 20:48:31 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -12,10 +12,6 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
 
 use statsconf;
 use stats;
-
-exec "ls";
-
-die;
 
 my $yyyy = (gmtime(time-3600))[5]+1900;
 my $mm = (gmtime(time-3600))[4]+1;
