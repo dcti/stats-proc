@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.11 2000/07/20 01:08:52 decibel Exp $
+# $Id: integrate.sql,v 1.12 2000/07/21 14:06:05 bwilson Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -19,8 +19,6 @@ go
 update import_bcp
 	set EMAIL = ltrim(EMAIL)
 	where EMAIL <> ltrim(EMAIL)
-go
-
 /*
 ** TODO: Strip out any text in <brackets>, per the RFC for email addresses
 */
@@ -36,8 +34,6 @@ update import_bcp
 		or EMAIL like '%[ <>]%'	/* Must not contain space, &gt or &lt */
 		or EMAIL like '@%'	/* Must not begin with @ */
 		or EMAIL like '%@'	/* Must not end with @ */
-go
-
 /*
 **	Only one @.  Must test after we know they have at least one @
 */
@@ -45,8 +41,20 @@ update import_bcp
 	set EMAIL = 'rc5-bad@distributed.net'
 	where substring(EMAIL, charindex('@', EMAIL) + 1, 64) like '%@%'
 go
+/* [BW] Processing all projects at once is a Bad Thing (TM) because we may not have
+**	the same number of logs for all projects, and even if that doesn't cause a
+**	problem, it would make it harder to run hourly for one the same time as
+**	daily for another, if we need to.  I need to think about this more, but
+**	even if we do it all in one fell swoop, there might be performance benefits
+**	to stepping through each project in a cursor.
+*/
+
 
 /* Create a temp table that lets us know what project(s) we're working on here */
+/* [BW] If this step wasn't here, it would be possible to run integrate without
+**	importing any data, which could be useful if we can get data in
+**	Email_Contrib_Today format but not import_bcp format.
+*/
 select PROJECT_ID,  max(TIME_STAMP) as STATS_DATE
 	into #Projects
 	from import_bcp
@@ -62,7 +70,7 @@ update Projects
 go
 
 /*
-Assign contest id
+Assign project id
 	Insert in holding table, or set bit or date field in STATS_Participant
 	seqn, id, request_source, date_requested, date_sent
 daytable contains id instead of EMAIL
@@ -95,6 +103,9 @@ go
 print "Assigning IDs"
 go
 -- NOTE: At some point we might want to set TEAM_ID and CREDIT_ID here as well
+-- [BW] No, because it shouldn't take effect until the end of day.  No sense
+--	doing it 24 times when once will do.  The same would apply here, except
+--	that it's really, really nice to be able to show new participants hourly
 update #Email_Contrib_Today
 	set ID = sp.ID
 	from STATS_Participant sp
@@ -144,7 +155,7 @@ go
 insert #Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 	select ect.PROJECT_ID, "", ect.ID, ect.WORK_UNITS
 	from Email_Contrib_Today ect, #Projects p
-	where ect.PROJECT_ID = p.PROJECT_ID 
+	where ect.PROJECT_ID = p.PROJECT_ID
 
 /* Finally, remove the previous records from Email_Contrib_Today and insert the new
 ** data from the temp table. (It seems there should be a better way to do this...)
@@ -154,7 +165,7 @@ go
 begin transaction
 delete Email_Contrib_Today
 	from #Projects p
-	where Email_Contrib_Today.PROJECT_ID = p.PROJECT_ID 
+	where Email_Contrib_Today.PROJECT_ID = p.PROJECT_ID
 
 insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
 	select PROJECT_ID, sum(WORK_UNITS), ID, 0, 0
@@ -195,7 +206,7 @@ go
 begin transaction
 delete Platform_Contrib_Today
 	from #Projects p
-	where Platform_Contrib_Today.PROJECT_ID = p.PROJECT_ID 
+	where Platform_Contrib_Today.PROJECT_ID = p.PROJECT_ID
 
 insert Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
