@@ -1,4 +1,4 @@
--- $Id: create_id_lookup.sql,v 1.10 2003/01/18 23:42:13 nerf Exp $ --
+-- $Id: create_id_lookup.sql,v 1.11 2003/01/22 01:37:37 nerf Exp $ --
 
 CREATE temp TABLE import_id (
 email VARCHAR (64),
@@ -6,7 +6,7 @@ id INTEGER,
 retire_to INTEGER
 );
 
-COPY import_id FROM '/home/nerf/id_import.out';
+COPY import_id FROM '/tmp/id_import.out';
 
 DROP TABLE id_lookup;
 
@@ -23,4 +23,4 @@ INSERT INTO id_lookup
 	FROM import_id;
 
 CREATE INDEX idlookup_id ON id_lookup (id);
-CREATE INDEX idlookup_email_idx ON id_lookup (email);
+CREATE UNIQUE INDEX idlookup_email_lower ON id_lookup (lower(email));
