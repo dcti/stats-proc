@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.9 2000/11/09 03:58:47 decibel Exp $
+# $Id: newjoin.sql,v 1.10 2000/11/09 04:16:01 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -62,15 +62,8 @@ begin
 				and PROJECT_ID = ${1}
 				and TEAM_ID = 0
 	
-		if @@error > 0
-		begin
-			select @update_ids = @update_ids + 1, @idrows = @@rowcount, @total_rows = @total_rows + @@rowcount
-			select @abort = @abort + 1
-		end
-		else
-		begin
-			select @update_ids = @update_ids + 1, @idrows = @@rowcount, @total_rows = @total_rows + @@rowcount
-		end
+		select @abort = @abort + sign(@@error), @update_ids = @update_ids + 1,
+			@idrows = @@rowcount, @total_rows = @total_rows + @@rowcount
 
 # Update Team_Members
 		if @retire_to = 0
@@ -100,8 +93,7 @@ begin
 					and PROJECT_ID = ${1}
 					and TEAM_ID = @team_id
 			
-			if @@error > 0
-				select @abort = @abort + 1
+			select @abort = @abort + sign(@@error)
 		end
 		else
 		begin
@@ -137,8 +129,7 @@ begin
 				where PROJECT_ID = ${1}
 					and TEAM_ID = @team_id
 			
-			if @@error > 0
-				select @abort = @abort + 1
+			select @abort = @abort + sign(@@error)
 		end
 		else
 		begin
@@ -149,8 +140,7 @@ begin
 			values ( ${1}, @team_id, @first, @last, 0, @work,
 				@rank, 0, @rank, 0, 0, 0, 0 )
 			
-			if @@error > 0
-				select @abort = @abort + 1
+			select @abort = @abort + sign(@@error)
 		end
 
 # Commit (or rollback)
