@@ -1,0 +1,44 @@
+#
+# $Id: statsconf.pm.default,v 1.1 2000/06/22 23:10:37 nugget Exp $
+#
+# Stats global configuration
+#
+
+package stats-conf;
+
+require IO::Socket;
+
+$logtag = "statsbox-ii";
+@projects = ("rc5");
+%logdir = (
+	"stats"	=> "/var/log/",
+	"rc5"	=> "/usr/home/statproc/log/",
+	"des"	=> "/usr/home/statproc/log/",
+	"ogr"	=> "/usr/home/statproc/log/",
+	"csc"	=> "/usr/home/statproc/log/",
+);
+%htdocs = (
+	"stats"	=> "/htdocs/",
+	"rc5"	=> "/htdocs/rc5/",
+	"des"	=> "/htdocs/des/",
+	"ogr"	=> "/htdocs/ogr/",
+	"csc"	=> "/htdocs/csc/",
+);
+%incoming =  (
+	"stats"	=> ".",
+	"rc5"	=> "/usr/home/incoming/newlogs-rc5",
+	"des"	=> "/usr/home/incoming/newlogs-des",
+	"ogr"	=> "/usr/home/incoming/newlogs-ogr",
+	"csc"	=> "/usr/home/incoming/newlogs-csc",
+);
+
+%projectdir = (
+	"rc5"	=> "/usr/home/statproc/stats-rc5",
+	"des"	=> "/usr/home/statproc/stats-des",
+	"ogr"	=> "/usr/home/statproc/stats-ogr",
+	"csc"	=> "/usr/home/statproc/stats-csc",
+);
+
+$sqllogin = "LOGIN";
+$sqlpasswd = "PASSWORD";
+$sqlserver = "SERVER";
