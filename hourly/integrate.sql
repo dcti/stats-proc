@@ -1,11 +1,12 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.1 2003/03/25 00:03:52 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.2 2003/03/27 21:22:27 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
 # Arguments:
 #       ProjectType (OGR, RC5, etc.)
+#       HourNumber
 */
 
 
@@ -15,7 +16,8 @@
 **	Email_Contrib_Today format but not import_bcp format.
 */
 \echo Updating LAST_STATS_DATE for :ProjectType
-select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK
+select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK,
+        count(*) as TOTAL_ROWS
 	into TEMP TEMP_Projects
 	from import_bcp i, Projects p
 	where p.PROJECT_ID *= i.PROJECT_ID
@@ -322,6 +324,17 @@ commit;
 drop table TEMP_Platform_Contrib_Today
 ;
 --go
+
+/*
+  Store info in Log_Info table
+*/
+
+\echo Adding data to Log_Info
+insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
+    select PROJECT_ID, STATS_DATE + (text(:HourNumber) || " hours")::interval, TOTAL_WORK, TOTAL_LINES ,0
+    from #Projects
+    group by PROJECT_ID
+;
 
 \echo Clearing import table
 
