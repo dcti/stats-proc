@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.4 2000/10/30 13:26:02 decibel Exp $
+# $Id: tm_update.sql,v 1.5 2000/10/31 04:09:12 decibel Exp $
 
 TM_RANK
 
@@ -123,7 +123,7 @@ insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY,
 	where IS_NEW = 1
 		and ec.ID = tmw.ID
 		and ec.TEAM_ID = tmw.TEAM_ID
-	group by tmw.ID, tmw.TEAM_ID
+	group by ec.ID, ec.TEAM_ID
 go
 
 /*
@@ -215,7 +215,7 @@ select tm.TEAM_ID, min(tm.FIRST_DATE) as FIRST_DATE, sum(tm.WORK_TOTAL) as WORK_
 	where tm.TEAM_ID = tmw.TEAM_ID
 		and tm.ID = tmw.ID
 		and tmw.IS_NEW = 1
-	group by TEAM_ID
+	group by tm.TEAM_ID
 go
 
 update Team_Rank
