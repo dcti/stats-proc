@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.1 2000/09/22 02:41:37 decibel Exp $
+# $Id: tm_update.sql,v 1.2 2000/10/30 00:21:39 decibel Exp $
 
 TM_RANK
 
@@ -44,16 +44,14 @@ Notes:
 print '!! Prepare for team member generation'
 go
 
-select ect.CREDIT_ID, sp.TEAM, ect.WORK_UNITS
+select ect.CREDIT_ID, ect.TEAM_ID, ect.WORK_UNITS
 	into #TeamMembers
 	from Email_Contrib_Today ect, STATS_Participant sp, STATS_Team st
-	where ect.CREDIT_ID = sp.ID
-		and ect.TEAM_ID = st.team
-		and sp.TEAM = st.team
-		and sp.TEAM = ect.TEAM_ID	-- Give the optimizer some more options
+	where sp.ID = ect.CREDIT_ID
+		and st.team = ect.TEAM_ID
 		and ect.TEAM_ID > 0
-		and sp.LISTMODE <= 9	/* Don't insert hidden people */
-		and st.LISTMODE <= 9	/* Don't insert hidden teams */
+		and sp.LISTMODE < 10	/* Don't insert hidden people */
+		and st.LISTMODE < 10	/* Don't insert hidden teams */
 		and ect.PROJECT_ID = ${1}
 go
 
@@ -67,7 +65,7 @@ create table #TeamMemberWork
 go
 
 insert #TeamMemberWork (ID, TEAM_ID, WORK_TODAY, IS_NEW)
-	select CREDIT_ID, TEAM, sum(WORK_UNITS) as WORK_UNITS, 1
+	select CREDIT_ID, TEAM_ID, sum(WORK_UNITS) as WORK_UNITS, 1
 	from #TeamMembers
 	group by CREDIT_ID, TEAM
 go
