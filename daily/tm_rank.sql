@@ -1,5 +1,5 @@
 /*
-# $Id: tm_rank.sql,v 1.13 2000/07/14 23:37:09 decibel Exp $
+# $Id: tm_rank.sql,v 1.14 2000/07/15 00:01:12 decibel Exp $
 
 TM_RANK
 
@@ -47,7 +47,7 @@ go
 select ect.CREDIT_ID, sp.TEAM, ect.WORK_UNITS
 	into #TeamMembers
 	from Email_Contrib_Today ect, STATS_Participant sp, STATS_Team st
-	where ect.ID = sp.ID
+	where ect.CREDIT_ID = sp.ID
 		and ect.TEAM_ID = st.team
 		and sp.TEAM = st.team
 		and sp.TEAM = ect.TEAM_ID	-- Give the optimizer some more options
