@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # 11/28/2002 - Joel Von Holdt for distributed.net
-# $Id: filter.pl,v 1.3 2002/12/21 19:12:36 joel Exp $
+# $Id: filter.pl,v 1.4 2002/12/22 21:24:19 joel Exp $
 
 use strict;
 my ( $var, $fn, $fn24, $fn25, $reject, $numargs, $i );
@@ -45,6 +45,9 @@ $var = @ARGV[$i];
 		#    (I know that the bug manifests itself very rarely. But IMHO there is no
 		#     100% safe way to tell if a submitted result is valid without
 		#     reprocessing the stub with a fixed client!) - (State of OGR email from coders@ on 11/27/02)
+
+# Do we need to do email verification?
+# if( $email =~ m/^[A-Za-z0-9\_-]+@[A-za-z0-9\_-]+.[A-Za-z0-9\_-]+.*/ ) || ( $email =~ m/^[A-Za-z0-9\_-]+.[A-Za-z0-9\_-]+@[A-za-z0-9\_-]+.[A-Za-z0-9\_-]+.* ) {
 
                 if ( $version < 8014 )
                         {

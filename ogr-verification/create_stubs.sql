@@ -1,12 +1,12 @@
--- $Id: create_stubs.sql,v 1.2 2002/12/21 23:32:44 joel Exp $ --
+-- $Id: create_stubs.sql,v 1.3 2002/12/22 21:24:19 joel Exp $ --
 
 CREATE TABLE stubs (
-email VARCHAR(64),
 stub_id VARCHAR(22),
 nodecount BIGINT,
 os_type SMALLINT,
 cpu_type SMALLINT,
-version INT);
+version INT,
+stats_id INT);
 
 
 --CREATE INDEX stubs_email_idx ON stubs (email);
