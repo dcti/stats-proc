@@ -1,7 +1,7 @@
 #!/usr/bin/perl -I../global
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: OGRhourly.pl,v 1.3 2003/01/19 09:20:13 nerf Exp $
+# $Id: OGRhourly.pl,v 1.4 2003/01/19 21:31:12 decibel Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -21,6 +21,13 @@
 # Without it, the script is unable to spawn bcp or sqsh claiming the inability
 # to access /dev/stderr.  *shrug*
 
+
+
+# OK, what's worse is using the stats-proc lockfile and breaking the statsrun. You're going to have to seperate this stuff out somehow.
+
+
+
+
 #OK, this is bad, force the sem to be unlocked
 stats::semflag('hourly') ne "OK";
 
@@ -32,8 +39,8 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
 #my $me = $2;
 #chdir $cwd;
 
-use statsconf;
-use stats;
+#use statsconf;
+#use stats;
 
 my $respawn = 0;
 
