@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.52 2000/09/07 18:46:19 decibel Exp $
+# $Id: hourly.pl,v 1.53 2000/09/07 18:54:11 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -28,12 +28,6 @@ use stats;
 
 use Time::Local;
 
-# This is a big-time kludge to make sure we don't walk on the RC5 run
-if (-e /home/incoming/newlogs-rc5/nologs.lck) {
-  stats::log($project,1,"/usr/home/incoming/newlogs-rc5/nologs.lck exists; aborting.");
-  die;
-}
-
 my $yyyy = (gmtime(time-3600))[5]+1900;
 my $mm = (gmtime(time-3600))[4]+1;
 my $dd = (gmtime(time-3600))[3];
@@ -46,6 +40,12 @@ my $workdir = "./workdir/";
 
 for (my $i = 0; $i < @statsconf::projects; $i++) {
   my $project = $statsconf::projects[$i];
+  # This is a big-time kludge to make sure we don't walk on the RC5 run
+  if (-e /home/incoming/newlogs-rc5/nologs.lck) {
+    stats::log($project,1,"/usr/home/incoming/newlogs-rc5/nologs.lck exists; aborting.");
+    die;
+  }
+  
   if(stats::semflag($project,"hourly.pl") ne "OK") {
     my $ret = stats::semcheck($project);
     chomp $ret;
