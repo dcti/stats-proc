@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.5 2000/07/13 23:57:44 nugget Exp $
+# $Id: stats.pm,v 1.6 2000/07/19 04:09:30 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -21,6 +21,7 @@ sub log {
 	#	  2 - #dcti
 	#	  4 - #distributed
 	#	  8 - pagers
+	#	 64 - Print to STDERR instead of STDOUT
 	#	128 - High Priority
 
 	my @par = @_;
@@ -41,8 +42,12 @@ sub log {
 	print LOGFILE $ts," ",@par,"\n";
 	close LOGFILE;
 
-	# Display to stdout, of course.
-	print $ts," ",@par,"\n";
+	if ($dest & 64) {
+		print STDERR $ts," ",@par,"\n";
+	} else {
+		print $ts," ",@par,"\n";
+	}
+
 
 	# Cycle through configured irc channels and send to any that qualify
 	for (my $i = 0; $i < @statsconf::ircchannels; $i++) {
