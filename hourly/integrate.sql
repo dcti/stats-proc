@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.6 2003/04/04 21:16:53 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.7 2003/04/05 00:23:02 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -9,6 +9,7 @@
 #       HourNumber
 */
 
+\set ON_ERROR_STOP 1
 
 /* Create a temp table that lets us know what project(s) we're working on here */
 /* [BW] If this step wasn't here, it would be possible to run integrate without
@@ -132,7 +133,7 @@ update TEMP_import
 */
 update TEMP_import
 	set EMAIL = 'rc5-bad@distributed.net'
-	where substring(EMAIL, charindex('@', EMAIL) + 1, 64) like '%@%'
+	where like '%@%@%'
 ;
 --go
 /* [BW] Processing all projects at once is a Bad Thing (TM) because we may not have
@@ -194,7 +195,7 @@ update TEMP_Email_Contrib_Today
 
 /* First, copy all new participants to TEMP_dayemails to do the identity assignment */
 create temporary sequence Email;
-insert into TEMP_dayemails
+insert into TEMP_dayemails (EMAIL, ID)
 	select distinct EMAIL, nextval('Email')
 	from TEMP_Email_Contrib_Today
 	where ID = 0
@@ -227,7 +228,7 @@ update TEMP_Email_Contrib_Today
 
 -- JCN: Removed sum() and group by.. data in Email_Contrib_Today should be summed already
 insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
-	select ect.PROJECT_ID, "", ect.ID, ect.WORK_UNITS
+	select ect.PROJECT_ID, '', ect.ID, ect.WORK_UNITS
 	from Email_Contrib_Today ect, TEMP_Projects p
 	where ect.PROJECT_ID = p.PROJECT_ID
 ;
@@ -238,7 +239,7 @@ insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 */
 \echo Moving data from temptable to Email_Contrib_Today
 begin;
-delete Email_Contrib_Today
+delete from Email_Contrib_Today
 	from TEMP_Projects p
 	where Email_Contrib_Today.PROJECT_ID = p.PROJECT_ID
 ;
@@ -305,7 +306,7 @@ insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 
 \echo Moving data from temptable to Platform_Contrib_Today
 begin;
-delete Platform_Contrib_Today
+delete from Platform_Contrib_Today
 	from TEMP_Projects p
 	where Platform_Contrib_Today.PROJECT_ID = p.PROJECT_ID
 ;
