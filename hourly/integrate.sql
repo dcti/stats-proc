@@ -1,14 +1,16 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.23 2003/04/28 20:55:06 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.24 2003/04/29 19:28:29 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
 # Arguments:
 #       ProjectType (OGR, RC5, etc.)
+#       LogDate
 #       HourNumber
 */
 
+\t
 \set ON_ERROR_STOP 1
 
 /* Create a temp table that lets us know what project(s) we're working on here */
@@ -17,14 +19,22 @@
 **    Email_Contrib_Today format but not import_bcp format.
 */
 \echo Updating LAST_STATS_DATE for :ProjectType
-select p.PROJECT_ID, min(TIME_STAMP) as STATS_DATE
+select p.PROJECT_ID, coalesce(min(TIME_STAMP), LogDate::date) as STATS_DATE
         , coalesce(sum(WORK_UNITS),0) * min(WORK_UNIT_IMPORT_MULTIPLIER) as TOTAL_WORK
-        , count(*) as TOTAL_ROWS
+        , count(i.*) as TOTAL_ROWS
     into TEMP TEMP_Projects
     from import_bcp i RIGHT JOIN Projects p ON p.PROJECT_ID = i.PROJECT_ID
     where lower(p.PROJECT_TYPE) = lower(:ProjectType)
         and p.STATUS = 'O'
     group by p.PROJECT_ID
+;
+SELECT 'ERROR! LogDate (' || :LogDate::date || ') doesn't match stats_date (' || stats_date || ')!'
+    FROM TEMP_Projects
+    WHERE :LogDate::date <> stats_date
+;
+SELECT raise('EXCEPTION','ERROR! LogDate (' || :LogDate::date || ') doesn't match stats_date (' || stats_date || ')!')
+    FROM TEMP_Projects
+    WHERE :LogDate::date <> stats_date
 ;
 
 update TEMP_Projects

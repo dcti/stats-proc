@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.20 2003/04/29 16:44:40 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.21 2003/04/29 19:28:29 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -174,7 +174,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       my $bufstorage = "";
       my $psqlsuccess = 0;
       my $sqlrows = 0;
-      if(!open SQL, "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |") {
+      if(!open SQL, "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |") {
         stats::log($project,139,"Error launching psql, aborting hourly run.");
         die;
       }
@@ -182,7 +182,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
         my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
         print "$ts $_";
         $bufstorage = "$bufstorage$ts $_";
-        if( $_ =~ /^Msg/ ) {
+        if( $_ =~ /^Msg|^ERROR/ ) {
           $psqlsuccess = 1;
         } elsif ( $_ =~ /^ Total rows: *(\d+)/ ) {
           $sqlrows = $1;
