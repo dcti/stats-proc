@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.11 2000/09/13 20:00:41 decibel Exp $
+# $Id: dy_appendday.sql,v 1.12 2000/11/02 10:06:56 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -20,6 +20,11 @@ go
 ** be the ID that should get credit for this work.
 */
 
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
 update Email_Contrib_Today
 	set CREDIT_ID = (abs(sign(sp.RETIRE_TO)) * sp.RETIRE_TO) + ((1 - abs(sign(sp.RETIRE_TO))) * sp.ID)
 	from STATS_Participant sp
@@ -27,9 +32,11 @@ update Email_Contrib_Today
 		and PROJECT_ID = ${1}
 
 update Email_Contrib_Today
-	set TEAM_ID = sp.TEAM
-	from STATS_Participant sp
-	where sp.ID = Email_Contrib_Today.CREDIT_ID
+	set TEAM_ID = sp.TEAM_ID
+	from Team_Joins tj
+	where tj.ID = Email_Contrib_Today.CREDIT_ID
+		and tj.join_date <= @stats_date
+		and (tj.last_date = null or tj.last_date >= @stats_date)
 		and PROJECT_ID = ${1}
 --create unique clustered index iID on Email_Contrib_Today(PROJECT_ID,ID)
 --create index iTEAM_ID on Email_Contrib_Today(PROJECT_ID,TEAM_ID)

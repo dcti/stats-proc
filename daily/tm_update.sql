@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.7 2000/11/01 04:59:12 decibel Exp $
+# $Id: tm_update.sql,v 1.8 2000/11/02 10:06:57 decibel Exp $
 
 TM_RANK
 
@@ -273,10 +273,17 @@ go
 #	and tm.WORK_TODAY > 0
 */
 
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
 insert #CurrentMembers (TEAM_ID, OVERALL, ACTIVE, CURR)
-	select tm.TEAM_ID, count(*), sum(sign(WORK_TODAY)), sum(1-abs(sign(sp.team - tm.TEAM_ID)))
-	from Team_Members tm, STATS_Participant sp
-	where sp.ID = tm.ID
+	select tm.TEAM_ID, count(*), sum(sign(WORK_TODAY)), sum(1-abs(sign(tj.TEAM_ID - tm.TEAM_ID)))
+	from Team_Members tm, Team_Joins tj
+	where tj.ID = tm.ID
+		and tj.JOIN_DATE <= @stats_date
+		and (tj.LAST_DATE = null or tj.LAST_DATE >= @stats_date)
 		and tm.PROJECT_ID = ${1}
 	group by tm.TEAM_ID
 go
