@@ -1,4 +1,5 @@
--- $Id: audit.sql,v 1.32.2.3 2003/04/26 18:43:35 decibel Exp $
+-- $Id: audit.sql,v 1.32.2.4 2003/04/27 20:53:07 decibel Exp $
+\set ON_ERROR_STOP 1
 
 \t
 

@@ -1,4 +1,5 @@
--- $Id: clearday.sql,v 1.5.2.1 2003/04/27 20:40:38 decibel Exp $
+-- $Id: clearday.sql,v 1.5.2.2 2003/04/27 20:53:07 decibel Exp $
+\set ON_ERROR_STOP 1
 
 \echo Dropping indexes
 --drop index email_contrib_today.iid

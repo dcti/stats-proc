@@ -1,5 +1,5 @@
 /*
- $Id: tm_update.sql,v 1.32.2.1 2003/04/23 07:05:49 decibel Exp $
+ $Id: tm_update.sql,v 1.32.2.2 2003/04/27 20:53:07 decibel Exp $
 
 TM_RANK
 
@@ -7,6 +7,7 @@ Parameters
     Project_ID
 
 */
+\set ON_ERROR_STOP 1
 
 \echo !! Begin team update
 

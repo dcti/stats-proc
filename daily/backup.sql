@@ -1,10 +1,11 @@
 /*
-# $Id: backup.sql,v 1.14.2.1 2003/04/27 20:40:38 decibel Exp $
+# $Id: backup.sql,v 1.14.2.2 2003/04/27 20:53:07 decibel Exp $
 #
 # Makes backup copies of Email_Rank, Team_Rank, and Team_Members
 # Arguments:
 #    ProjectID
 */
+\set ON_ERROR_STOP 1
 
 SELECT last_date, last_date - interval '4 days' AS keep_date
     INTO TEMP Tdates

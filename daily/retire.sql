@@ -1,11 +1,12 @@
 /*
-# $Id: retire.sql,v 1.25.2.3 2003/04/20 22:07:21 decibel Exp $
+# $Id: retire.sql,v 1.25.2.4 2003/04/27 20:53:07 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
 # Arguments:
 #       ProjectID
 */
+\set ON_ERROR_STOP 1
 
 \echo Build a list of blocked participants
 ;

@@ -1,12 +1,13 @@
 /*
 #
-# $Id: em_rank.sql,v 1.22.2.2 2003/04/23 04:38:58 decibel Exp $
+# $Id: em_rank.sql,v 1.22.2.3 2003/04/27 20:53:07 decibel Exp $
 #
 # Does the participant ranking
 #
 # Arguments:
 #       Project_id
 */
+\set ON_ERROR_STOP 1
 
 \echo !! Begin e-mail ranking
 --\echo  Drop indexes on email_rank

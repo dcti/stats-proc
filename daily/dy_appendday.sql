@@ -1,11 +1,12 @@
 /*
-# $Id: dy_appendday.sql,v 1.23.2.2 2003/04/23 05:09:11 decibel Exp $
+# $Id: dy_appendday.sql,v 1.23.2.3 2003/04/27 20:53:07 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
 # Arguments:
 #       PROJECT_ID
 */
+\set ON_ERROR_STOP 1
 
 \echo !! Appending day's activity to master tables
 

@@ -1,12 +1,13 @@
 /*
 #
-# $Id: tm_rank.sql,v 1.23.2.1 2003/04/23 07:05:49 decibel Exp $
+# $Id: tm_rank.sql,v 1.23.2.2 2003/04/27 20:53:07 decibel Exp $
 #
 # Does the team ranking
 #
 # Arguments:
 #       Project_id
 */
+\set ON_ERROR_STOP 1
 
 \echo !! Begin team ranking
 --\echo  Drop indexes on team_rank

@@ -1,11 +1,12 @@
 /*
-# $Id: newjoin.sql,v 1.13.2.6 2003/04/23 06:05:00 decibel Exp $
+# $Id: newjoin.sql,v 1.13.2.7 2003/04/27 20:53:07 decibel Exp $
 #
 # Assigns old work to current team
 #
 # Arguments:
 #       ProjectID
 */
+\set ON_ERROR_STOP 1
 
 \echo :: Assigning old work to current team
 ;

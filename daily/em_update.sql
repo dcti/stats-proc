@@ -1,12 +1,13 @@
 /*
 #
-# $Id: em_update.sql,v 1.8.2.1 2003/04/23 02:45:22 decibel Exp $
+# $Id: em_update.sql,v 1.8.2.2 2003/04/27 20:53:07 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
 # Arguments:
 #       ProjectID
 */
+\set ON_ERROR_STOP 1
 
 \echo !! Begin e-mail ranking
 \echo  Drop indexes on Email_Rank
