@@ -1,6 +1,5 @@
-$Id: TODO,v 1.7 2002/12/30 13:56:52 nerf Exp $
+$Id: TODO,v 1.8 2002/12/30 13:57:24 nerf Exp $
 
-write script to get id_lookup from Sybase
 rename query3.sql
 make sure indexes are correct (especially on nodes)
 modify scripts that create tables to delete them if they already exist
