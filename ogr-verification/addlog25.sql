@@ -1,4 +1,4 @@
--- $Id: addlog25.sql,v 1.3 2002/12/23 01:35:30 joel Exp $ --
+-- $Id: addlog25.sql,v 1.4 2002/12/23 01:53:28 joel Exp $ --
 
 DROP TABLE logdata;
 
@@ -14,6 +14,6 @@ id INT);
 
 COPY logdata FROM '/home/postgres/ogr25.filtered' USING DELIMITERS ',';
 
-CREATE INDEX id_idx ON logdata (email);
+CREATE INDEX id_idx ON logdata (id);
 CREATE INDEX nodecount_idx ON logdata (nodecount);
 CREATE INDEX stubid_idx ON logdata (stub_id);
