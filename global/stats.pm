@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.23 2000/11/24 23:06:41 decibel Exp $
+# $Id: stats.pm,v 1.24 2002/06/10 05:49:50 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -123,11 +123,11 @@ sub semflag {
 
         my ($project, $task) = @_;
 
-	my $lockfile = "$statsconf::logdir{$project}$project.lck";
+	my $lockfile = "~/log/statsrun.lck";
 
 	if($task) {
-		if(semcheck($project)) {
-			# Can't set the lock if it already exists.
+	    if(semcheck($project)) {
+		# Can't set the lock if it already exists.
 			return semcheck($project);
 		} else {
 			# Apply lock
@@ -146,7 +146,7 @@ sub semcheck {
 
 	my ($project) = @_;
 
-	my $lockfile = "$statsconf::logdir{$project}$project.lck";
+	my $lockfile = "~/log/statsrun.lck";
 
 	if(-e $lockfile) {
 		$_ = `cat $lockfile`;
