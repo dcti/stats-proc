@@ -1,7 +1,7 @@
 #!/usr/bin/perl -I../global
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: OGRhourly.pl,v 1.2 2003/01/19 07:56:57 nerf Exp $
+# $Id: OGRhourly.pl,v 1.3 2003/01/19 09:20:13 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -20,6 +20,9 @@
 # the 2> redirect of stderr seems to be necessary, although I'm not certain why.
 # Without it, the script is unable to spawn bcp or sqsh claiming the inability
 # to access /dev/stderr.  *shrug*
+
+#OK, this is bad, force the sem to be unlocked
+stats::semflag('hourly') ne "OK";
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
@@ -50,6 +53,7 @@ if ($_ = stats::semcheck('OGRhourly')) {
 }
 my $sourcelist = $statsconf::logsource{$project};
 my $prefilter = $statsconf::prefilter{$project};
+my $homedir = $statsconf::homedir;
 my $outbuf = "";
 my @server = split /:/, $sourcelist;
 
@@ -88,8 +92,8 @@ if( $qualcount > 0 ) {
      $respawn = 1;
   }
 
-  my $fullfn = "$server[1]$project$logtoload$logext";
-  my $basefn = "$project$logtoload$logext";
+  my $fullfn = "$server[1]ogr$logtoload$logext";
+  my $basefn = "ogr$logtoload$logext";
 
   # Go ahead and set the lock now
   if($_ = stats::semflag('OGRhourly',"OGRhourly.pl") ne "OK") {
@@ -137,8 +141,12 @@ if( $qualcount > 0 ) {
   if( $rawfn eq "" ) {
     stats::log($project,130,"$basefn failed decompression!");
   } else {
-    {
-	`cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> ./filter_$project.err`;
+     my $finalfn = "$rawfn.filtered";
+     if( $prefilter eq "" ) {
+        stats::log($project,0,"There is no log filter for this project, proceeding to copy.");
+        $finalfn = $rawfn;
+      } else {
+	`cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> /tmp/filter_$project.err`;
 	if ($? == 0) {
 	    stats::log($project,1,"$rawfn successfully filtered through $prefilter.");
 	} else {
@@ -147,7 +155,7 @@ if( $qualcount > 0 ) {
 	}
     }
 
-    open COPYFROM, "psql ogr -c\"COPY logdata FROM \'$workdir$finalfn\' USING DELIMITERS ',';\" |";
+    open COPYFROM, "psql ogr -U nerf -c\"COPY logdata FROM \'$homedir/$workdir$finalfn\' USING DELIMITERS ',';\" |";
     if(!<COPYFROM>) {
       stats::log($project,131,"Error launching COPY FROM, aborting OGRhourly run.");
       die;
@@ -222,7 +230,7 @@ sub findlog {
 
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
-  if( !open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1] | grep $project\"'|" ) {
+  if( !open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1] | grep ogr\"'|" ) {
     stats::log($project,131,"Unable to contact log source!");
     return "",0;
   } 
@@ -231,7 +239,7 @@ sub findlog {
   my $qualcount = 0;
 
   while (<LS>) {
-    if( $_ =~ /-(...)(...)(...).*$project(\d\d\d\d\d\d\d\d-\d\d)(.*)/ ) {
+    if( $_ =~ /-(...)(...)(...).*ogr(\d\d\d\d\d\d\d\d-\d\d)(.*)/ ) {
       my $lastdate = $4;
       my $lastext = $5;
 
