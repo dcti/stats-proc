@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.4 2000/07/13 22:42:27 nugget Exp $
+# $Id: statsconf.pm.default,v 1.5 2000/07/13 22:53:13 nugget Exp $
 #
 # Stats global configuration
 #
@@ -42,7 +42,7 @@ $logtag = "statsbox-ii";
 	"des"	=> "keymaster.distributed.net:/home/master/logs/",
 	"ogr"	=> "keymaster.distributed.net:/home/master/logs/",
 	"csc"	=> "keymaster.distributed.net:/home/master/logs/",
-};
+);
 
 %prefilter = (
 	"rc5"	=> "./logmod_rc5.pl",
