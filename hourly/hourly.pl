@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.118 2004/11/02 20:14:11 decibel Exp $
+# $Id: hourly.pl,v 1.119 2004/11/03 20:45:12 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -225,10 +225,13 @@ while ($respawn == 1 and not -e 'stop') {
             $psqlsuccess = 1;
           } elsif ( $_ =~ /^ Total rows: *(\d+)/ ) {
             $sqlrows = $1;
-          } elsif ( $_ =~ /^ Skipped *(\d+) rows from projects/ ) {
+          } elsif ( $_ =~ /^ Skipped *(\d+) rows from project/ ) {
             $skippedrows = $1;
+
+            # Don't do this before grabbing $1
+            s/^ *//;
             if ( $skippedrows != 0 ) {
-              stats::log($project,1,$_);
+              stats::log($project,1,"$_");
             }
           }
         }
