@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.17 2000/09/13 18:42:37 decibel Exp $
+# $Id: stats.pm,v 1.18 2000/10/18 23:08:10 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -167,7 +167,7 @@ sub lastday {
   if(!$statsconf::prids{$f_project}) {
     return 99999999;
   } else {
-    my $qs_update = "select convert(char(8),max(DATE),112) from Platform_Contrib where 2=1";
+    my $qs_update = "select convert(char(8),max(DATE),112) from Daily_Summary where 2=1";
   
     my @pridlist = split /:/, $statsconf::prids{$f_project};
     for (my $i = 0; $i < @pridlist; $i++) {
