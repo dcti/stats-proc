@@ -1,5 +1,5 @@
 /*
-# $Id: newjoin.sql,v 1.13.2.9 2003/04/28 03:20:22 decibel Exp $
+# $Id: newjoin.sql,v 1.13.2.10 2003/04/28 03:38:27 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -16,7 +16,8 @@
 SELECT id, team_id
     INTO TEMP newjoins
     FROM Team_Joins tj, Project_statsrun ps
-    WHERE tj.join_date = ps.last_date
+    WHERE ps.project_id = :ProjectID
+        AND tj.join_date = ps.last_date
         AND (tj.last_date IS NULL OR tj.last_date >= ps.last_date)
 ;
 
