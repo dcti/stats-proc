@@ -1,5 +1,5 @@
 /*
-# $Id: dy_dailyblocks.sql,v 1.12.2.2 2003/04/27 20:53:07 decibel Exp $
+# $Id: dy_dailyblocks.sql,v 1.12.2.3 2003/04/29 20:36:14 decibel Exp $
 #
 # Inserts the daily totals
 #
@@ -8,33 +8,70 @@
 */
 \set ON_ERROR_STOP 1
 
-INSERT INTO daily_summary (date, project_id, work_units
-        , participants
-        , participants_new
-        , teams
-        , teams_new
-        , top_oparticipant
-        , top_opwork
-        , top_yparticipant
-        , top_ypwork
-        , top_oteam
-        , top_otwork
-        , top_yteam
-        , top_ytwork)
-    SELECT ps.last_date, :ProjectID, ps.work_for_day
-            , (SELECT count(distinct credit_id) FROM email_contrib_today WHERE project_id = :ProjectID)
-            , (SELECT count(*) FROM email_rank WHERE project_id = :ProjectID AND first_date = ps.last_date)
-            , (SELECT count(distinct team_id) FROM email_contrib_today WHERE project_id = :ProjectID)
-            , (SELECT count(*) FROM team_rank WHERE project_id = :ProjectID AND first_date = ps.last_date)
-            , (SELECT min(id) FROM email_rank WHERE project_id = :ProjectID AND overall_rank = 1)
-            , (SELECT min(work_total) FROM email_rank WHERE project_id = :ProjectID AND overall_rank = 1)
-            , (SELECT min(id) FROM email_rank WHERE project_id = :ProjectID AND day_rank = 1)
-            , (SELECT min(work_total) FROM email_rank WHERE project_id = :ProjectID AND day_rank = 1)
-            , (SELECT min(team_id) FROM team_rank WHERE project_id = :ProjectID AND overall_rank = 1)
-            , (SELECT min(work_total) FROM team_rank WHERE project_id = :ProjectID AND overall_rank = 1)
-            , (SELECT min(team_id )FROM team_rank WHERE project_id = :ProjectID AND day_rank = 1)
-            , (SELECT min(work_total) FROM team_rank WHERE project_id = :ProjectID AND day_rank = 1)
-        FROM project_statsrun ps
-        WHERE ps.project_id = :ProjectID
+SELECT *
+    INTO TEMP Tsummary
+    FROM daily_summary
+    WHERE 1=0
 ;
 
+\echo project_statsrun, _new
+UPDATE Tsummary
+    SET date = last_date
+            , project_id = :ProjectID
+            , work_units = work_for_day
+            , participants_new = (SELECT count(*) FROM email_rank WHERE project_id = :ProjectID
+                                            AND first_date = ps.last_date)
+            , teams_new = (SELECT count(*) FROM team_rank WHERE project_id = :ProjectID
+                                            AND first_date = ps.last_date)
+    FROM project_statsrun ps
+    WHERE ps.project_id = :ProjectID
+;
+
+\echo email_contrib_today
+UPDATE Tsummary
+    SET participants = count(distinct credit_id)
+            , teams = count(distinct team_id)
+    FROM email_contrib_today
+    WHERE project_id = :ProjectID
+;
+
+\echo email_rank, overall_rank = 1
+UPDATE Tsummary
+    SET top_oparticipant = min(id)
+        , top_opwork = min(work_total)
+    FROM email_rank
+    WHERE project_id = :ProjectID
+        AND overall_rank = 1
+;
+
+\echo email_rank, day_rank = 1
+UPDATE Tsummary
+    SET top_yparticipant = min(id)
+        , top_ypwork = min(work_total)
+    FROM email_rank
+    WHERE project_id = :ProjectID
+        AND day_rank = 1
+;
+
+\echo team_rank, overall_rank = 1
+UPDATE Tsummary
+    SET top_oteam = min(team_id)
+        , top_otwork = min(work_total)
+    FROM team_rank
+    WHERE project_id = :ProjectID
+        AND overall_rank = 1
+;
+
+\echo team_rank, overall_rank = 1
+UPDATE Tsummary
+    SET top_yteam = min(team_id)
+        , top_ytwork) = min(work_total)
+    FROM team_rank
+    WHERE project_id = :ProjectID
+        AND day_rank = 1
+;
+
+INSERT INTO daily_summary
+    SELECT *
+        FROM Tsummary
+;
