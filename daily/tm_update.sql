@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.28 2002/04/16 05:40:16 decibel Exp $
+# $Id: tm_update.sql,v 1.29 2002/04/18 04:04:53 decibel Exp $
 
 TM_RANK
 
@@ -137,6 +137,10 @@ create table #NewTeamMembers (
 )
 go
 
+-- Find the ficst date each new participant was on the team
+
+-- First, build a list of just the new members, including everyone that's
+-- retired to them
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun
@@ -156,13 +160,14 @@ go
 create clustered index id_project on #NewTeamMembers(EC_ID, PROJECT_ID)
 go
 
+-- Now, figure out the first date each one effectively joined the team
 insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
-	select ec.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
+	select ntm.CREDIT_ID, ntm.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
 	from #NewTeamMembers ntm, Email_Contrib ec
 	where ec.ID = ntm.EC_ID
 		and ec.TEAM_ID = ntm.TEAM_ID
-		and ec.PROJECT_ID = ${1}
-	group by ec.ID, ec.TEAM_ID
+		and ec.PROJECT_ID = ntm.PROJECT_ID
+	group by ntm.CREDIT_ID, ntm.TEAM_ID
 
 /*
 # We're doing min(tmw.WORK_TODAY) because there can be more than one record in #Work_Summary. Any time
