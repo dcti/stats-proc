@@ -1,4 +1,4 @@
--- $Id: create_id_lookup.sql,v 1.13 2003/02/24 22:16:08 nerf Exp $ --
+-- $Id: create_id_lookup.sql,v 1.14 2003/04/25 21:09:20 nerf Exp $ --
 
 CREATE TEMP TABLE import_id (
 email VARCHAR (64),
@@ -17,7 +17,7 @@ DROP INDEX idlookup_email_lower;
 
 BEGIN;
 
-COPY import_id FROM '/tmp/id_import.out';
+\copy import_id FROM '/tmp/id_import.out'
 
 INSERT INTO OGR_idlookup
 	SELECT email,
@@ -31,4 +31,4 @@ COMMIT;
 CREATE INDEX idlookup_id ON OGR_idlookup (id);
 CREATE UNIQUE INDEX idlookup_email_lower ON OGR_idlookup (lower(email));
 
-VACUUM ANALYZE OGR_idlookup;
+ANALYZE OGR_idlookup;
