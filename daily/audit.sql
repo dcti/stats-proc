@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.34 2004/04/13 04:59:09 decibel Exp $
+-- $Id: audit.sql,v 1.35 2004/04/14 23:07:41 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -170,7 +170,7 @@ SELECT DSunits, DSusers FROM audit
 -- Build a summary table, which dramatically cuts down the time needed for this
 \echo Building Email_Contrib summary
 BEGIN;
-    SET LOCAL enable_seqscan = off;
+    --SET LOCAL enable_seqscan = off;
     SELECT id, team_id, sum(work_units) AS work_units
         INTO TEMP email_contrib_summary
         FROM email_contrib
@@ -219,7 +219,7 @@ drop table email_contrib_summary
 SELECT 'Sum of work in Email_Contrib for today (' || date || ')' FROM audit
 ;
 BEGIN;
-    SET LOCAL enable_seqscan = off;
+    --SET LOCAL enable_seqscan = off;
     UPDATE audit
         SET ECsumtoday = (SELECT coalesce(sum(work_units), 0)
             FROM email_contrib ec

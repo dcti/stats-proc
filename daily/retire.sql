@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.26 2003/09/11 01:41:02 decibel Exp $
+# $Id: retire.sql,v 1.27 2004/04/14 23:07:42 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -55,7 +55,7 @@ delete from STATS_Team_Blocked
 ;
 
 BEGIN;
-    SET LOCAL enable_seqscan = off;
+    --SET LOCAL enable_seqscan = off;
     SELECT id, retire_to
         INTO TEMP Tnew_retires
         FROM STATS_Participant sp
@@ -224,7 +224,7 @@ COMMIT;
 \echo Select IDs to remove
 -- This is all in one transaction because of the SET LOCAL
 BEGIN;
-    SET LOCAL enable_seqscan = off;
+    --SET LOCAL enable_seqscan = off;
     SELECT DISTINCT spb.ID
         INTO TEMP BadIDs
         FROM Team_Members tm, STATS_Participant_Blocked spb

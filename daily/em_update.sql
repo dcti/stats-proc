@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_update.sql,v 1.9 2003/09/11 01:41:02 decibel Exp $
+# $Id: em_update.sql,v 1.10 2004/04/14 23:07:42 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -36,9 +36,10 @@ SELECT credit_id, sum(ect.work_units) AS work_today INTO TEMP retired_work
 ;
 
 BEGIN;
-    \set LOCAL enable_seqscan=off
+    --\set LOCAL enable_seqscan=off
     SELECT stats_set_last_update(:ProjectID, 'e', NULL);
 
+explain analyze
     INSERT INTO email_rank (project_id, id, first_date, last_date)
         SELECT :ProjectID, rw.credit_id, stats_get_last_update(:ProjectID, 's'), stats_get_last_update(:ProjectID, 's')
         FROM retired_work rw
@@ -47,6 +48,7 @@ BEGIN;
 
     \echo  Remove or move "today" info 
 
+explain analyze
     UPDATE email_rank
         SET day_rank_previous = day_rank,
             overall_rank_previous = overall_rank,
