@@ -103,25 +103,31 @@ for (my $i = 0; $i < @projectlist; $i++) {
       }
       #$retcode = system "bcp", "$project" . "_import", "in", $finalfn, "-ebcp_errors", $sqlserver, $sqllogin, $sqlpasswd, "-c", "-t,";
       open BCP, "bcp import_bcp in $finalfn -ebcp_errors $sqlserver $sqllogin $sqlpasswd -c -t, 2> /dev/stderr |";
+
+      my $rows = 0;
+      my $rate = 0;
+
       while (<BCP>) {
-	print $_;
-	my $rows = 0;
-	my $rate = 0;
-	if ($_ =~ /(\d+) rows copied./) {
-	  $rows = num_format($1);
-	}
-	if ($_ =~ /Clock Time (ms.): total = (\d+) Avg = (\d+.\d) ((\d+.\d) rows per sec.)/) {
-	  my $rate = num_format($3);
+	my $buf = $_;
+        print $buf;
+        chomp $buf;
+
+        if ($buf =~ /(\d+) rows copied/) {
+          $rows = num_format($1);
+        }
+
+	if ($buf =~ /(\d+\.\d+) rows per sec/) {
+	  $rate = num_format($1);
 	  stats::log($project,1,"$finalfn successfully BCP in; $rows rows at $rate rows/second.");
 	}
       }
       close BCP;
 
       # call bruce's code here
-      open SQL, "sqsh $sqlserver $sqllogin $sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
-	while (<SQL>) {
-	print $_;
-      }
+      #open SQL, "sqsh $sqlserver $sqllogin $sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
+      #  while (<SQL>) {
+      #  print $_;
+      #}
 
       # perform sanity checking here
 
