@@ -1,7 +1,7 @@
--- $Id: movedata.sql,v 1.3 2002/12/21 21:13:22 joel Exp $ --
+-- $Id: movedata.sql,v 1.4 2002/12/21 23:06:54 joel Exp $ --
 
 INSERT INTO stubs
-SELECT DISTINCT email , stub_id, stub_string_id , nodecount, os_type, cpu_type, version
+SELECT DISTINCT email , stub_id, nodecount, os_type, cpu_type, version
 FROM logdata;
 
 CREATE INDEX stubs_email ON stubs(email);
