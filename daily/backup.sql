@@ -1,23 +1,23 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: backup.sql,v 1.3 2000/08/08 00:50:31 decibel Exp $
+# $Id: backup.sql,v 1.4 2000/10/23 20:26:18 decibel Exp $
 #
 # Makes backup copies of Email_Rank, Team_Rank, and Team_Members
 # Arguments:
 #	Project
 
-print "Deleting old data"
+print "Deleting old data and any previous data for today."
 go
 declare @stats_date smalldatetime
 select @stats_date = LAST_STATS_DATE
 	from Projects
 	where PROJECT_ID = ${1}
 delete statproc.Email_Rank_Backup
-	where PROJECT_ID = ${1} and BACKUP_DATE = @stats_date
+	where PROJECT_ID = ${1} and (BACKUP_DATE = @stats_date or BACKUP_DATE < dateadd(d, -7, @stats_date)
 delete statproc.Team_Rank_Backup
-	where PROJECT_ID = ${1} and BACKUP_DATE = @stats_date
+	where PROJECT_ID = ${1} and (BACKUP_DATE = @stats_date or BACKUP_DATE < dateadd(d, -7, @stats_date)
 delete statproc.Team_Members_Backup
-	where PROJECT_ID = ${1} and BACKUP_DATE = @stats_date
+	where PROJECT_ID = ${1} and (BACKUP_DATE = @stats_date or BACKUP_DATE < dateadd(d, -7, @stats_date)
 go
 
 print "Backing up Email_Rank"
