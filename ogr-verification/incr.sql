@@ -1,4 +1,4 @@
--- $Id: incr.sql,v 1.3 2003/08/01 15:50:53 nerf Exp $ --
+-- $Id: incr.sql,v 1.4 2003/08/01 18:37:06 decibel Exp $ --
 ----------------
 -- day_results and retire_today will probably be handled somewhere else
 -- in the future, but it's here for not to facilitate testing
@@ -113,46 +113,6 @@ FROM (SELECT stub_id, nodecount, count(*) AS duplicated_ids
 	FROM retired_stub_id GROUP BY stub_id, nodecount) dw
 WHERE ogr_summary.stub_id = dw.stub_id
 AND ogr_summary.nodecount = dw.nodecount;
-
-CREATE TEMP TABLE retired_new_info (
-stub_id integer NOT NULL,
-nodecount bigint NOT NULL,
-ids integer NOT NULL
-);
-
-explain analyze INSERT INTO retired_new_info
-SELECT r.stub_id, r.nodecount
-        , (SELECT count(*)
-                FROM retired_stub_id rsi
-                WHERE rsi.stub_id = r.stub_id
-                    AND rsi.nodecount = r.nodecount
-            ) AS ids
-    FROM ogr_results r
-        , (SELECT DISTINCT stub_id, nodecount FROM retired_stub_id) rs
-    WHERE r.stub_id = rs.stub_id
-        AND r.nodecount = rs.nodecount
-        AND r.id NOT IN (SELECT id
-                                FROM retired_stub_id rsi
-                                WHERE rsi.stub_id = r.stub_id
-                                    AND rsi.nodecount = r.nodecount
-                            )
-;
-select now();
-select * from retired_new_info;
-
-analyze retired_new_info;
-
-select now();
-explain UPDATE OGR_summary
-    SET participants = participants - n.ids
-    FROM retired_new_info n
-    WHERE OGR_summary.stub_id = n.stub_id
-    AND OGR_summary.nodecount = n.nodecount
-;
-select now();
-
-analyze day_results;
-select now();
 
 create temp table day_summary (
  stub_id       integer  NOT NULL,
