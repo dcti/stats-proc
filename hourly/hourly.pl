@@ -20,6 +20,8 @@ my @prefilter   = ("./logmod_ogr.pl",
 
 # Insert code here to look for droppings in $workdir
 
+`rm $workdir*`;
+
 for (my $i = 0; $i < @projectlist; $i++) {
   my $project = $projectlist[$i];
   my $lastlog = `cat ~/var/lastlog.$project`;
@@ -60,14 +62,28 @@ for (my $i = 0; $i < @projectlist; $i++) {
     }
     close SCP;
 
-    print "Decompressing $basefn: ";
+    print "Decompressing $basefn";
     open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
+    my $rawfn = "";
     while (<GZIP>) {
       if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
-        print " ** $1% efficieny, now in file: $2\n";
+        print "-->$2 ($1% compression)\n";
+        $rawfn = $2;
       }
     }
-    close GZIP;
+    if( $rawfn eq "" ) {
+      print ": gzip failed!\n";
+    } else {
+      my $finalfn = "$rawfn.filtered";
+      if( $prefilter[$i] eq "" ) {
+        print "There is no log filter for this project, proceeding to bcp.\n";
+        $finalfn = $rawfn;
+      } else {
+        print "Filtering log through $prefilter[$i]\n";
+        `cat $rawfn | $prefilter[$i] > $finalfn`;
+      }
+      # bcp goes here
+    }
     print "\n";
   }
 }
