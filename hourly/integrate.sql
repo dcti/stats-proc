@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.15 2000/10/29 10:16:17 decibel Exp $
+# $Id: integrate.sql,v 1.16 2000/11/24 23:25:17 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -16,7 +16,7 @@ go
 **	Email_Contrib_Today format but not import_bcp format.
 */
 print "Updating LAST_STATS_DATE for all projects"
-select PROJECT_ID,  max(TIME_STAMP) as STATS_DATE
+select PROJECT_ID,  min(TIME_STAMP) as STATS_DATE
 	into #Projects
 	from import_bcp
 	group by PROJECT_ID
@@ -39,8 +39,10 @@ create table #import
 )
 go
 insert #import (PROJECT_ID, EMAIL, WORK_UNITS)
-	select PROJECT_ID, EMAIL, sum(WORK_UNITS)
-	from import_bcp
+	select i.PROJECT_ID, i.EMAIL, sum(i.WORK_UNITS)
+	from import_bcp i, Projects p
+	where i.PROJECT_ID = p.PROJECT_ID
+		and i.TIME_STAMP = p.LAST_STATS_DATE
 	group by PROJECT_ID, EMAIL
 go
 
@@ -202,8 +204,10 @@ create table #Platform_Contrib_Today
 )
 go
 insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
-	select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
-	from import_bcp
+	select i.PROJECT_ID, i.CPU, i.OS, i.VER, sum(i.WORK_UNITS)
+	from import_bcp i, Projects p
+	where i.PROJECT_ID = p.PROJECT_ID
+		and i.TIME_STAMP = p.LAST_STATS_DATE
 	group by PROJECT_ID, CPU, OS, VER
 
 insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
@@ -233,7 +237,9 @@ print "Clearing import table"
 
 print "Total rows in import table:"
 delete import_bcp
-	where 1 = 1
+	from Projects p
+	where import_bcp.PROJECT_ID = p.PROJECT_ID
+		and import_bcp.TIME_STAMP = p.LAST_STATS_DATE
 
 /* This line produces the number of rows imported for logging. The print is for the benefit of hourly.pl */
 select @@rowcount
