@@ -1,4 +1,5 @@
--- $Id: create_id_lookup.sql,v 1.14 2003/04/25 21:09:20 nerf Exp $ --
+-- $Id: create_id_lookup.sql,v 1.15 2003/05/13 14:05:42 nerf Exp $ --
+\set ON_ERROR_STOP 1
 
 CREATE TEMP TABLE import_id (
 email VARCHAR (64),

@@ -1,4 +1,5 @@
--- $Id: initial_move.sql,v 1.1 2003/02/16 19:51:47 nerf Exp $
+-- $Id: initial_move.sql,v 1.2 2003/05/13 14:05:42 nerf Exp $
+\set ON_ERROR_STOP 1
 
 SELECT now();
 

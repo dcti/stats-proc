@@ -1,4 +1,5 @@
--- $Id: create_all_stubs.sql,v 1.10 2003/04/25 21:08:50 nerf Exp $
+-- $Id: create_all_stubs.sql,v 1.11 2003/05/13 14:05:42 nerf Exp $
+\set ON_ERROR_STOP 1
 
 CREATE TEMPORARY TABLE OGR_stubs_import(
 stub_marks VARCHAR(22) not null);

@@ -1,4 +1,5 @@
--- $Id: fake_allstubs.sql,v 1.5 2003/02/16 19:18:42 nerf Exp $
+-- $Id: fake_allstubs.sql,v 1.6 2003/05/13 14:05:42 nerf Exp $
+\set ON_ERROR_STOP 1
 
 -- Create a fake all_stubs table for people who don't have access to
 -- the real one

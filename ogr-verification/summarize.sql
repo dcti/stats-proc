@@ -1,4 +1,6 @@
--- $Id: summarize.sql,v 1.3 2003/05/03 12:25:07 nerf Exp $
+-- $Id: summarize.sql,v 1.4 2003/05/13 14:05:42 nerf Exp $
+\set ON_ERROR_STOP 1
+
 create table OGR_summary
 (
 	stub_id int,

@@ -1,7 +1,8 @@
--- $Id: create_cheaters.sql,v 1.8 2003/02/16 19:18:42 nerf Exp $
+-- $Id: create_cheaters.sql,v 1.9 2003/05/13 14:05:42 nerf Exp $
 -- Create a table where we keep track of how many stubs someone has
 -- returned vs how many unique ones they have returned.  Used to find
 -- people who submit the same stub over and over.
+\set ON_ERROR_STOP 1
 
 CREATE TABLE cheaters (
 id INT NOT NULL,

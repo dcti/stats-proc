@@ -1,4 +1,5 @@
--- $Id: movedata.sql,v 1.26 2003/04/25 21:11:38 nerf Exp $
+-- $Id: movedata.sql,v 1.27 2003/05/13 14:05:42 nerf Exp $
+\set ON_ERROR_STOP 1
 
 select now();
 

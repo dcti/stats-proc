@@ -1,4 +1,5 @@
--- $Id: create_stubs.sql,v 1.11 2003/02/16 19:18:42 nerf Exp $ --
+-- $Id: create_stubs.sql,v 1.12 2003/05/13 14:05:42 nerf Exp $ --
+\set ON_ERROR_STOP 1
 
 CREATE TABLE OGR_results (
 id INT,

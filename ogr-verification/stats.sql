@@ -1,4 +1,5 @@
--- $Id: stats.sql,v 1.4 2003/04/25 21:12:30 nerf Exp $
+-- $Id: stats.sql,v 1.5 2003/05/13 14:05:42 nerf Exp $
+\set ON_ERROR_STOP 1
 
 select now();
 

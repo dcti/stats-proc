@@ -1,4 +1,5 @@
--- $Id: addlog.sql,v 1.9 2003/02/03 05:32:21 nerf Exp $ --
+-- $Id: addlog.sql,v 1.10 2003/05/13 14:05:42 nerf Exp $ --
+\set ON_ERROR_STOP 1
 
 DROP TABLE logdata;
 

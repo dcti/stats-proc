@@ -1,4 +1,5 @@
--- $Id: create_platform.sql,v 1.1 2003/01/22 19:33:08 nerf Exp $
+-- $Id: create_platform.sql,v 1.2 2003/05/13 14:05:42 nerf Exp $
+\set ON_ERROR_STOP 1
 
 CREATE TABLE platform (
 platform_id SERIAL UNIQUE PRIMARY KEY,
