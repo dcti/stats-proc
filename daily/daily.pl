@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.29 2002/02/15 14:27:09 decibel Exp $
+# $Id: daily.pl,v 1.30 2002/03/30 01:31:06 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -56,10 +56,10 @@ if(!$statsconf::prids{$project}) {
     sqsh("tm_update.sql $project_id");
     sqsh("tm_rank.sql $project_id");
     sqsh("dy_dailyblocks.sql $project_id");
+    system "sudo pcpages_$project $project_id";
     sqsh("audit.sql $project_id");
 
     sqsh("clearday.sql $project_id");
-    system "sudo pcpages_$project $project_id";
     sqsh("backup.sql $project_id");
   }
   my $newlastday = stats::lastday($project);

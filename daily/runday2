@@ -6,5 +6,4 @@ if [ x$1 = x ]; then
 fi
 
 sqsh -i clearday.sql $1
-sudo pcpages_ogr $1
 sqsh -i backup.sql $1
