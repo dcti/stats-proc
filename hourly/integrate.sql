@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.11 2003/04/07 02:02:26 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.12 2003/04/07 02:24:57 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -330,9 +330,8 @@ drop table TEMP_Platform_Contrib_Today
 
 \echo Adding data to Log_Info
 insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
-    select PROJECT_ID, STATS_DATE + (text(:HourNumber) || " hours")::interval, TOTAL_WORK, TOTAL_LINES ,0
+    select PROJECT_ID, STATS_DATE + (text(:HourNumber) || ' hours')::interval, TOTAL_WORK, total_rows ,0
     from TEMP_Projects
-    group by PROJECT_ID
 ;
 
 \echo Clearing import table
