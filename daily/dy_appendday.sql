@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.18 2002/01/13 19:34:52 decibel Exp $
+# $Id: dy_appendday.sql,v 1.19 2002/04/11 08:08:59 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -32,6 +32,11 @@ update Email_Contrib_Today
 	where sp.ID = Email_Contrib_Today.ID
 		and sp.RETIRE_TO >= 1
 		and (sp.RETIRE_DATE <= @stats_date or sp.RETIRE_DATE is NULL)
+		and not exists (select *
+					from STATS_Participant_Blocked spb
+					where spb.ID = Email_Contrib_Today.ID
+						and spb.ID = sp.ID
+				)
 		and PROJECT_ID = ${1}
 
 update Email_Contrib_Today
