@@ -1,6 +1,6 @@
--- $Id: create_id_lookup.sql,v 1.9 2002/12/29 22:33:50 nerf Exp $ --
+-- $Id: create_id_lookup.sql,v 1.10 2003/01/18 23:42:13 nerf Exp $ --
 
-CREATE TABLE temp import_id (
+CREATE temp TABLE import_id (
 email VARCHAR (64),
 id INTEGER,
 retire_to INTEGER
