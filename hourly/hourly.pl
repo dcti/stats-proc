@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.72 2000/10/04 07:12:10 decibel Exp $
+# $Id: hourly.pl,v 1.73 2000/10/05 00:17:18 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -229,9 +229,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       my $bufstorage = "";
       my $sqshsuccess = 0;
-      open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 2> /dev/stdout |";
-
-      if(!<SQL>) {
+      if(!open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 2> /dev/stdout |") {
         stats::log($project,131,"Error launching sqsh, aborting hourly run.");
         die;
       }

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.22 2000/10/04 15:55:04 decibel Exp $
+# $Id: daily.pl,v 1.23 2000/10/05 00:17:18 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -72,12 +72,11 @@ sub sqsh {
   my $sqshsuccess = 0;
   my $starttime = (gmtime);
   my $secs_start = int `date "+%s"`;
-  open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -i $sqlfile 2>&1 |";
-
-  if(!<SQL>) {
+  if(!open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -i $sqlfile 2>&1 |") {
     stats::log($project,131,"Failed to launch $sqlfile -- aborting.");
     die;
   }
+
   while (<SQL>) {
     my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
     my $buf = $_;
@@ -91,6 +90,7 @@ sub sqsh {
       $sqshsuccess = 1;
     }
   }
+
   close SQL;
   if( $sqshsuccess > 0) {
     stats::log($project,139,"$sqlfile puked  -- aborting.  Details are in $workdir\sqsh_errors");
