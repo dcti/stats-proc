@@ -1,0 +1,7 @@
+Msg 247, Level 16, State 1
+, Line 1
+Arithmetic overflow during implicit conversion of NUMERIC value '10147156' to a
+NUMERIC field .
+Arithmetic overflow occurred.
+(286 rows affected)
+

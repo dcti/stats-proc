@@ -1,0 +1,7 @@
+#!/bin/sh
+date > timetest.perf
+sqsh -i dp_tm_prepare.sql
+sqsh -i dp_tm_rank.sql
+sqsh -i dp_tm_yrank.sql
+date >> timetest.perf
+

@@ -1,0 +1,512 @@
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+=============================================================================== 
+              Sybase SQL Server System Performance Report
+=============================================================================== 
+ 
+Run Date                     Sep 30, 1999
+Statistics Cleared at            21:09:45
+Statistics Sampled at            21:14:45
+Sample Interval                    5  min.
+ 
+=============================================================================== 
+ 
+Kernel Utilization
+------------------
+ 
+  Engine Busy Utilization:
+    Engine 0                       37.4 %
+    Engine 1                       61.1 %
+  -----------             ---------------          ----------------
+  Summary:                Total:   98.5 %          Average:  49.2 %
+ 
+ 
+  CPU Yields by Engine            per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Engine 0                         31.3        3129.3        9388      62.6 %
+    Engine 1                         18.7        1870.3        5611      37.4 %
+  -------------------------  ------------  ------------  ----------
+  Total CPU Yields:                  50.0        4999.7  14999     
+ 
+ 
+  Network Checks
+    Non-Blocking                      0.0           0.7           2     100.0 %
+    Blocking                          0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total Network I/O Checks:           0.0           0.7           2             
+  Avg Net I/Os per Check              n/a           n/a     0.00000       n/a
+ 
+ 
+  Disk I/O Checks
+    Total Disk I/O Checks          2064.0      206354.7      619064       n/a
+    Checks Returning I/O              0.0           0.0           0       0.0 %
+ 
+=============================================================================== 
+ 
+Task Management                   per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+ 
+  Connections Opened                  0.0           0.0           0       n/a
+ 
+ 
+  Task Context Switches by Engine
+    Engine 0                        377.0       37689.7      113069      38.3 %
+    Engine 1                        608.0       60783.0      182349      61.7 %
+  -------------------------  ------------  ------------  ----------
+    Total Task Switches:            984.9       98472.7      295418             
+ 
+ 
+  Task Context Switches Due To:
+    Voluntary Yields                  8.0         800.7        2402       0.8 %
+    Cache Search Misses             974.6       97438.0      292314      98.9 %
+    System Disk Writes                0.0           3.7          11       0.0 %
+    I/O Pacing                        0.0           3.3          10       0.0 %
+    Logical Lock Contention           0.0           0.0           0       0.0 %
+    Address Lock Contention           0.0           0.0           0       0.0 %
+    Log Semaphore Contention          0.0           0.0           0       0.0 %
+    Group Commit Sleeps               0.0           0.0           0       0.0 %
+    Last Log Page Writes              0.0           2.0           6       0.0 %
+    Modify Conflicts                  0.0           0.0           0       0.0 %
+    I/O Device Contention             0.0           3.7          11       0.0 %
+    Network Packet Received           0.0           0.0           0       0.0 %
+    Network Packet Sent               0.0           0.0           0       0.0 %
+    SYSINDEXES Lookup                 0.0           0.0           0       0.0 %
+    Other Causes                      2.2         221.3         664       0.2 %
+ 
+=============================================================================== 
+ 
+Transaction Profile
+-------------------
+ 
+  Transaction Summary             per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Committed Xacts                   0.0           n/a           3     n/a
+ 
+ 
+  Transaction Detail              per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Inserts
+      Heap Table                      0.0           0.0           0       0.0 %
+      Clustered Table                 0.0           2.0           6     100.0 %
+  -------------------------  ------------  ------------  ----------
+    Total Rows Inserted               0.0           2.0           6     100.0 %
+ 
+    Updates
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------
+    Total Rows Updated                0.0           0.0           0       0.0 %
+ 
+    Deletes
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------
+    Total Rows Deleted                0.0           0.0           0       0.0 %
+ 
+=============================================================================== 
+ 
+Transaction Management
+----------------------
+ 
+  ULC Flushes to Xact Log         per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    by Full ULC                       0.0           0.0           0       0.0 %
+    by End Transaction                0.0           1.7           5      16.1 %
+    by Change of Database             0.0           0.7           2       6.5 %
+    by System Log Record              0.1           8.0          24      77.4 %
+    by Other                          0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total ULC Flushes                   0.1          10.3          31             
+ 
+ 
+  ULC Log Records                     0.1          10.7          32       n/a
+  Max ULC Size                        n/a           n/a         168       n/a
+ 
+ 
+  ULC Semaphore Requests
+    Granted                           0.2          19.7          59     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total ULC Semaphore Req             0.2          19.7          59             
+ 
+ 
+  Log Semaphore Requests
+    Granted                           0.1          14.3          43     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total Log Semaphore Req             0.1          14.3          43             
+ 
+ 
+  Transaction Log Writes              0.0           3.0           9       n/a
+  Transaction Log Alloc               0.0           0.3           1       n/a
+  Avg # Writes per Log Page           n/a           n/a     9.00000       n/a
+ 
+=============================================================================== 
+ 
+Index Management
+----------------
+ 
+  Nonclustered Maintenance        per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Ins/Upd Requiring Maint           0.0           0.3           1       n/a
+      # of NC Ndx Maint               0.0           0.3           1       n/a
+      Avg NC Ndx Maint / Op           n/a           n/a     1.00000       n/a
+ 
+    Deletes Requiring Maint           0.0           0.0           0       n/a
+      # of NC Ndx Maint               0.0           0.0           0       n/a
+ 
+    RID Upd from Clust Split          0.0           0.0           0       n/a
+      # of NC Ndx Maint               0.0           0.0           0       n/a
+ 
+ 
+  Page Splits                         0.0           0.0           0       n/a
+ 
+ 
+  Page Shrinks                        0.0           0.0           0       n/a
+ 
+=============================================================================== 
+ 
+Lock Management
+---------------
+ 
+  Lock Summary                    per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total Lock Requests               974.9       97468.0      292404       n/a
+  Avg Lock Contention                 0.0           0.0           0       0.0 %
+  Deadlock Percentage                 0.0           0.0           0       0.0 %
+ 
+ 
+  Lock Detail                     per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+ 
+  Exclusive Table
+    Granted                           0.0           1.7           5     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total EX-Table Requests             0.0           1.7           5       0.0 %
+ 
+ 
+  Shared Table
+    Granted                           0.0           0.3           1     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total SH-Table Requests             0.0           0.3           1       0.0 %
+ 
+ 
+  Exclusive Intent
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------
+  Total EX-Intent Requests            0.0           0.0           0       0.0 %
+ 
+ 
+  Shared Intent
+    Granted                           0.0           1.7           5     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total SH-Intent Requests            0.0           1.7           5       0.0 %
+ 
+ 
+  Exclusive Page
+    Granted                           0.0           1.3           4     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total EX-Page Requests              0.0           1.3           4       0.0 %
+ 
+ 
+  Update Page
+    Granted                           0.0           0.7           2     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total UP-Page Requests              0.0           0.7           2       0.0 %
+ 
+ 
+  Shared Page
+    Granted                         974.6       97435.0      292305     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total SH-Page Requests            974.6       97435.0      292305     100.0 %
+ 
+ 
+  Exclusive Address
+    Granted                           0.1          13.3          40     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total EX-Address Requests           0.1          13.3          40       0.0 %
+ 
+ 
+  Shared Address
+    Granted                           0.1          14.0          42     100.0 %
+    Waited                            0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------
+  Total SH-Address Requests           0.1          14.0          42       0.0 %
+ 
+ 
+  Last Page Locks on Heaps
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------
+  Total Last Pg Locks                 0.0           0.0           0       0.0 %
+ 
+ 
+  Deadlocks by Lock Type          per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+                                      0.0           0.0           0       n/a   
+ 
+ 
+  Deadlock Detection
+    Deadlock Searches                 0.0           0.0           0       n/a
+ 
+ 
+  Lock Promotions
+                                      0.0           0.0           0       n/a   
+ 
+=============================================================================== 
+ 
+Data Cache Management
+---------------------
+ 
+  Cache Statistics Summary (All Caches)
+  -------------------------------------
+ 
+    Cache Search Summary
+      Total Cache Hits                0.4          44.0         132       0.0 %
+      Total Cache Misses            974.6       97440.0      292320     100.0 %
+  -------------------------  ------------  ------------  ----------
+    Total Cache Searches            975.0       97484.0      292452             
+ 
+ 
+    Cache Turnover
+      Buffers Grabbed              1949.2      194879.0      584637       n/a
+      Buffers Grabbed Dirty           0.0           0.0           0       0.0 %
+ 
+ 
+    Cache Strategy Summary
+      Cached (LRU) Buffers          975.1       97493.7      292481     100.0 %
+      Discarded (MRU) Buffers         0.0           0.0           0       0.0 %
+ 
+ 
+    Large I/O Usage
+                                      0.0           0.0           0       n/a   
+ 
+ 
+    Large I/O Effectiveness
+      Pages by Lrg I/O Cached         0.0           0.0           0       n/a
+ 
+ 
+    Dirty Read Behavior
+      Page Requests                   0.0           0.0           0       n/a
+ 
+------------------------------------------------------------------------------- 
+ 
+  default data cache                                                            
+                                  per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+ 
+    Spinlock Contention              n/a           n/a         n/a       0.0 %
+    Utilization                      n/a           n/a         n/a     100.0 %
+ 
+    Cache Searches
+      Cache Hits                      0.4          44.0         132       0.0 %
+         Found in Wash                0.0           0.0           0       0.0 %
+      Cache Misses                  974.6       97440.0      292320     100.0 %
+  -------------------------  ------------  ------------  ----------
+    Total Cache Searches            975.0       97484.0      292452             
+ 
+ 
+    Pool Turnover
+      2  Kb Pool
+          LRU Buffer Grab           974.6       97440.0      292320      50.0 %
+            Grabbed Dirty             0.0           0.0           0       0.0 %
+ 
+ 
+ 
+  -------------------------  ------------  ------------  ----------
+    Total Cache Turnover           1949.2      194879.0      584637             
+ 
+ 
+    Buffer Wash Behavior
+      Buffers Passed Clean          884.6       88439.0      265317     100.0 %
+      Buffers Already in I/O          0.0           0.0           0       0.0 %
+      Buffers Washed Dirty            0.1           6.0          18       0.0 %
+ 
+ 
+    Cache Strategy
+      Cached (LRU) Buffers          975.1       97493.7      292481     100.0 %
+      Discarded (MRU) Buffers         0.0           0.0           0       0.0 %
+ 
+ 
+    Large I/O Usage
+                                      0.0           0.0           0       n/a   
+ 
+ 
+    Large I/O Detail
+      No Large Pool(s) In This Cache
+ 
+    Dirty Read Behavior
+	  Page Requests               0.0           0.0           0       n/a
+ 
+=============================================================================== 
+ 
+Procedure Cache Management        per sec      per xact       count  % of total
+---------------------------  ------------  ------------  ----------  ---------- 
+  Procedure Requests                  0.0           0.0           0       n/a
+ 
+=============================================================================== 
+ 
+Memory Management                 per sec      per xact       count  % of total
+---------------------------  ------------  ------------  ----------  ---------- 
+  Pages Allocated                     0.0           3.3          10       n/a
+  Pages Released                      0.0           3.3          10       n/a
+ 
+=============================================================================== 
+ 
+Recovery Management
+-------------------
+ 
+  Checkpoints                     per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    # of Normal Checkpoints           0.0           0.7           2     100.0 %
+    # of Free Checkpoints             0.0           0.0           0       0.0 %
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total Checkpoints                   0.0           0.7           2       n/a
+ 
+  Avg Time per Normal Chkpt       0.00000 seconds                               
+ 
+=============================================================================== 
+ 
+Disk I/O Management
+-------------------
+ 
+  Max Outstanding I/Os            per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Server                            n/a           n/a           0       n/a
+    Engine 0                          n/a           n/a           0       n/a
+    Engine 1                          n/a           n/a           0       n/a
+ 
+ 
+  I/Os Delayed by
+    Disk I/O Structures               n/a           n/a           0       n/a
+    Server Config Limit               n/a           n/a           0       n/a
+    Engine Config Limit               n/a           n/a           0       n/a
+    Operating System Limit            n/a           n/a           0       n/a
+ 
+ 
+  Total Requested Disk I/Os         975.3       97505.7      292517       n/a
+ 
+  Completed Disk I/O's
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total Completed I/Os                0.0           0.0           0             
+ 
+ 
+  Device Activity Detail
+  ----------------------
+ 
+  /usr/local/sybase/data/dev_statsa.dat                                         
+  dev_statsa                      per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Reads                           974.5       97425.7      292277      99.9 %
+    Writes                            0.5          51.0         153       0.1 %
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total I/Os                        975.0       97476.7      292430     100.0 %
+ 
+  Device Semaphore Granted          974.9       97474.0      292422     100.0 %
+  Device Semaphore Waited             0.0           3.7          11       0.0 %
+ 
+    --------------------------------------------------------------------------- 
+ 
+  /usr/local/sybase/data/dev_statsb.dat                                         
+  dev_statsb                      per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total I/Os                          0.0           0.0           0       0.0 %
+ 
+ 
+    --------------------------------------------------------------------------- 
+ 
+  /usr/local/sybase/data/dev_tempdb_a.dat                                       
+  dev_tempdb                      per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Reads                             0.0           0.3           1       7.7 %
+    Writes                            0.0           4.0          12      92.3 %
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total I/Os                          0.0           4.3          13       0.0 %
+ 
+  Device Semaphore Granted            0.0           4.3          13     100.0 %
+  Device Semaphore Waited             0.0           0.0           0       0.0 %
+ 
+    --------------------------------------------------------------------------- 
+ 
+  /usr/local/sybase/logs/dev_stats_loga.dat                                     
+  dev_stats_loga                  per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Reads                             0.0           0.0           0       0.0 %
+    Writes                            0.0           0.3           1     100.0 %
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total I/Os                          0.0           0.3           1       0.0 %
+ 
+  Device Semaphore Granted            0.0           0.3           1     100.0 %
+  Device Semaphore Waited             0.0           0.0           0       0.0 %
+ 
+    --------------------------------------------------------------------------- 
+ 
+  /usr/local/sybase/sybprocs.dat                                                
+  sysprocsdev                     per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total I/Os                          0.0           0.0           0       0.0 %
+ 
+ 
+    --------------------------------------------------------------------------- 
+ 
+  d_master                                                                      
+  master                          per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+    Reads                             0.1          11.7          35      47.9 %
+    Writes                            0.1          12.7          38      52.1 %
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total I/Os                          0.2          24.3          73       0.0 %
+ 
+  Device Semaphore Granted            0.2          24.3          73     100.0 %
+  Device Semaphore Waited             0.0           0.0           0       0.0 %
+ 
+    --------------------------------------------------------------------------- 
+ 
+=============================================================================== 
+ 
+Network I/O Management
+----------------------
+ 
+  Total Network I/O Requests          0.0           0.0           0       n/a
+ 
+ 
+  Total TDS Packets Received      per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total TDS Packets Rec'd             0.0           0.0           0             
+ 
+ 
+  Total Bytes Received            per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total Bytes Rec'd                   0.0           0.0           0             
+ 
+ 
+  ----------------------------------------------------------------------------- 
+ 
+  Total TDS Packets Sent          per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total TDS Packets Sent              0.0           0.0           0             
+ 
+ 
+  Total Bytes Sent                per sec      per xact       count  % of total
+  -------------------------  ------------  ------------  ----------  ---------- 
+                                      0.0           0.0           0       n/a   
+  -------------------------  ------------  ------------  ----------  ---------- 
+  Total Bytes Sent                    0.0           0.0           0             
+ 
+ 
+=============================== End of Report =================================
+(return status = 0)

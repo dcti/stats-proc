@@ -1,19 +1,42 @@
-# $Id: dy_newemails.sql,v 1.1 1999/07/27 20:49:04 nugget Exp $
+#!/usr/bin/sqsh -i
+#
+# $Id: dy_newemails.sql,v 1.2 2003/09/11 02:04:01 decibel Exp $
+#
+# Adds new participants to stats_participant
+#
+# Arguments:
+#       Project
 
-select distinct email, NULL as id
-into #newemails
-from RC5_64_daytable_master
-group by email
+print "!! Adding new emails to stats_participant"
 go
 
-update #newemails
-set id = (select id from STATS_participant S where S.email = #newemails.email)
+print "::  Inserting all new emails from daytable"
+go
+select distinct email
+	into #${1}_dayemails
+	from rc5_64_daytable_master
+	order by email
 go
 
-delete from #newemails where id <> NULL
+delete from #${1}_dayemails
+	where email in (select email from STATS_participant)
 go
+alter table #${1}_dayemails
+ add id numeric(10, 0) identity
+go
+print "::  Adding new participants to stats_participant"
+go
+declare @idoffset int
 
-insert into STATS_participant (email)
-select email from #newemails
+select @idoffset = max(id)
+	from STATS_Participant
+	where id < 5000000
+
+-- [BW] If we switch to retire_to = id as the normal condition,
+--	this insert should insert (id, email, retire_to)
+--	from id + @idoffset, email, id + @idoffset
+insert into STATS_participant (id, email)
+	select id + @idoffset, email
+	from #${1}_dayemails
 go
 

@@ -1,10 +1,12 @@
-# $Id: dy_members.sql,v 1.1 1999/07/27 20:49:04 nugget Exp $
-
 print "!! Begin CACHE_tm_MEMBERS Build"
 go
 
 use stats
+set flushmessage on
 set rowcount 0
+go
+
+drop table PREBUILD_tm_MEMBERS
 go
 
 print "::  Creating PREBUILD_tm_MEMBERS table"
@@ -21,7 +23,7 @@ go
 
 print "::  Filling cache table with data (id,team,first,last,blocks)"
 go
-select distinct
+select
   id,
   team,
   min(date) as first,
@@ -29,36 +31,30 @@ select distinct
   sum(blocks) as blocks
 into #RANKa
 from RC5_64_master
-where team <> 0 and team <> NULL
-group by id,team
-go
-
-print ":: Linking to participant data in cache_table b (retire_to)"
-go
-
-select C.id, C.team, C.first, C.last, C.blocks, S.retire_to
-into #RANKb
-from #RANKa C, STATS_participant S
-where C.id = S.id
+where team > 0
+group by team, id
 go
 
 print "::  Honoring all retire_to requests"
 go
-update #RANKb
-  set id = retire_to
-where retire_to <> id and retire_to <> NULL and retire_to <> 0
+update #RANKa
+  set R.id = P.retire_to
+from #RANKa R, STATS_participant P
+where P.retire_to > 0 and P.id = R.id
 go
 
 print ":: Populating PREBUILD_tm_MEMBERS table"
 go
 insert into PREBUILD_tm_MEMBERS
   (id,team,first,last,blocks)
-select distinct id, team, min(first), max(last), sum(blocks)
-from #RANKb
-group by id, team
+select id, team, min(first), max(last), sum(blocks)
+from #RANKa
+group by team, id
 go
 
-create index main on PREBUILD_tm_MEMBERS(team,blocks)
+print ":: Creating clustered index"
+go
+create clustered index main on PREBUILD_tm_MEMBERS(team,blocks) with fillfactor = 100
 go
 
 grant select on PREBUILD_tm_MEMBERS to public

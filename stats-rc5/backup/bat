@@ -1,0 +1,3 @@
+date
+sqsh -i dp_tm_rank.sql
+date

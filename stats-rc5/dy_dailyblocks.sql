@@ -1,4 +1,4 @@
-# $Id: dy_dailyblocks.sql,v 1.3 1999/07/28 15:23:53 nugget Exp $
+# $Id: dy_dailyblocks.sql,v 1.4 2003/09/11 02:04:01 decibel Exp $
 
 insert into STATS_dailies (date, blocks,
                            participants, top_oparticipant, top_opblocks, top_yparticipant, top_ypblocks,

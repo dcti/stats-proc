@@ -1,15 +1,16 @@
-#!/usr/bin/perl -Tw
+#!/usr/bin/perl -w -I.
 #
-# $Id: daily.pl,v 1.1 1999/07/27 20:49:03 nugget Exp $
+# $Id: daily.pl,v 1.2 2003/09/11 02:04:01 decibel Exp $
 #
 
 use strict
 $ENV{PATH} = '/usr/local/sybase/bin:/usr/local/bin:/usr/bin:/bin';
+use statsconf;
 use stats;
 
 my $sqllogin = "-Ustatproc";
-my $sqlpasswd = "-PPASSWORD";
-my $sqlserver = "-STALLY";
+my $sqlpasswd = "-PTR2cod#";
+my $sqlserver = "-SBLOWER";
 
 my $project = "rc5";
 my $incoming = $stats::incoming{$project};
@@ -51,7 +52,7 @@ if ("$insort[0]" =~ m/^rc5(\d\d\d\d\d\d\d\d)/ ) {
     # Let's re-read the directory, just for $earlyday
 
     opendir INFILE, $incoming;
-    my @infiles = grep/$earlyday/, readdir INFILE;
+    my @infiles = grep/^rc5$earlyday/, readdir INFILE;
     closedir INFILE;
     my @insort = sort @infiles;
     
@@ -87,17 +88,21 @@ if ("$insort[0]" =~ m/^rc5(\d\d\d\d\d\d\d\d)/ ) {
     print CHECKDAY "select count(*) from RC5_64_master where date = '$earlyday'\ngo\n";
     close CHECKDAY;
     my $dayrows = `sqsh -h -i dy_checkday.sql`;
+# Commented out by JN on 3/26/00
+#    $dayrows = 0;
     if ($dayrows > 0) {
       stats::log($project,131,"Um. Something doesn't look right.  I'm about to load the $earlyday logs, but there's already data for that day in the master table.  Someone tell me what to do.");
       stats::log($project,8,"Possible duplicate day load.  Aborting.");
       die;
     }
     
+    # Set the lock file
+    $retcode = system "touch $incoming/nologs.lck";
+    $retcode = system "chmod 666 $incoming/nologs.lck";
+
     for ($i = 0; $i < $innum; $i++) {
       my $fullpath = "$incoming/$insort[$i]";
       $retcode = system "cp",$fullpath,"./stalelogs";
-      $retcode = system "touch $incoming/nologs.lck";
-      $retcode = system "chmod 666 $incoming/nologs.lck";
       $retcode = system "mv",$fullpath,"./workdir";
       if ( $retcode > 0 ) {
         stats::log($project,139,"Error moving logs to workdir!");
@@ -127,8 +132,9 @@ if ("$insort[0]" =~ m/^rc5(\d\d\d\d\d\d\d\d)/ ) {
         $unzipfn = $1;
       }
       $retcode = system "sqsh -i clearimport.sql";
-      # bcp import in $1 -ebcp_errors -STALLY -Ustatproc -PPASSWORD -c -t, 
-      $retcode = system "bcp", "import", "in", $unzipfn, "-ebcp_errors", "-STALLY", "-Ustatproc", "-PPASSWORD", "-c", "-t,";
+      # bcp import in $1 -ebcp_errors -SBLOWER -Ustatproc -PTR2cod# -c -t, 
+      #$retcode = system "bcp", "import", "in", $unzipfn, "-A8192", "-ebcp_errors", "-SBLOWER", "-Ustatproc", "-PTR2cod#", "-c", "-t,";
+      $retcode = system "bcp", "import", "in", $unzipfn, "-A2048", "-ebcp_errors", "-SBLOWER", "-Ustatproc", "-PTR2cod#", "-c", "-t,";
       if ( $retcode > 0 ) {
         stats::log($project,139,"BCP Failed!");
         die;
@@ -146,29 +152,16 @@ if ("$insort[0]" =~ m/^rc5(\d\d\d\d\d\d\d\d)/ ) {
 
     $retcode = system "sqsh -i dy_fixemails.sql";
     stats::log($project,1,"Cleaned all the bad emails");
-    $retcode = system "sqsh -i dy_newemails.sql";
+    $retcode = system "sqsh -i dy_newemails.sql $project";
     stats::log($project,1,"Added new emails to STATS_participant");
     $retcode = system "sqsh -i dy_appendday.sql";
+    # $retcode = system "sqsh -h -i dy_maxdate.sql";
+    $retcode = `sqsh -h -i dy_maxdate.sql`;
+    if ( $retcode != $earlyday ) {
+	stats::log($project,139,"Insert into _master failed, maxdate returned $retcode!");
+	die;
+    } else {
     stats::log($project,1,"Appened day's activity to master table");
-
-    ######
-    # OK, Here we should test to see if another day is stacked.
-    ######
-
-    # Pull directory listing of the project's incoming directory.
-    opendir INFILE, $incoming;
-    @infiles = grep /^rc5/, readdir INFILE;
-    closedir INFILE;
-    @insort = sort @infiles;
-
-    # Grab date component out of earliest log's filename for comparison.
-    if ("$insort[0]" =~ m/^rc5(\d\d\d\d\d\d\d\d)/ ) {
-      my $earlyday = $1;
-      # Test to see if there are logs we need to process.
-      if ( $earlyday < $today ) {
-        stats::log($project,1,"I see logs for $earlyday, I think I'll get caught up before re-ranking.");
-        exec "./daily.pl";
-      }
     }
 
     $retcode = system "sqsh -i dp_newjoin.sql";
@@ -192,6 +185,30 @@ if ("$insort[0]" =~ m/^rc5(\d\d\d\d\d\d\d\d)/ ) {
 
     $retcode = system "sudo pcpages";
     stats::log($project,1,"pc_web pages generated");
+
+#    for ($i = 0; $i < $innum; $i++) {
+#	$retcode = system "scp -B ./stalelogs/$insort[$i] gatekeeper.caprice.mb.ca:";
+#	stats:log($project,1,"$insort[$i] scped to grub");
+#    }
+    ######
+    # OK, Here we should test to see if another day is stacked.
+    ######
+
+    # Pull directory listing of the project's incoming directory.
+    opendir INFILE, $incoming;
+    @infiles = grep /^rc5/, readdir INFILE;
+    closedir INFILE;
+    @insort = sort @infiles;
+
+    # Grab date component out of earliest log's filename for comparison.
+    if ("$insort[0]" =~ m/^rc5(\d\d\d\d\d\d\d\d)/ ) {
+      my $earlyday = $1;
+      # Test to see if there are logs we need to process.
+      if ( $earlyday < $today ) {
+        stats::log($project,1,"I see logs for $earlyday, I think I'll get caught up before re-ranking.");
+        exec "./daily.pl";
+      }
+    }
 
     system "rm $incoming/nologs.lck";
 

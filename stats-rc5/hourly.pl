@@ -1,8 +1,4 @@
-#!/usr/bin/perl -Tw 
-#
-# $Id: hourly.pl,v 1.1 1999/07/27 20:49:04 nugget Exp $
-#
-
+#!/usr/bin/perl -Tw
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
 use stats;

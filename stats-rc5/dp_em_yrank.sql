@@ -1,26 +1,17 @@
-# $Id: dp_em_yrank.sql,v 1.1 1999/07/27 20:49:03 nugget Exp $
-
 print "!! Begin CACHE_em_YRANK Build"
 go
 
 use stats
+set flushmessage on
 set rowcount 0
 go
 
-revoke select on CACHE_em_YRANK to public
+print "::  Creating PREBUILD_em_YRANK table"
 go
-
-while exists (select * from sysobjects where id = object_id('CACHE_em_YRANK_old'))
-	drop table CACHE_em_YRANK_old
+while exists (select * from sysobjects where id = object_id('PREBUILD_em_YRANK'))
+	drop table PREBUILD_em_YRANK
 go
-
-while exists (select * from sysobjects where id = object_id('CACHE_em_YRANK'))
-	EXEC sp_rename 'CACHE_em_YRANK', 'CACHE_em_YRANK_old'
-go
-
-print "::  Creating CACHE_em_YRANK table"
-go
-create table CACHE_em_YRANK 
+create table PREBUILD_em_YRANK 
 (       idx numeric (10,0) IDENTITY NOT NULL,
         id numeric (10,0) NULL ,
 	email varchar (64) NULL ,
@@ -35,94 +26,78 @@ create table CACHE_em_YRANK
 )
 go
 
-print "::  Filling cache table a with data (id,first,last,blocks)"
+print "::  Populating PREBUILD_em_YRANK table"
 go
-
 declare @mdv smalldatetime
 select @mdv = max(date)
 from RC5_64_master
 
-select distinct
- id,
- min(date) as first,
- max(date) as last,
- Sum(blocks) as blocks
-into #YRANKa
-from RC5_64_master
-where datediff(dd,date,@mdv)=0
-group by id
-go
-
-print "::  Linking to participant data into cache table b (listmode,retire_to)"
-go
-
-select C.id, S.email, C.first, C.last, C.blocks,
-  S.listmode, S.retire_to 
-into #YRANKb
-from #YRANKa C, STATS_participant S
-where C.id = S.id
-go 
-
-print "::  Honoring all retire_to requests"
-go
-update #YRANKb
-  set id = retire_to,
-      email = "",
-      listmode = 0
-where retire_to <> id and retire_to <> NULL and retire_to <> 0
-go
-
-print "::  Populating CACHE_em_YRANK table"
-go
-insert into CACHE_em_YRANK 
+insert into PREBUILD_em_YRANK 
   (id,email,first,last,blocks,days_working,rank,change,listmode)
-select distinct id, max(email),min(first),max(last),sum(blocks),1 as days_working,0 as rank, 0 as change,max(listmode)
-from #YRANKb
-where listmode < 10 or listmode = NULL
-group by id
-order by sum(blocks) desc
+select id, email,last,last,yblocks,1 as days_working,0 as rank, 0 as change,listmode
+from CACHE_em_RANK
+where last = @mdv
+order by yblocks desc, id desc
 go
 
 print "::  Updating rank values to idx values (ranking step 1)"
 go
-update CACHE_em_YRANK
+update PREBUILD_em_YRANK
   set rank = idx,
       overall_rate = convert(numeric(14,4),blocks*268435.456/DateDiff(ss,first,DateAdd(dd,1,last)))
 go
 
 print "::  Indexing on blocks for ranking acceleration"
 go
-create index tempindex on CACHE_em_YRANK(blocks)
+create index tempindex on PREBUILD_em_YRANK(blocks) with fillfactor = 100
 go
 
 print "::  Correcting rank for tied participants"
 go
-update CACHE_em_YRANK
-set rank = (select min(btb.rank) from CACHE_em_YRANK btb where btb.blocks = CACHE_em_YRANK.blocks)
-where (select count(btb.blocks) from CACHE_em_YRANK btb where btb.blocks = CACHE_em_YRANK.blocks) > 1
+update PREBUILD_em_YRANK
+set rank = (select min(btb.rank) from PREBUILD_em_YRANK btb where btb.blocks = PREBUILD_em_YRANK.blocks)
+where (select count(*) from PREBUILD_em_YRANK btb where btb.blocks = PREBUILD_em_YRANK.blocks) > 1
 go
 
-drop index CACHE_em_YRANK.tempindex
+drop index PREBUILD_em_YRANK.tempindex
 go
 
 print "::  Creating id indexes"
 go
-create index id on CACHE_em_YRANK(id)
+create unique index id on PREBUILD_em_YRANK(id) with fillfactor = 100
 go
 
 print "::  Calculating offset from previous ranking"
 go
-update CACHE_em_YRANK
-set change = (select CACHE_em_YRANK_old.rank from CACHE_em_YRANK_old
-              where CACHE_em_YRANK_old.id = CACHE_em_YRANK.id)-CACHE_em_YRANK.rank
+update PREBUILD_em_YRANK
+ set change = old.rank - PREBUILD_em_YRANK.rank
+ from CACHE_em_YRANK old
+ where old.id = PREBUILD_em_YRANK.id
 go
 
-print ":: Indexing on email"
+print ":: Indexing on rank and email"
 go
 
-create index email on CACHE_em_YRANK(email)
+create clustered index rank on PREBUILD_em_YRANK(rank) with fillfactor = 100
+create index email on PREBUILD_em_YRANK(email) with fillfactor = 100
+go
+print ":: updating statistics"
 go
 
-grant select on CACHE_em_YRANK to public
+grant select on PREBUILD_em_YRANK to public
 go
 
+drop view rc5_64_CACHE_em_YRANK
+go
+create view rc5_64_CACHE_em_YRANK as select * from CACHE_em_YRANK
+go
+grant select on rc5_64_CACHE_em_YRANK to public
+go
+revoke select on CACHE_em_YRANK to public
+go
+
+while exists (select * from sysobjects where id = object_id('CACHE_em_YRANK'))
+	drop table CACHE_em_YRANK
+go
+sp_rename PREBUILD_em_YRANK, CACHE_em_YRANK
+go
