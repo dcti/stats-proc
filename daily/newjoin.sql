@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.2 2000/11/08 14:44:46 decibel Exp $
+# $Id: newjoin.sql,v 1.3 2000/11/08 14:58:09 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -35,7 +35,7 @@ go
 begin transaction
 declare @id int, @retire_to int, @team_id int
 declare @work numeric(20,0), @first smalldatetime, @last smalldatetime
-declare @eff_id, @curfirst smalldatetime, @curlast smalldatetime
+declare @eff_id int, @curfirst smalldatetime, @curlast smalldatetime
 declare @update_ids int, @total_ids int, @idrows int, @total_rows int
 select @update_ids = 0, @total_ids = 0, @total_rows = 0
 open ids
