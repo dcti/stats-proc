@@ -1,5 +1,5 @@
 /*
-# $Id: tm_rank.sql,v 1.10 2000/06/27 00:18:48 decibel Exp $
+# $Id: tm_rank.sql,v 1.11 2000/06/27 02:04:33 decibel Exp $
 
 TM_RANK
 
@@ -184,11 +184,14 @@ update #TeamWork
 		and tr.TEAM_ID = #TeamWork.TEAM_ID
 
 print " Remove or move ""today"" info"
+declare @max_rank int
+select @max_rank = count(*)+1 from STATS_Team
+select @max_rank as max_rank into #maxrank
 update Team_Rank
 	set DAY_RANK_PREVIOUS = DAY_RANK,
-		DAY_RANK = 1000000,
+		DAY_RANK = @max_rank,
 		OVERALL_RANK_PREVIOUS = OVERALL_RANK,
-		OVERALL_RANK = 1000000,
+		OVERALL_RANK = @max_rank,
 		WORK_TODAY = 0,
 		MEMBERS_TODAY = 0
 	where PROJECT_ID = ${1}
@@ -209,11 +212,13 @@ update Team_Rank
 		and Team_Rank.PROJECT_ID = ${1}
 		and tw.IS_NEW = 0
 
+declare @max_rank int
+select @max_rank = max_rank from #maxrank
 insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
 		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
 	select ${1}, tw.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY,
-			1000000, 1000000, 1000000, 1000000, 0, 0, 0
+			@max_rank, @max_rank, @max_rank, @max_rank, 0, 0, 0
 	from #TeamWork tw
 	where tw.IS_NEW = 1
 
@@ -306,6 +311,20 @@ update Team_Rank
 go
 drop table #rank_assign
 drop table #rank_tie
+go
+
+print ' set previous rank = current rank for new teams'
+go
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
+update	Team_Rank
+	set DAY_RANK_PREVIOUS = DAY_RANK,
+		OVERALL_RANK_PREVIOUS = OVERALL_RANK
+	where PROJECT_ID = ${1}
+		and FIRST_DATE = @stats_date
 go
 
 

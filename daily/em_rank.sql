@@ -1,7 +1,7 @@
 /*
 #!/usr/bin/sqsh -i
 #
-# $Id: em_rank.sql,v 1.4 2000/04/20 13:11:37 bwilson Exp $
+# $Id: em_rank.sql,v 1.5 2000/06/27 02:04:33 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -28,11 +28,14 @@ delete Email_Rank
 		and PROJECT_ID = ${1}
 go
 print ' Remove or move "today" info '
+declare @max_rank int
+select @max_rank = count(*)+1 from STATS_Participant
+select @max_rank as max_rank into #maxrank
 update Email_Rank
 	set DAY_RANK_PREVIOUS = DAY_RANK,
-		DAY_RANK = 1000000,
+		DAY_RANK = @max_rank,
 		OVERALL_RANK_PREVIOUS = OVERALL_RANK,
-		OVERALL_RANK = 1000000,
+		OVERALL_RANK = @max_rank,
 		WORK_TODAY = 0
 	where Email_Rank.PROJECT_ID = ${1}
 go
@@ -46,9 +49,11 @@ select @stats_date = LAST_STATS_DATE
 	where PROJECT_ID = ${1}
 select @stats_date = isnull(@stats_date, getdate())
 
+declare @max_rank int
+select @max_rank = max_rank from #maxrank
 insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
 		OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select distinct ${1}, ect.CREDIT_ID, @stats_date, @stats_date, 0, 0, 1000000, 1000000, 1000000, 1000000
+	select distinct ${1}, ect.CREDIT_ID, @stats_date, @stats_date, 0, 0, @max_rank, @max_rank, @max_rank, @max_rank
 	from Email_Contrib_Today ect, STATS_Participant sp
 	where ect.CREDIT_ID = sp.ID
 		and sp.RETIRE_TO = 0
@@ -167,11 +172,25 @@ go
 drop table #rank_assign
 drop table #rank_tie
 
+print ' set previous rank = current rank for new participants'
+go
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
+update	Email_Rank
+	set DAY_RANK_PREVIOUS = DAY_RANK,
+		OVERALL_RANK_PREVIOUS = OVERALL_RANK
+	where PROJECT_ID = ${1}
+		and FIRST_DATE = @stats_date
+go
+
 print ' update statistics'
 go
 update statistics Email_Rank
 go
-print ' Rebuild indexes on _Email_Rank'
+print ' Rebuild indexes on Email_Rank'
 create index iDAY_RANK on Email_Rank(PROJECT_ID, DAY_RANK)
 create index iOVERALL_RANK on Email_Rank(PROJECT_ID, OVERALL_RANK)
 go
