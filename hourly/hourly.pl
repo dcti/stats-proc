@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.83 2001/07/02 00:25:48 decibel Exp $
+# $Id: hourly.pl,v 1.84 2001/07/08 22:34:25 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -97,12 +97,12 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
         }
         if(($lastdate lt $logtoload) and ($lastdate le $datestr)) {
           if(! ($2 =~ /r/) ) {
-            stats::log($project,131,"I need to load log $4, but I cannot because the master created it with the wrong permissions!");
+            stats::log($project,131,"I need to load log $lastdate, but I cannot because the master created it with the wrong permissions!");
             die;
           }
           print $_;
           if(! ($_ =~ /gz$/) ) {
-            stats::log($project,131,"The master failed to compress the $4 logfile.  Skipping to next project.");
+            stats::log($project,131,"The master failed to compress the $lastdate logfile.  Skipping to next project.");
 	    next RUNPROJECTS;
           }
           $logtoload = $lastdate;
