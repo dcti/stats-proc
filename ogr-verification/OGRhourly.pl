@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.9 2003/02/24 22:15:04 nerf Exp $
+# $Id: OGRhourly.pl,v 1.10 2003/03/18 21:11:13 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -167,6 +167,8 @@ if( $qualcount > 0 ) {
 
 if ($respawn > 0) {
   exec "./OGRhourly.pl";
+} else {
+  unlink "/tmp/filter_$project.err";
 }
 
 sub spawn_daily {
