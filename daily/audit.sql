@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.32.2.1 2003/04/26 15:21:15 decibel Exp $
+-- $Id: audit.sql,v 1.32.2.2 2003/04/26 18:32:23 decibel Exp $
 
 \t
 
@@ -185,7 +185,7 @@ UPDATE email_contrib_summary
     SET id = sp.retire_to
     FROM stats_participant sp
     WHERE sp.id = email_contrib_summary.id
-        AND sp.retire_to >= 0
+        AND sp.retire_to >= 1
         AND (sp.retire_date >= (SELECT ps.last_date FROM project_statsrun ps WHERE ps.project_id = :ProjectID)
                 OR sp.retire_date IS NULL)
 ;
@@ -196,11 +196,11 @@ UPDATE email_contrib_summary
 UPDATE audit
     SET ECsum = sum(work_units)
             , ECblcksum = sum( sign(coalesce(spb.id,0)) * work_units )
-            , ECteamsum = coalesce(
-                            sum( ( 1-sign(coalesce(spb.id,0)) )
-                            * sign(ws.team_id) * ( 1-sign(coalesce(stb.team_id,0)) )
-                            * ws.work_units )
-                        , 0)
+            , ECteamsum = sum(CASE WHEN ws.team_id >= 1
+                                        AND spb.id IS NULL
+                                        AND stb.team_id IS NULL
+                                    THEN ws.work_units
+                                END)
     FROM email_contrib_summary ws
         LEFT JOIN stats_participant_blocked spb ON ws.id = spb.id
         LEFT JOIN stats_team_blocked stb ON ws.team_id = stb.team_id
@@ -357,7 +357,7 @@ SELECT 'ERROR! email_contrib_today blocked sum (ECTblcksum=' || ECTblcksum
 /* ECblcksum + ERsum should equal ECsum */
 SELECT 'ERROR! Email_Contrib blocked sum (ECblcksum=' || ECblcksum
         || ') + Email_Rank sum (ERsum=' || ERsum
-        || ') != Email_Contrib sum (ECsum=' || ECsum ')'
+        || ') != Email_Contrib sum (ECsum=' || ECsum || ')'
     FROM audit WHERE  (ECblcksum + ERsum) <> ECsum;
 
 /* ECteamsum, TMsum, and TRsum should all match */
