@@ -1,11 +1,11 @@
-#!/usr/bin/sqsh -i
-#
-# $Id: retire.sql,v 1.25.2.1 2003/04/07 23:55:39 decibel Exp $
+/*
+# $Id: retire.sql,v 1.25.2.2 2003/04/15 04:24:12 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
 # Arguments:
 #       ProjectID
+*/
 
 \echo Build a list of blocked participants
 ;

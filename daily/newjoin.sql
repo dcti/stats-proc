@@ -1,49 +1,45 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.13 2002/01/07 23:29:30 decibel Exp $
+# $Id: newjoin.sql,v 1.13.2.1 2003/04/15 04:24:12 decibel Exp $
 #
 # Assigns old work to current team
 #
 # Arguments:
-#       PROJECT_ID
+#       ProjectID
 
-set flushmessage on
-print ":: Assigning old work to current team"
-go
+\echo :: Assigning old work to current team
+;
 
 #-- This query will only get joins to teams (not to team 0) that have
 #-- taken place on the day that we're running stats for.
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
 select id, team_id
-	into #newjoins
-	from Team_Joins
-	where JOIN_DATE = @proj_date
-		and (LAST_DATE = NULL or LAST_DATE >= @proj_date)
-go
+	into TEMP newjoins
+	from Team_Joins tj, Project_statsrun ps
+	where tj.join_date = ps.last_hourly_date
+		and (last_date = NULL or last_date >= ps.last_hourly_date)
+;
 
 select sp.id, sp.retire_to, nj.team_id
-	into #nj_ids
-	from STATS_Participant sp, #newjoins nj
+	into TEMP nj_ids
+	from STATS_Participant sp, newjoins nj
 	where sp.retire_to = nj.id
 		and sp.retire_to > 0
 		and nj.id > 0
-go
+;
 
-insert into #nj_ids (id, retire_to, team_id)
+insert into nj_ids (id, retire_to, team_id)
 	select sp.id, 0, nj.team_id
-	from STATS_Participant sp, #newjoins nj
+	from STATS_Participant sp, newjoins nj
 	where sp.id = nj.id
-go
+;
 
--- Dont forget to check for any retired emails that have blocks on team 0
-declare ids cursor for
-	select distinct id, retire_to, team_id
-	from #nj_ids
-go
+UPDATE Email_Contrib
+    SET team_id = nj.team_id
+    FROM nj_ids nj
+    WHERE Email_Contrib.project_id = :ProjectID
+        AND Email_Contrib.id = nj.id
+        AND Email_Contrib.team_id = 0
+;
 
 declare @id int, @retire_to int, @team_id int
 declare @work numeric(20,0), @first smalldatetime, @last smalldatetime
@@ -59,7 +55,7 @@ begin
 	select @work = sum(WORK_UNITS), @first = min(DATE), @last = max(DATE)
 		from Email_Contrib
 		where ID = @id
-			and PROJECT_ID = ${1}
+			and PROJECT_ID = :ProjectID
 			and TEAM_ID = 0
 
 # Don't do the update if there's no work for this person
@@ -71,7 +67,7 @@ begin
 # Update Email_Contrib
 		update Email_Contrib set Email_Contrib.TEAM_ID = @team_id
 			where ID = @id
-				and PROJECT_ID = ${1}
+				and PROJECT_ID = :ProjectID
 				and TEAM_ID = 0
 	
 		select @abort = @abort + sign(@@error), @update_ids = @update_ids + 1,
@@ -83,12 +79,12 @@ begin
 		else
 			select @eff_id = @retire_to
 
-		if exists (select * from Team_Members where ID = @eff_id and PROJECT_ID = ${1} and TEAM_ID = @team_id)
+		if exists (select * from Team_Members where ID = @eff_id and PROJECT_ID = :ProjectID and TEAM_ID = @team_id)
 		begin
 			select @curfirst = FIRST_DATE, @curlast = LAST_DATE
 				from Team_Members
 				where ID = @eff_id
-					and PROJECT_ID = ${1}
+					and PROJECT_ID = :ProjectID
 					and TEAM_ID = @team_id
 	
 			-- See if we need to update first and last dates
@@ -102,28 +98,28 @@ begin
 					FIRST_DATE = @curfirst,
 					LAST_DATE = @curlast
 				where ID = @eff_id
-					and PROJECT_ID = ${1}
+					and PROJECT_ID = :ProjectID
 					and TEAM_ID = @team_id
 			
 			select @abort = @abort + sign(@@error)
 		end
 		else
 		begin
-			select @rank = count(*) from Team_Members where PROJECT_ID = ${1} and TEAM_ID = @team_id
+			select @rank = count(*) from Team_Members where PROJECT_ID = :ProjectID and TEAM_ID = @team_id
 			insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 					DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-				values ( ${1}, @eff_id, @team_id, @first, @last, 0, @work,
+				values ( :ProjectID, @eff_id, @team_id, @first, @last, 0, @work,
 					@rank, 0, @rank, 0 )
 			
 			if @@error > 0
 				select @abort = @abort + 1
 		end
 # Update Team_Rank
-		if exists (select * from Team_Rank where PROJECT_ID = ${1} and TEAM_ID = @team_id)
+		if exists (select * from Team_Rank where PROJECT_ID = :ProjectID and TEAM_ID = @team_id)
 		begin
 			select @curfirst = FIRST_DATE, @curlast = LAST_DATE
 				from Team_Rank
-				where PROJECT_ID = ${1}
+				where PROJECT_ID = :ProjectID
 					and TEAM_ID = @team_id
 	
 			-- See if we need to update first and last dates
@@ -138,18 +134,18 @@ begin
 					LAST_DATE = @curlast,
 					MEMBERS_OVERALL = MEMBERS_OVERALL + 1,
 					MEMBERS_CURRENT = MEMBERS_CURRENT + 1
-				where PROJECT_ID = ${1}
+				where PROJECT_ID = :ProjectID
 					and TEAM_ID = @team_id
 			
 			select @abort = @abort + sign(@@error)
 		end
 		else
 		begin
-			select @rank = count(*) + 1 from Team_Rank where PROJECT_ID = ${1}
+			select @rank = count(*) + 1 from Team_Rank where PROJECT_ID = :ProjectID
 			insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 					DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
 					MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
-			values ( ${1}, @team_id, @first, @last, 0, @work,
+			values ( :ProjectID, @team_id, @first, @last, 0, @work,
 				@rank, 0, @rank, 0, 0, 0, 0 )
 			
 			select @abort = @abort + sign(@@error)
@@ -160,22 +156,13 @@ begin
 			commit transaction
 		else
 		begin
-			print "%1! error(s) encountered, rolling back transaction!", @abort
+			\echo %1! error(s) encountered, rolling back transaction!, @abort
 			rollback transaction
 		end
 
-		print "  %1! rows processed for ID %2!, TEAM_ID %3!", @idrows, @id, @team_id
+		\echo   %1! rows processed for ID %2!, TEAM_ID %3!, @idrows, @id, @team_id
 	end
 
 	select @total_ids = @total_ids + 1
 	fetch ids into @id, @retire_to, @team_id
 end
-
-if (@@sqlstatus = 1)
-	print "ERROR! Cursor returned an error"
-
-close ids
-deallocate cursor ids
-print "%1! of %2! IDs updated; %3! rows total", @update_ids, @total_ids, @total_rows
-go -f
-
