@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.27 2000/11/09 07:41:54 decibel Exp $
+# $Id: daily.pl,v 1.28 2001/12/29 07:35:12 decibel Exp $
 
 use strict;
-$ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
+$ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
 
 #$0 =~ /(.*\/)([^\/]+)/;
 #my $cwd = $1;
