@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.25 2002/06/10 06:14:48 decibel Exp $
+# $Id: stats.pm,v 1.26 2002/06/11 05:08:01 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -11,6 +11,7 @@
 package stats;
 
 require IO::Socket;
+require statsconf.pm;
 
 sub log {
 
@@ -123,20 +124,18 @@ sub semflag {
 
         my ($project, $task) = @_;
 
-	my $lockfile = `echo "~/log/statsrun.lck"`;
-
 	if($task) {
 	    if(semcheck($project)) {
 		# Can't set the lock if it already exists.
 			return semcheck($project);
 		} else {
 			# Apply lock
-			`echo "$task" > $lockfile`;
+			`echo "$task" > $statsconf::lockfile`;
 			return "OK";
 		}
 	} else {
 		# Clear lock
-		unlink $lockfile;
+		unlink $statsconf::lockfile;
 		return "OK";
 	}
 }
@@ -146,10 +145,11 @@ sub semcheck {
 
 	my ($project) = @_;
 
-	my $lockfile = `echo "~/log/statsrun.lck"`;
+	$statsconf::lockfile or die 'lockfile undefined';
+	$statsconf::lockfile ne '' or die 'lockfile undefined (empty)';
 
-	if(-e $lockfile) {
-		$_ = `cat $lockfile`;
+	if(-e $statsconf::lockfile) {
+		$_ = `cat $statsconf::lockfile`;
 		chomp;
 		return $_;
 	} else {

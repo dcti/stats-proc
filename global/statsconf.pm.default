@@ -1,26 +1,28 @@
 #
-# $Id: statsconf.pm.default,v 1.10 2001/12/29 07:31:31 decibel Exp $
+# $Id: statsconf.pm.default,v 1.11 2002/06/11 05:08:01 decibel Exp $
 #
 # Stats global configuration
 #
 
 package statsconf;
 
-$logtag = "statsbox-ii";
-@projects = ("ogr");
+$homedir = @{[getpwuid $<]}[7];
+$logtag = "statsbox-iii";
+@projects = ("ogr:rc5");
 %prids = (
         "rc5"   => "5",
         "ogr"   => "24:25",
 );
+$lockfile = "$homedir/log/statsrun.lck";
 
 # NOTE! This is where logs from the run go, it is not the source for
 # project logfiles!
 %logdir = (
 	"stats"	=> "/var/log/",
-	"rc5"	=> "/usr/home/statproc/log/",
-	"des"	=> "/usr/home/statproc/log/",
-	"ogr"	=> "/usr/home/statproc/log/",
-	"csc"	=> "/usr/home/statproc/log/",
+	"rc5"	=> "$homedir/log/",
+	"des"	=> "$homedir/log/",
+	"ogr"	=> "$homedir/log/",
+	"csc"	=> "$homedir/log/",
 );
 %logsource = (
 	"rc5"	=> "keymaster.distributed.net:/home/master/logs/",
@@ -45,10 +47,10 @@ $logtag = "statsbox-ii";
 );
 
 %projectdir = (
-	"rc5"	=> "/usr/home/statproc/stats-rc5",
-	"des"	=> "/usr/home/statproc/stats-des",
-	"ogr"	=> "/usr/home/statproc/stats-ogr",
-	"csc"	=> "/usr/home/statproc/stats-csc",
+	"rc5"	=> "$homedir/stats-rc5",
+	"des"	=> "$homedir/stats-des",
+	"ogr"	=> "$homedir/stats-ogr",
+	"csc"	=> "$homedir/stats-csc",
 );
 
 %prefilter = (
