@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.5 2003/09/12 20:51:51 nerf Exp $
+-- $Id: daily_update.sql,v 1.6 2003/09/27 21:16:41 nerf Exp $
 
 select now();
 
@@ -280,7 +280,7 @@ explain analyze INSERT INTO OGR_summary(stub_id, nodecount, participants, max_cl
 COMMIT;
 
 BEGIN;
-  select doOGRstatsrun(:RUNDATE);
+  select doOGRstatsrun( :RUNDATE ::DATE);
 COMMIT;
 
 select now();
