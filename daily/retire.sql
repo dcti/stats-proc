@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.29 2004/11/04 16:26:13 decibel Exp $
+# $Id: retire.sql,v 1.30 2004/11/08 05:26:38 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -77,7 +77,7 @@ SELECT RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, 
                     FROM stats_participant_blocked spb
                     WHERE spb.id = nr.id
                         AND spb.id = er.id
-                        AND blocked_date <= (SELECT last_date FROM project_statsrun WHERE project_id = :ProjectID)
+                        AND block_date <= (SELECT last_date FROM project_statsrun WHERE project_id = :ProjectID)
                 )
         AND er.project_id = :ProjectID
     GROUP BY retire_to
@@ -125,7 +125,7 @@ BEGIN;
             AND EXISTS (SELECT *
                             FROM stats_participant_blocked spb
                             WHERE spb.id = email_rank.id
-                                AND blocked_date <= (SELECT last_date
+                                AND block_date <= (SELECT last_date
                                                             FROM project_statsrun
                                                             WHERE project_id = :ProjectID
                                                     )
@@ -172,7 +172,7 @@ SELECT retire_to, team_id, sum(work_total) as work_total, min(first_date) as fir
                             FROM stats_participant_blocked spb
                             WHERE spb.id = nr.id
                                 AND spb.id = tm.id
-                                AND blocked_date <= (SELECT last_date
+                                AND block_date <= (SELECT last_date
                                                             FROM project_statsrun
                                                             WHERE project_id = :ProjectID
                                                     )
