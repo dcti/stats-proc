@@ -1,0 +1,30 @@
+# $Id: notes.txt,v 1.1 1999/07/27 20:49:04 nugget Exp $
+
+@ 00:01
+
+	X get today's date string
+
+	X get earliest day's logs for incoming
+
+	X if earliest < today
+
+		X procdate = earliest
+		X count files for ealiest
+		X if < 24 die
+***		check max(date) in stats and fail if dupe
+		X test files and die on fail
+		for each file
+			uncompress
+			bcp into import
+			spawn recompress/move script
+		after all files done
+		run dayadd stuff
+
+		get earliest day's logs for incoming
+
+		if earliest < today then loop
+
+		re-aggregate
+
+		statson
+
