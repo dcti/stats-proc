@@ -5,4 +5,4 @@ if [ x$1 = x ]; then
     exit 1
 fi
 
-pgsql -f audit.sql -v ProjectID=$1 stats
+psql -f audit.sql -v ProjectID=$1 stats
