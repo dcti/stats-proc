@@ -1,7 +1,23 @@
 #
-# $Id: README,v 1.1 1999/07/11 18:36:35 nugget Exp $
+# $Id: README,v 1.2 2000/02/09 16:11:08 nugget Exp $
 #
 # This tree is intended to be the homedirectory for the statproc user on
 # statsbox.
 #
 
+stats-rc5 is non-live, non-production code and is slated to be Attic'd
+very soon.
+
+"daily" is intended to be the new cross-project daily processing code and
+will be made production code as soon as it can handle ogr and rc5 stats.
+
+In a production environment, you'll need to add some symlinks to the daily
+directory for it to function properly.
+
+The old csc dir had the following, this will obviouslyu need to be tweaked
+somewhat:
+
+   incoming -> /home/incoming/newlogs-csc
+   stalelogs -> ../stale-csc/
+
+should symlink a workdir someplace, too.
