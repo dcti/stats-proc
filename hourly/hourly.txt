@@ -1,4 +1,6 @@
-Hourly.pl
+# Design notes for hourly.pl
+#
+# $Id: hourly.txt,v 1.1 2000/02/17 17:17:17 nugget Exp $
 
 X = [last log we processed]
 Y = X + [most logs we can skip] - 1
@@ -23,3 +25,11 @@ If J is not NULL
 	goto top (is there another log waiting?)
 endif
 wait for next scheduled run
+
+# Comments / Questions
+
+- Where do we intend to store "X"?  in sql or in a work file?
+  If we're placing it in sql, how should that be handled?  Is it time
+  for a projectinfo table?  (could possibly assume some of the work
+  being done by Stats.pm)
+
