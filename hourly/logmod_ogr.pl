@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: logmod_ogr.pl,v 1.2 2000/06/20 15:28:57 nugget Exp $
+# $Id: logmod_ogr.pl,v 1.3 2000/06/20 16:46:02 nugget Exp $
 #
 #
 # ogr logfile sample:
@@ -15,7 +15,7 @@ while(<>) {
   my $buf = $_;
   chomp $buf;
 
-  # Strip the workunit id information, leaving only the subproject id.
+  # Strip the workunit id information, leaving only the project id.
   $buf =~ s/\/\d+-[^,]+//;
 
   # Precision on smalldatetime is 1 minute.  This doesn't prevent us from
@@ -28,12 +28,12 @@ while(<>) {
   $buf =~ s/ \d\d:\d\d:\d\d//;
 
   # Split the comma-delimited line into component fields
-  my ($timestamp, $ip, $email, $subproject, $size, $os, $cpu, $version) = split(/,/, $buf);
+  my ($timestamp, $ip, $email, $project, $size, $os, $cpu, $version) = split(/,/, $buf);
 
   # We remove a few fields prior to import, in order to keep the size of the
   # import table as small as possible.  ip and workunit id are unnecessary
   # for stats, so they are eliminated.
 
-  print "$timestamp,$email,$subproject,$size,$os,$cpu,$version\n";
+  print "$timestamp,$email,$project,$size,$os,$cpu,$version\n";
 
 }
