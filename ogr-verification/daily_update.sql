@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.15 2003/11/05 14:21:03 nerf Exp $
+-- $Id: daily_update.sql,v 1.16 2003/11/15 14:10:23 nerf Exp $
 
 select now();
 
@@ -218,6 +218,12 @@ FROM (
 WHERE OGR_summary.stub_id = dw.stub_id
   AND OGR_summary.nodecount = dw.nodecount;
 
+-- Now we have some updates to in_results.  Setting this flag to true
+-- now means that those records will not make it into ogr_summary.  Use
+-- this for cases where we want separate results in ogr_results, but
+-- they aren't different enough to warrant two entries (or a participant
+-- count of 2 in ogr_summary
+
 -- update day_results.in_results for stubs that were done by someone
 -- under a different id, but that we now know is the same person (due
 -- to retires)
@@ -232,7 +238,16 @@ WHERE exists
     day_results.stub_id = OGR_results.stub_id AND
     day_results.nodecount = OGR_results.nodecount AND
     day_results.platform_id = OGR_results.platform_id);
-select now();
+
+-- update where stub_id, nodecount, id are equal but platform is different
+-- We have decided that this should not count as having been done twice.
+UPDATE day_results
+SET in_results = true
+WHERE day_results.id = ogr_results.id
+    AND day_results.stub_id = ogr_results.stub_id
+    AND day_results.nodecount = ogr_results.nodecount
+    AND day_results.platform_id != ogr_results.platform_id
+;
 
 -- Create a summary, like OGR_summary, but just with today's data
 CREATE TEMP TABLE day_summary (
