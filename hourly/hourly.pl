@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.60 2000/09/11 17:47:43 nugget Exp $
+# $Id: hourly.pl,v 1.61 2000/09/11 17:54:36 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -255,6 +255,8 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       if($hh == 23) {
         if(stats::lastday($project) < $yyyymmdd) {
+          # Note -- CWD is not clean after calling spawn_daily.  Always use absolute
+          # Paths after calling this.  (yeah, I know that's ugly)
           spawn_daily($project);
         }
       }
@@ -274,8 +276,11 @@ if ($respawn > 0) {
 sub spawn_daily {
 
   my ($f_project) = @_;
+  chdir "../daily/";
+  stats::log($project,1,"Spawning daily.pl for $f_project");
+  system "./daily.pl $f_project";
+  stats::log($project,1,"daily.pl complete for $f_project");
 
-  die;
 }
 
 sub num_format {
