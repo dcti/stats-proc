@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.21 2002/10/07 15:12:05 decibel Exp $
+# $Id: dy_appendday.sql,v 1.22 2002/12/16 19:50:39 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -20,6 +20,9 @@ go
 ** CREDIT_ID holds RETIRE_TO or ID.  Not unique, but guaranteed to
 ** be the ID that should get credit for this work.
 */
+
+p_set_lastupdate_ec ${1}, NULL
+go
 
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
@@ -63,12 +66,12 @@ insert into Email_Contrib (DATE, PROJECT_ID, ID, TEAM_ID, WORK_UNITS)
 	where d.PROJECT_ID = ${1}
 	/* Group by is unnecessary, data is already summarized */
 
-update Email_Contrib_Last_Update
-	set LAST_DATE = @proj_date
-	where PROJECT_ID = ${1}
+p_set_lastupdate_ec ${1}, @proj_date
 go
 
 print ":: Appending into Platform_Contrib"
+go
+p_set_lastupdate_pc ${1}, NULL
 go
 declare @proj_date smalldatetime
 select @proj_date = LAST_HOURLY_DATE
@@ -81,7 +84,5 @@ insert into Platform_Contrib (DATE, PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	where PROJECT_ID = ${1}
 	/* Group by is unnecessary, data is already summarized */
 
-update Platform_Contrib_Last_Update
-	set LAST_DATE = @proj_date
-	where PROJECT_ID = ${1}
+p_set_lastupdate_pc ${1}, @proj_date
 go

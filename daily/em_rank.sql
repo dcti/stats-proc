@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_rank.sql,v 1.20 2002/10/07 15:12:05 decibel Exp $
+# $Id: em_rank.sql,v 1.21 2002/12/16 19:50:39 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -108,9 +108,7 @@ update	Email_Rank
 	where PROJECT_ID = ${1}
 		and FIRST_DATE = @stats_date
 
-update Email_Rank_Last_Update
-	set LAST_DATE = @stats_date
-	where PROJECT_ID = ${1}
+p_set_lastupdate_e ${1}, @stats_date
 go
 
 --print ' update statistics'
