@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.31 2002/06/06 03:24:55 decibel Exp $
+# $Id: daily.pl,v 1.31.2.1 2003/04/27 20:47:04 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -48,33 +48,33 @@ if(!$statsconf::prids{$project}) {
   for (my $i = 0; $i < @pridlist; $i++) {
     my $project_id = int $pridlist[$i];
   
-    sqsh("retire.sql $project_id");
-    sqsh("newjoin.sql $project_id");
-    sqsh("dy_appendday.sql $project_id");
-    sqsh("em_update.sql $project_id");
-    sqsh("em_rank.sql $project_id");
-    sqsh("tm_update.sql $project_id");
-    sqsh("tm_rank.sql $project_id");
-    sqsh("platform.sql $project_id");
-    sqsh("dy_dailyblocks.sql $project_id");
+    psql("retire.sql");
+    psql("newjoin.sql");
+    psql("dy_appendday.sql");
+    psql("em_update.sql");
+    psql("em_rank.sql");
+    psql("tm_update.sql");
+    psql("tm_rank.sql");
+    psql("platform.sql");
+    psql("dy_dailyblocks.sql");
     system "sudo pcpages $project_id";
-    sqsh("audit.sql $project_id");
+    psql("audit.sql");
 
-    sqsh("clearday.sql $project_id");
-    sqsh("backup.sql $project_id");
+    psql("clearday.sql");
+    psql("backup.sql");
   }
   my $newlastday = stats::lastday($project);
   stats::log($project,5,"Daily processing for $newlastday has completed");
 }
 
-sub sqsh {
+sub psql {
   my ($sqlfile) = @_;
 
   my $bufstorage = "";
-  my $sqshsuccess = 0;
+  my $psqlsuccess = 0;
   my $starttime = (gmtime);
   my $secs_start = int `date "+%s"`;
-  if(!open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -a 1 -i $sqlfile 2>&1 |") {
+  if(!open SQL, "psql -d $statsconf::database -f $sqlfile -v ProjectID=$project_id 2>&1 |") {
     stats::log($project,131,"Failed to launch $sqlfile -- aborting.");
     die;
   }
@@ -88,20 +88,20 @@ sub sqsh {
       $bufstorage = "$bufstorage$ts $_";
     }
     if( $_ =~ /^Msg/ ) {
-      $sqshsuccess = 1;
+      $psqlsuccess = 1;
     }
     if( $_ =~ /ERROR/ ) {
-      $sqshsuccess = 1;
+      $psqlsuccess = 1;
     }
   }
 
   close SQL;
-  if( $sqshsuccess > 0) {
-    stats::log($project,147,"$sqlfile puked  -- aborting.  Details are in $workdir\sqsh_errors");
-    open SQERR, ">$workdir\sqsh_errors" or stats::log($project,139,"Unable to open $workdir\sqsh_errors for writing!");
+  if( $psqlsuccess > 0) {
+    stats::log($project,147,"$sqlfile puked  -- aborting.  Details are in $workdir\psql_errors");
+    open SQERR, ">$workdir\psql_errors" or stats::log($project,139,"Unable to open $workdir\psql_errors for writing!");
     print SQERR "$bufstorage";
     close SQERR;
-    die $sqshsuccess;
+    die $psqlsuccess;
   }
   my $secs_finish = int `date "+%s"`;
   my $secs_run = $secs_finish - $secs_start;
