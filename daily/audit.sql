@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.32.2.2 2003/04/26 18:32:23 decibel Exp $
+-- $Id: audit.sql,v 1.32.2.3 2003/04/26 18:43:35 decibel Exp $
 
 \t
 
@@ -195,7 +195,7 @@ UPDATE email_contrib_summary
 
 UPDATE audit
     SET ECsum = sum(work_units)
-            , ECblcksum = sum( sign(coalesce(spb.id,0)) * work_units )
+            , ECblcksum = sum(CASE WHEN spb.id IS NOT NULL THEN work_units END)
             , ECteamsum = sum(CASE WHEN ws.team_id >= 1
                                         AND spb.id IS NULL
                                         AND stb.team_id IS NULL
