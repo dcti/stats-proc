@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.59 2000/09/11 17:43:38 nugget Exp $
+# $Id: hourly.pl,v 1.60 2000/09/11 17:47:43 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -84,6 +84,10 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       if($lastdate gt $lastlog) {
         $qualcount++;
+        if($lastdate gt $datestr) {
+          # This log is the "active" log, we don't want to count it in our summary.
+          $qualcount--;
+        }
         if(($lastdate lt $logtoload) and ($lastdate le $datestr)) {
           if(! ($2 =~ /r/) ) {
             stats::log($project,131,"I need to load log $4, but I cannot because the master created it with the wrong permissions!");
