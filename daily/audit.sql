@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.6 2000/07/17 11:14:33 decibel Exp $
+# $Id: audit.sql,v 1.7 2000/07/18 09:48:03 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -210,17 +210,12 @@ print "checking total work units submitted...."
 declare @ECsum numeric(20)
 declare @PCsum numeric(20)
 declare @DSsum numeric(20)
-declare @ERsum numeric(20)
-declare @ECblcksum numeric(20)
-select	@ECsum = ECsum, @PCsum = PCsum, @DSsum = DSsum, @ERsum = ERsum, @ECblcksum = ECblcksum
+select	@ECsum = ECsum, @PCsum = PCsum, @DSsum = DSsum
 	from #audit
 if (@ECsum <> @PCsum)
 	print "ERROR! Email_Contrib sum (ECsum=%1!) != Platform_Contrib sum (PCsum=%2!)", @ECsum, @PCsum
 if (@ECsum <> @DSsum)
 	print "ERROR! Email_Contrib sum (ECsum=%1!) != Daily_Summary sum (DSsum=%2!)", @ECsum, @DSsum
-if ( (@ERsum + @ECblcksum) <> @ECsum )
-	print "ERROR! Email_Rank sum (ERsum=%1!) + Email_Contrib_Blocked sum (ECblcksum=%2!) != Email_Contrib sum (ECsum=%3!)", @ERsum, @ECblcksum, @ECsum
-
 go -f -h
 
 /* ECTblcksum should equal ECblcksumtdy */
