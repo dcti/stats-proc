@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_rank.sql,v 1.23 2003/09/11 01:41:02 decibel Exp $
+# $Id: em_rank.sql,v 1.24 2004/04/17 04:54:20 decibel Exp $
 #
 # Does the participant ranking
 #
@@ -26,6 +26,7 @@ CREATE TEMP TABLE Trank_work_overall AS
                             ORDER BY work_total DESC
                         ) AS raw_work
 ;
+ANALYZE Trank_work_overall;
 SELECT work_units, min(raw_rank) AS rank INTO TEMP rank_tie_overall
     FROM Trank_work_overall
     GROUP BY work_units
@@ -46,6 +47,7 @@ CREATE TEMP TABLE Trank_work_today AS
                             ORDER BY work_today DESC
                         ) AS raw_work
 ;
+ANALYZE Trank_work_today;
 SELECT work_units, min(raw_rank) AS rank INTO TEMP rank_tie_today
     FROM Trank_work_today
     GROUP BY work_units
@@ -55,6 +57,8 @@ DROP TABLE Trank_work_today;
 \echo    Index on work_units
 CREATE UNIQUE INDEX work_units_today ON rank_tie_today(work_units)
 ;
+ANALYZE work_units_overall;
+ANALYZE work_units_today;
 
 \echo  Update email_rank with new rankings
 BEGIN;
