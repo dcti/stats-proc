@@ -1,7 +1,7 @@
-/*
 #!/usr/bin/sqsh -i
+/*
 #
-# $Id: em_rank.sql,v 1.6 2000/07/17 11:37:30 decibel Exp $
+# $Id: em_rank.sql,v 1.7 2000/08/04 04:32:41 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -39,7 +39,7 @@ declare @stats_date smalldatetime
 select @stats_date = LAST_STATS_DATE
 	from Projects
 	where PROJECT_ID = ${1}
-select @stats_date = isnull(@stats_date, getdate())
+-- select @stats_date = isnull(@stats_date, getdate())
 
 declare @max_rank int
 select @max_rank = max_rank from #maxrank
@@ -50,7 +50,7 @@ insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL
 	where ect.CREDIT_ID = sp.ID
 		and sp.RETIRE_TO = 0
 		and sp.LISTMODE < 10
-		and ect.CREDIT_ID not in (select ID from Email_Rank)
+		and ect.CREDIT_ID not in (select ID from Email_Rank where PROJECT_ID=${1})
 		and ect.PROJECT_ID = ${1}
 
 /*
