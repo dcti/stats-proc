@@ -1,4 +1,4 @@
--- $Id: addlog.sql,v 1.4 2002/12/31 16:39:15 joel Exp $ --
+-- $Id: addlog.sql,v 1.5 2002/12/31 16:46:56 joel Exp $ --
 --set projnum '24' or '25'
 --set infile '/home/joel/ogr/scripts/ogr24.filtered'
 
@@ -15,6 +15,6 @@ version INT);
 
 COPY logdata:projnum FROM :infile USING DELIMITERS ',';
 
-CREATE INDEX log:projnum_email_id ON log:foo (email);
-CREATE INDEX log:projnum_nodecount_idx ON log:foo (nodecount);
-CREATE INDEX log:projnum_stubmark_idx ON log:foo (stub_marks);
+CREATE INDEX log:projnum_email_id ON log:projnum (email);
+CREATE INDEX log:projnum_nodecount_idx ON log:projnum (nodecount);
+CREATE INDEX log:projnum_stubmark_idx ON log:projnum (stub_marks);
