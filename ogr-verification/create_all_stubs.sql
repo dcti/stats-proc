@@ -1,5 +1,4 @@
--- $Id: create_all_stubs.sql,v 1.6 2003/01/10 17:26:34 nerf Exp $
--- set infile='/home/nerf/all_stubs'
+-- $Id: create_all_stubs.sql,v 1.7 2003/01/10 22:01:37 nerf Exp $
 
 CREATE TEMPORARY TABLE all_stubs_import(
 stub_marks VARCHAR(22) not null);
@@ -10,7 +9,7 @@ DROP SEQUENCE all_stubs_stub_id_seq;
 
 CREATE TABLE all_stubs (
 	stub_marks VARCHAR(22) not null,
-	stub_id SERIAL,
+	stub_id UNIQUE SERIAL,
 	project_id SMALLINT not null,
 	nodecount BIGINT,
 	pass1_id INT,
