@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.5 2000/07/13 22:53:13 nugget Exp $
+# $Id: statsconf.pm.default,v 1.6 2000/07/13 23:30:57 nugget Exp $
 #
 # Stats global configuration
 #
@@ -7,7 +7,7 @@
 package statsconf;
 
 $logtag = "statsbox-ii";
-@projects = ("rc5");
+@projects = ("ogr");
 %logdir = (
 	"stats"	=> "/var/log/",
 	"rc5"	=> "/usr/home/statproc/log/",
