@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.81 2000/11/01 19:57:00 decibel Exp $
+# $Id: hourly.pl,v 1.82 2000/11/12 22:59:51 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -98,8 +98,8 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
           }
           print $_;
           if(! ($_ =~ /gz$/) ) {
-            stats::log($project,131,"The master failed to compress the $4 logfile.  Aborting.");
-            die;
+            stats::log($project,131,"The master failed to compress the $4 logfile.  Skipping to next project.");
+	    next RUNPROJECTS;
           }
           $logtoload = $lastdate;
         }
@@ -131,7 +131,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
   
       if ( $lasttime != ($logtime - 86400)) {
-        stats::log($project,131,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
+        stats::log($project,139,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
         die;
       }
     }
@@ -215,8 +215,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       $bcprows =~ s/,//g;
 
       if($bcprows == 0) {
-        stats::log($project,131,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
-        die;
+        stats::log($project,139,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
       }
 
       opendir WD, "$workdir" or die;
@@ -224,7 +223,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       closedir WD;
 
       if(@wdcontents > 0) {
-        stats::log($project,131,"Errors encountered during BCP!  Check bcp_errors file.  Aborting.");
+        stats::log($project,139,"Errors encountered during BCP!  Check bcp_errors file.  Aborting.");
         die;
       }
 
@@ -233,7 +232,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       my $rowsnext = 0;
       my $sqlrows = 0;
       if(!open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 2> /dev/stdout |") {
-        stats::log($project,131,"Error launching sqsh, aborting hourly run.");
+        stats::log($project,139,"Error launching sqsh, aborting hourly run.");
         die;
       }
       while (<SQL>) {
@@ -262,7 +261,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       }
       close SQL;
       if( $sqshsuccess > 0) {
-        stats::log($project,131,"integrate.sql failed on $basefn - aborting.  Details are in $workdir\sqsh_errors");
+        stats::log($project,139,"integrate.sql failed on $basefn - aborting.  Details are in $workdir\sqsh_errors");
         open SQERR, ">$workdir\sqsh_errors";
         print SQERR "$bufstorage";
         close SQERR;
@@ -271,7 +270,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       # perform sanity checking here
       if ( $sqlrows != $bcprows ) {
-	stats::log($project,131,"Row counts for BCP($bcprows) and SQL($sqlrows) do not match, aborting.");
+	stats::log($project,139,"Row counts for BCP($bcprows) and SQL($sqlrows) do not match, aborting.");
 	die;
       }
       stats::log($project,1,"$basefn successfully processed.");
@@ -292,7 +291,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     close GZIP;
   }
   if(stats::semflag($project) ne "OK") {
-    stats::log($project,131,"Error clearing hourly.pl lock");
+    stats::log($project,139,"Error clearing hourly.pl lock");
     die;
   }
 }
