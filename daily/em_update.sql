@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_update.sql,v 1.8.2.3 2003/04/27 21:36:14 decibel Exp $
+# $Id: em_update.sql,v 1.8.2.4 2003/09/02 21:53:35 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -21,8 +21,6 @@
 */
 
 \echo Build temporary tables
-SELECT stats_get_max_rank_participant() AS max_rank INTO TEMP max_rank;
-
 SELECT credit_id, sum(ect.work_units) AS work_today INTO TEMP retired_work
     FROM email_contrib_today ect
     WHERE ect.project_id = :ProjectID
@@ -50,11 +48,8 @@ BEGIN;
 
     UPDATE email_rank
         SET day_rank_previous = day_rank,
-            day_rank = max_rank,
             overall_rank_previous = overall_rank,
-            overall_rank = max_rank,
             work_today = 0
-        FROM max_rank
         WHERE email_rank.project_id = :ProjectID
     ;
 
