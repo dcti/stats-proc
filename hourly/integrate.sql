@@ -1,8 +1,8 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.1 2000/06/15 00:47:59 decibel Exp $
+# $Id: integrate.sql,v 1.2 2000/06/17 22:24:00 decibel Exp $
 #
-# Move data from the ${1}_import table to the daytables
+# Move data from the import_${1} table to the daytables
 #
 # Arguments:
 #       PROJECT_ID
@@ -14,7 +14,7 @@
 /*
 **	Make sure they don't have any leading spaces
 */
-update ${1}_import
+update import_${1}
 	set EMAIL = ltrim(EMAIL)
 	where EMAIL <> ltrim(EMAIL)
 
@@ -27,7 +27,7 @@ update ${1}_import
 **	It's going to table-scan anyway, so we might as well
 **	do all the tests we can
 */
-update ${1}_import
+update import_${1}
 	set EMAIL = 'rc5-bad@distributed.net'
 	where EMAIL not like '%@%'	/* Must have @ */
 		or EMAIL like '%[ <>]%'	/* Must not contain space, &gt or &lt */
@@ -37,7 +37,7 @@ update ${1}_import
 /*
 **	Only one @.  Must test after we know they have at least one @
 */
-update ${1}_import
+update import_${1}
 	set EMAIL = 'rc5-bad@distributed.net'
 	where substring(EMAIL, charindex('@', EMAIL) + 1, 64) like '%@%'
 go
@@ -45,7 +45,7 @@ go
 /* Store the stats date here, instead of in every row of Email_Contrib_Today and Platform_Contrib_Today */
 declare @stats_date smalldatetime
 select @stats_date = max(TIME_STAMP)
-	from ${1}_import
+	from import_${1}
 update Projects
 	set LAST_STATS_DATE = @stats_date
 	where PROJECT_ID = ${1}
@@ -68,7 +68,7 @@ go
 /* First, put the latest set of logs in */
 insert #Email_Contrib_Today (EMAIL, WORK_UNITS)
 	select EMAIL, sum(WORK_UNITS)
-	from ${1}_import
+	from import_${1}
 	group by EMAIL
 
 /* Now, add the stuff from the previous hourly runs */
@@ -104,7 +104,7 @@ create table #Platform_Contrib_Today
 go
 insert #Platform_Contrib_Today (CPU, OS, VER, WORK_UNITS)
 	select CPU, OS, VER, sum(WORK_UNITS)
-	from ${1}_import
+	from import_${1}
 	group by CPU, OS, VER
 
 insert #Platform_Contrib_Today (CPU, OS, VER, WORK_UNITS)
@@ -125,7 +125,7 @@ commit transaction
 
 drop table #Platform_Contrib_Today
 go
-delete ${1}_import
+delete import_${1}
 	where 1 = 1
 
 /* This line produces the number of rows imported for logging */

@@ -3,6 +3,11 @@ use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
 use stats;
 
+# Don't know if this is the best place for this stuff to live
+my $sqllogin = "-Ustatproc";
+my $sqlpasswd = "-PPASSWORD";
+my $sqlserver = "-STALLY";
+
 my $yyyy = (gmtime(time-3600))[5]+1900;
 my $mm = (gmtime(time-3600))[4]+1;
 my $dd = (gmtime(time-3600))[3];
@@ -14,12 +19,16 @@ my $workdir = "./workdir/";
 # This could easily be populated from somewhere else.
 # I don't see a big downside to simply hard-coding, however.
 
-my @projectlist = ("ogr",
-                   "rc5");
-my @sourcelist  = ("LOGS-SOURCE-FQDN:/home/master/logs/",
-                   "LOGS-SOURCE-FQDN:/home/master/logs/");
-my @prefilter   = ("./logmod_ogr.pl",
-                   "");
+#my @projectlist = ("ogr",
+#                   "rc5");
+#my @sourcelist  = ("LOGS-SOURCE.FQDN:/home/master/logs/",
+#                   "LOGS-SOURCE.FQDN:/home/master/logs/");
+#my @prefilter   = ("./logmod_ogr.pl",
+#                   "");
+
+my @projectlist = ("ogr");
+my @sourcelist  = ("n0:/home/decibel/logs/");
+my @prefilter   = ("./logmod_ogr.pl");
 
 # Insert code here to look for droppings in $workdir
 
@@ -93,8 +102,32 @@ for (my $i = 0; $i < @projectlist; $i++) {
         stats::log($project,1,"$basefn successfully filtered through $prefilter[$i].");
       }
       # bcp goes here
+      #$retcode = system "bcp", "$project" . "_import", "in", $finalfn, "-ebcp_errors", $sqlserver, $sqllogin, $sqlpasswd, "-c", "-t,";
+      open BCP, "bcp import_24 in $finalfn -ebcp_errors $sqlserver $sqllogin $sqlpasswd -c -t, 2> /dev/stderr |";
+      while (<BCP>) {
+#	if ($_ =~ /(\d+) rows copied.\nClock Time (ms.): total = (\d+) Avg = (\d+.\d) ((\d+.\d) rows per sec.)/) {
+#	  my $rows = num_format($1);
+#	  my $rate = num_format($4);
+#	  stats::log($project,1,"$finalfn successfully BCP in; $rows rows at $rate rows/second.");
+#	}
+	print $_;
+	my $rows = 0;
+	my $rate = 0;
+	if ($_ =~ /(\d+) rows copied./) {
+	  $rows = num_format($1);
+	}
+	if ($_ =~ /Clock Time (ms.): total = (\d+) Avg = (\d+.\d) ((\d+.\d) rows per sec.)/) {
+	  my $rate = num_format($3);
+	  stats::log($project,1,"$finalfn successfully BCP in; $rows rows at $rate rows/second.");
+	}
+      }
+      close BCP;
 
       # call bruce's code here
+      open SQL, "sqsh $sqlserver $sqllogin $sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
+	while (<SQL>) {
+	print $_;
+      }
 
       # perform sanity checking here
 
