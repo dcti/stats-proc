@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.25 2002/07/27 00:46:44 decibel Exp $
+# $Id: integrate.sql,v 1.26 2002/12/05 01:05:56 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -76,11 +76,16 @@ create table #import
 	WORK_UNITS	numeric(20, 0)	not NULL
 )
 go
+/* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
+   want to try and multiply outside the sum, it won't do what we want at all. /*
 insert #import (PROJECT_ID, EMAIL, WORK_UNITS)
-	select i.PROJECT_ID, i.EMAIL, sum(i.WORK_UNITS)
-	from import_bcp i, Project_statsrun p
-	where i.PROJECT_ID = p.PROJECT_ID
-		and i.TIME_STAMP = p.LAST_HOURLY_DATE
+	select i.PROJECT_ID, i.EMAIL, sum(i.WORK_UNITS) * (select WORK_UNIT_IMPORT_MULTIPLIER
+								from Projects p
+								where p.PROJECT_ID = i.PROJECT_ID
+								)
+	from import_bcp i, Project_statsrun ps
+	where i.PROJECT_ID = ps.PROJECT_ID
+		and i.TIME_STAMP = ps.LAST_HOURLY_DATE
 	group by i.PROJECT_ID, i.EMAIL
 go
 
