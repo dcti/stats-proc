@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.101 2002/06/10 05:46:10 decibel Exp $
+# $Id: hourly.pl,v 1.102 2002/08/08 23:34:21 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -289,7 +289,7 @@ sub findlog {
 
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
-  if( !open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1]$project*.log*\"'|" ) {
+  if( !open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1] | grep $project\"'|" ) {
     stats::log($project,131,"Unable to contact log source!");
     return "",0;
   } 
