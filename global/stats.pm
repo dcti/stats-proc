@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.9 2000/08/16 18:28:22 nugget Exp $
+# $Id: stats.pm,v 1.10 2000/08/16 19:40:42 nugget Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -153,14 +153,25 @@ sub lastlog {
 sub lastday {
   # This function will either return or store the lastlog value for the specified project.
   #
-  # lastday("ogr","get") will return lastday value.
-  # lastday("ogr","20001231") will set lastday value to 31-Dec-2000
+  # lastday("ogr") will return lastday value for all ogr project_ids
 
-  my ($f_project, $f_action) = @_;
+  my ($f_project) = @_;
 
-  if( $f_action =~ /get/i) {
-    return `cat ~/var/lastday.$f_project`;
+  if(!$statsconf::prids{$f_project}) {
+    return 99999999;
   } else {
-    return `echo $f_action > ~/var/lastday.$f_project`;
+    my $qs_update = "select convert(char(8),max(DATE),112) from Platform_Contrib where 2=1";
+  
+    my @pridlist = split /:/, $statsconf::prids{$f_project};
+    for (my $i = 0; $i < @pridlist; $i++) {
+      my $project_id = int $pridlist[$i];
+      $qs_update ="$qs_update or PROJECT_ID = $project_id";
+    }
+    open TMP, ">/tmp/sqsh.tmp.$f_project";
+    print TMP "$qs_update\ngo";
+    close TMP;
+    my $lastdaynewval = `sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -w 999 -h -i /tmp/sqsh.tmp.$f_project`;
+    $lastdaynewval =~ s/[^0123456789]//g;
+    return $lastdaynewval;
   }
 }
