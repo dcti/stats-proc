@@ -2,10 +2,12 @@
 /*
 TM_RANK
 
+Parameters
+	Project_ID
 Reset TODAY fields to defaults
-	Possibly in Members table as well as ${1}_Team_Rank
+	Possibly in Members table as well as Team_Rank
 Insert new teams
-	Teams with work that do not exist in ${1}_Team_Rank
+	Teams with work that do not exist in Team_Rank
 Insert new team members
 	Members who have work for a team for the first time
 Delete hidden teams
@@ -42,20 +44,22 @@ set rowcount 0
 go
 
 print ' Remove hidden teams'
-delete ${1}_Team_Rank
+delete Team_Rank
 	from STATS_Team
-	where STATS_Team.TEAM = ${1}_Team_Rank.TEAM
+	where STATS_Team.TEAM = Team_Rank.TEAM_ID
 		and STATS_Team.listmode >= 10
+		and PROJECT_ID = ${1}
 go
 
 print ' Remove or move "today" info'
-update ${1}_Team_Rank
+update Team_Rank
 	set DAY_RANK_PREVIOUS = DAY_RANK,
 		DAY_RANK = 1000000,
 		OVERALL_RANK_PREVIOUS = OVERALL_RANK,
 		OVERALL_RANK = 1000000,
 		WORK_TODAY = 0,
 		MEMBERS_TODAY = 0
+	where PROJECT_ID = ${1}
 go
 
 
@@ -64,59 +68,74 @@ go
 declare @stats_date smalldatetime
 select @stats_date = LAST_STATS_DATE
 	from Projects
-	where NAME = "${1}"
+	where PROJECT_ID = ${1}
 
-insert ${1}_Team_Rank (TEAM, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
+insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
 		OVERALL_RANK, OVERALL_RANK_PREVIOUS, MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_LISTED)
-	select dm.TEAM, @stats_date, @stats_date, 0, 0, 1000000, 1000000, 1000000, 1000000, 0, 0, 0
-	from ${1}_Email_Contrib_Day dm, Stats_Team st
-	where dm.TEAM = st.TEAM
-		and dm.TEAM not in (select TEAM from ${1}_Team_Rank)
+	select ${1}, dm.TEAM_ID, @stats_date, @stats_date, 0, 0, 1000000, 1000000, 1000000, 1000000, 0, 0, 0
+	from Email_Contrib_Today dm, Stats_Team st
+	where dm.TEAM_ID = st.TEAM
+		and dm.TEAM_ID not in (select TEAM_ID from Team_Rank where PROJECT_ID = ${1})
 		and dm.LISTMODE < 10
+		and dm.PROJECT_ID = ${1}
 go
 
 print ' Update member tables'
 go
+/*
+** TODO What was this doing in the original script?
+** May need to refer to Email_Contrib_Today instead
+*/
 
-
-update ${1}_Team_Rank
+update Team_Rank
 	set WORK_UNITS = tws.WORK_UNITS
-	from ${1}_Email_Rank er, STATS_Participant s
-	where er.PROJECT_ID = ${1}_Team_Rank.PROJECT_ID
-		and tws.ID = ${1}_Team_Rank.ID
-		and tws.TEAM = ${1}_Team_Rank.TEAM
+	from Email_Rank er, STATS_Participant s
+	where tws.ID = Team_Rank.ID
+		and s.TEAM = Team_Rank.TEAM_ID
+		and er.PROJECT_ID = ${1}
+		and Team_Rank.PROJECT_ID = ${1}
 
-insert ${1}_Team_Rank
+insert Team_Rank
+/*
+** TODO Finish this - insert new teams?
+*/
 
 go
-print ' Populate work'
+print " Populate work"
 go
-print "::  Filling temp table with data (team,first,last,blocks)"
+print "::  Filling temp table"
 go
 create table #TeamWork
 (
-	TEAM int not NULL,
+	TEAM_ID int not NULL,
 	WORK_UNITS numeric(20, 0) not NULL
 )
 go
-insert #TeamWork (TEAM, WORK_UNITS)
-	select TEAM, sum(WORK_UNITS)
-	from ${1}_Email_Contrib_Day
-	group by TEAM
+insert #TeamWork (TEAM_ID, WORK_UNITS)
+	select TEAM_ID, sum(WORK_UNITS)
+	from Email_Contrib_Today
+	where PROJECT_ID = ${1}
+	group by TEAM_ID
 go
 declare @stats_date smalldatetime
 select @stats_date = LAST_STATS_DATE
 	from Projects
-	where NAME = "${1}"
+	where PROJECT_ID = ${1}
 
-update ${1}_Team_Rank
+update Team_Rank
 	set WORK_TODAY = tw.WORK_UNITS,
 		WORK_TOTAL = WORK_TOTAL + tw.WORK_UNITS,
 		LAST_DATE = @stats_date
 	from #TeamWork tw
-	where dm.TEAM = tw.TEAM
+	where dm.TEAM_ID = tw.TEAM_ID
+		and Team_Rank.PROJECT_ID = ${1}
 
-/* TODO: team join should log, so this script can refer to team membership on stats_date */
+/*
+** TODO: team join should log, so this script can refer to team membership
+** based on stats_date instead of the current value.  Without that fix,
+** changes after midnight, before stats run will be mistakenly included.
+** This also has an impact if stats have to be rerun.
+*/
 go
 print ' Rank all, today'
 go
@@ -124,21 +143,22 @@ go
 create table #rank_assign
 (
 	IDENT numeric(10, 0) identity,
-	TEAM int,
+	TEAM_ID int,
 	WORK_UNITS numeric(20, 0)
 )
 go
-insert #rank_assign (TEAM, WORK_UNITS)
-	select TEAM, WORK_TODAY
-	from ${1}_Team_Rank
-	order by WORK_TODAY desc, TEAM desc
+insert #rank_assign (TEAM_ID, WORK_UNITS)
+	select TEAM_ID, WORK_TODAY
+	from Team_Rank
+	where PROJECT_ID = ${1}
+	order by WORK_TODAY desc, TEAM_ID desc
 
 create clustered index iWORK_UNITS on #rank_assign(WORK_UNITS)
 
 create table #rank_tie
 (
 	WORK_UNITS numeric(20, 0),
-	rank int
+	RANK int
 )
 go
 insert #rank_tie
@@ -146,11 +166,12 @@ insert #rank_tie
 	from #rank_assign
 	group by WORK_UNITS
 
-update ${1}_Team_Rank
+update Team_Rank
 	set DAY_RANK = #rank_tie.rank
 	from #rank_tie, #rank_assign
 	where #rank_tie.WORK_UNITS = #rank_assign.WORK_UNITS
-		and ${1}_Team_Rank.TEAM = #rank_assign.TEAM
+		and Team_Rank.TEAM_ID = #rank_assign.TEAM_ID
+		and Team_Rank.PROJECT_ID = ${1}
 
 go
 drop table #rank_assign
@@ -158,104 +179,82 @@ drop table #rank_tie
 go
 
 
--- Old script
-
-
-print "::  Setting # of Current members"
+print ' Rank all, overall'
 go
 
-select distinct team, count(*) as members
-into #curmema
-from STATS_participant
-where retire_to = 0 or retire_to = NULL
-group by team
+create table #rank_assign
+(
+	IDENT numeric(10, 0) identity,
+	TEAM_ID int,
+	WORK_UNITS numeric(20, 0)
+)
 go
+insert #rank_assign (TEAM_ID, WORK_UNITS)
+	select TEAM_ID, WORK_OVERALL
+	from Team_Rank
+	where PROJECT_ID = ${1}
+	order by WORK_OVERALL desc, TEAM_ID desc
 
-create index team on #curmema(team)
+create clustered index iWORK_UNITS on #rank_assign(WORK_UNITS)
+
+create table #rank_tie
+(
+	WORK_UNITS numeric(20, 0),
+	RANK int
+)
 go
+insert #rank_tie
+	select WORK_UNITS, min(IDENT)
+	from #rank_assign
+	group by WORK_UNITS
 
-update ${1}_CACHE_tm_RANK
-set CurrentMembers = T.members
-from ${1}_CACHE_tm_RANK C, #curmema T
-where T.team = C.team
+update Team_Rank
+	set OVERALL_RANK = #rank_tie.rank
+	from #rank_tie, #rank_assign
+	where #rank_tie.WORK_UNITS = #rank_assign.WORK_UNITS
+		and Team_Rank.TEAM_ID = #rank_assign.TEAM_ID
+		and Team_Rank.PROJECT_ID = ${1}
+
 go
-
-print "::  Setting # of total members"
-go
-
-select distinct team, count(*) as members
-into #curmemb
-from ${1}_master
-group by team
-go
-
-create index team on #curmemb(team)
-go
-
-update ${1}_CACHE_tm_RANK
-set TotalMembers = T.members
-from ${1}_CACHE_tm_RANK C, #curmemb T
-where T.team = C.team
-go
-
-print "::  Setting # of Active members"
-go
-
-declare @mdv smalldatetime
-select @mdv = max(date)
-from ${1}_master
-
-select distinct team, count(*) as members
-into #curmemc
-from ${1}_master
-where datediff(dd,date,@mdv)<7
-group by team
-go
-
-create index team on #curmemc(team)
-go
-
-update ${1}_CACHE_tm_RANK
-set ActiveMembers = T.members
-from ${1}_CACHE_tm_RANK C, #curmemc T
-where T.team = C.team
+drop table #rank_assign
+drop table #rank_tie
 go
 
 
+/*
+** Team_Members contains everyone who was or is on this team.
+** Active members have WORK_TODAY > 0
+** Total members = all listed in Team_Members
+** Current members = people who are listed on this team today, active or not
+*/
+print "::  Setting # of Overall and Active members"
+go
+select tm.TEAM_ID, count(*) 'OVERALL', sum(sign(WORK_TODAY)) 'ACTIVE', sum(abs(sign(sp.TEAM_ID - tm.TEAM_ID))) 'CURRENT'
+	into #CurrentMembers
+	from Team_Members tm, STATS_Participant sp
+	where tm.PROJECT_ID = ${1}
+		and tm.WORK_TODAY > 0
+		and sp.ID = tm.ID
+	group by tm.TEAM_ID
+go
+create index iTEAM_ID on #CurrentMembers(TEAM_ID)
+go
+update Team_Rank
+	set MEMBERS_TODAY = ACTIVE,
+		MEMBERS_OVERALL = OVERALL,
+		MEMBERS_CURRENT = CURRENT
+	from #CurrentMembers cm
+	where Team_Rank.TEAM_ID = cm.TEAM_ID
+		and Team_Rank.PROJECT_ID = ${1}
 
-print "::  Updating rank values to idx values (ranking step 1)"
-go
-update ${1}_CACHE_tm_RANK
-  set rank = idx,
-      overall_rate = convert(numeric(14,4),Blocks*268435.456/DateDiff(ss,First,DateAdd(dd,1,Last)))
+drop table #CurrentMembers
+
 go
 
-print "::  Indexing on blocks for ranking acceleration"
-go
-create index tempindex on ${1}_CACHE_tm_RANK(blocks)
-go
 
-print "::  Correcting rank for tied teams"
-go
-update ${1}_CACHE_tm_RANK
-set rank = (select min(btb.rank) from ${1}_CACHE_tm_RANK btb where btb.blocks = ${1}_CACHE_tm_RANK.blocks)
-where (select count(btb.blocks) from ${1}_CACHE_tm_RANK btb where btb.blocks = ${1}_CACHE_tm_RANK.blocks) > 1
-go
-
-drop index ${1}_CACHE_tm_RANK.tempindex
 
 print "::  Creating team indexes"
 go
-create index team on ${1}_CACHE_tm_RANK(team)
-go
-
-print "::  Calculating offset from previous ranking"
-go
-update ${1}_CACHE_tm_RANK
-set Change = (select ${1}_CACHE_tm_RANK_old.rank from ${1}_CACHE_tm_RANK_old
-              where ${1}_CACHE_tm_RANK_old.team = ${1}_CACHE_tm_RANK.team)-${1}_CACHE_tm_RANK.rank
-go
-
-grant select on ${1}_CACHE_tm_RANK  to public
+create index iTEAM_ID on Team_Rank(TEAM_ID)
 go
 

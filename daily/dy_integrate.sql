@@ -1,11 +1,11 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_integrate.sql,v 1.7 2000/04/13 14:58:16 bwilson Exp $
+# $Id: dy_integrate.sql,v 1.8 2000/04/14 21:32:55 bwilson Exp $
 #
 # Move data from the ${1}_import table to the daytables
 #
 # Arguments:
-#       Project
+#       PROJECT_ID
 
 /*
 **	Moved e-mail cleanup here, to aggregate the data more quickly
@@ -38,13 +38,13 @@ update ${1}_import
 	where substring(EMAIL, charindex('@', EMAIL) + 1, 64) like '%@%'
 go
 
-/* Store the stats date here, instead of in every row of Email_Contrib_Day and Platform_Contrib_Day */
+/* Store the stats date here, instead of in every row of Email_Contrib_Today and Platform_Contrib_Today */
 declare @stats_date smalldatetime
-select @stats_date = max(timestamp)
+select @stats_date = max(TIME_STAMP)
 	from ${1}_import
 update Projects
 	set LAST_STATS_DATE = @stats_date
-	where NAME = "${1}"
+	where PROJECT_ID = ${1}
 go
 
 /*
@@ -54,43 +54,37 @@ Assign contest id
 daytable contains id instead of EMAIL
 password assign automatic
 */
-create table #Email_Contrib_Day
+create table #Email_Contrib_Today
 (
 	EMAIL varchar (64) NULL,
 	WORK_UNITS numeric(20, 0) NULL
 )
 go
-declare @proj_id tinyint
-
-select @proj_id = PROJECT_ID
-	from Projects
-	where NAME = "${1}"
-
 /* Put EMAIL data into temp table */
-insert #Email_Contrib_Day (EMAIL, WORK_UNITS)
+insert #Email_Contrib_Today (EMAIL, WORK_UNITS)
 	select EMAIL, sum(WORK_UNITS)
 	from ${1}_import
 	group by EMAIL
 
-insert #Email_Contrib_Day (EMAIL, WORK_UNITS)
+insert #Email_Contrib_Today (EMAIL, WORK_UNITS)
 	select EMAIL, sum(WORK_UNITS)
-	from Email_Contrib_Day
-	where PROJECT_ID = @proj_id
+	from Email_Contrib_Today
+	where PROJECT_ID = ${1}
 
 begin transaction
-delete Email_Contrib_Day
-	where PROJECT_ID = @proj_id
+delete Email_Contrib_Today
+	where PROJECT_ID = ${1}
 
-insert into Email_Contrib_Day (PROJECT_ID, EMAIL, WORK_UNITS, ID, TEAM)
-	select @proj_id, EMAIL, sum(WORK_UNITS), 0, 0
-	from #Email_Contrib_Day
+insert into Email_Contrib_Today (PROJECT_ID, EMAIL, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
+	select ${1}, EMAIL, sum(WORK_UNITS), 0, 0, 0
+	from #Email_Contrib_Today
 	group by EMAIL
 commit transaction
 
-drop table #Email_Contrib_Day
+drop table #Email_Contrib_Today
 go
 
-create table #Platform_Contrib_Day
+create table #Platform_Contrib_Today
 (
 	CPU smallint not NULL,
 	OS smallint not NULL,
@@ -98,34 +92,28 @@ create table #Platform_Contrib_Day
 	WORK_UNITS numeric(20, 0) not NULL
 )
 go
-declare @proj_id tinyint
-
-select @proj_id = PROJECT_ID
-	from Projects
-	where NAME = "${1}"
-
-insert #Platform_Contrib_Day (CPU, os, ver, WORK_UNITS)
-	select CPU, os, ver, sum(WORK_UNITS)
+insert #Platform_Contrib_Today (CPU, OS, VER, WORK_UNITS)
+	select CPU, OS, VER, sum(WORK_UNITS)
 	from ${1}_import
-	group by CPU, os, ver
+	group by CPU, OS, VER
 
-insert #Platform_Contrib_Day (CPU, os, ver, WORK_UNITS)
-	select CPU, os, ver, sum(WORK_UNITS)
-	from Platform_Contrib_Day
-	where PROJECT_ID = @proj_id
-	group by CPU, os, ver
+insert #Platform_Contrib_Today (CPU, OS, VER, WORK_UNITS)
+	select CPU, OS, VER, sum(WORK_UNITS)
+	from Platform_Contrib_Today
+	where PROJECT_ID = ${1}
+	group by CPU, OS, VER
 
 begin transaction
-delete Platform_Contrib_Day
-	where PROJECT_ID = @proj_id
+delete Platform_Contrib_Today
+	where PROJECT_ID = ${1}
 
-insert Platform_Contrib_Day (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
-	select @proj_id, CPU, OS, VER, sum(WORK_UNITS)
-	from #Platform_Contrib_Day
+insert Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
+	select ${1}, CPU, OS, VER, sum(WORK_UNITS)
+	from #Platform_Contrib_Today
 	group by CPU, OS, VER
 commit transaction
 
-drop table #Platform_Contrib_Day
+drop table #Platform_Contrib_Today
 go
 delete ${1}_import
 	where 1 = 1

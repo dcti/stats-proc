@@ -1,15 +1,15 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: rowcount.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: rowcount.sql,v 1.2 2000/04/14 21:32:55 bwilson Exp $
 #
 # Returns how many rows are in a table
 #
 # Arguments:
-#	Tablename and where clause
+#	project_id and date
 #
 # Returns:
 #	Rowcount
 
-select count(*) from ${1}_master where date = '${2}'
+select count(*) from Email_Contrib where PROJECT_ID = ${1} and DATE = "${2}"
 # turn off header and rows affected output
 go -f -h

@@ -1,12 +1,12 @@
 /*
 #!/usr/bin/sqsh -i
 #
-# $Id: em_rank.sql,v 1.2 2000/04/13 14:58:16 bwilson Exp $
+# $Id: em_rank.sql,v 1.3 2000/04/14 21:32:55 bwilson Exp $
 #
 # Does the participant ranking (overall)
 #
 # Arguments:
-#       Project
+#       Project_id
 */
 
 use stats
@@ -19,12 +19,13 @@ drop index Email_Rank.iDAY_RANK
 drop index Email_Rank.iOVERALL_RANK
 go
 print 'Remove retired or hidden participants'
-/* No project information because it's OK to remove them from all projects */
+go
 delete Email_Rank
 	from STATS_Participant
 	where STATS_Participant.ID = Email_Rank.ID
-		and (STATS_Participant.retire_to > 0
+		and (STATS_Participant.RETIRE_TO >= 1
 			or STATS_Participant.listmode >= 10)
+		and PROJECT_ID = ${1}
 go
 print ' Remove or move "today" info '
 update Email_Rank
@@ -33,68 +34,35 @@ update Email_Rank
 		OVERALL_RANK_PREVIOUS = OVERALL_RANK,
 		OVERALL_RANK = 1000000,
 		WORK_TODAY = 0
-	from Projects
-	where Email_Rank.PROJECT_ID = Projects.PROJECT_ID
-		and Projects.NAME = "${1}"
-go
-print ' Populate ID field in Email_Contrib_Day'
-go
-update Email_Contrib_Day
-	set ID = sp.ID
-	from STATS_Participant sp, Projects p
-	where sp.EMAIL = Email_Contrib_Day.EMAIL
-		and Email_Contrib_Day.ID = 0
-		and p.PROJECT_ID = Email_Contrib_Day.PROJECT_ID
-		and p.NAME = "${1}"
-go
-create clustered index iID on Email_Contrib_Day(ID)
-go
-print ' Now insert new participants '
+	where Email_Rank.PROJECT_ID = ${1}
 go
 
-declare @stats_date smalldatetime,
-	@proj_id tinyint
-select @stats_date = LAST_STATS_DATE,
-		@proj_id = PROJECT_ID
+print ' Now insert new participants'
+go
+
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
 	from Projects
-	where NAME = "${1}"
+	where PROJECT_ID = ${1}
 select @stats_date = isnull(@stats_date, getdate())
 
 insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
 		OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select @proj_id, sp.ID, @stats_date, @stats_date, 0, 0, 1000000, 1000000, 1000000, 1000000
-	from Email_Contrib_Day dm, STATS_Participant sp
-	where dm.ID = sp.ID
+	select distinct ${1}, ect.CREDIT_ID, @stats_date, @stats_date, 0, 0, 1000000, 1000000, 1000000, 1000000
+	from Email_Contrib_Today ect, STATS_Participant sp
+	where ect.CREDIT_ID = sp.ID
 		and sp.RETIRE_TO = 0
 		and sp.LISTMODE < 10
-		and dm.ID not in (select ID from Email_Rank)
+		and ect.CREDIT_ID not in (select ID from Email_Rank)
+		and ect.PROJECT_ID = ${1}
 
-/* TODO: Assign earlier date if others are retired into */
-/* Will not attempt to do it here.  It should happen during a retire. */
+/*
+** TODO: Assign earlier date if others are retired into
+** Should not attempt to do it here.  It should happen one-up during a retire.
+*/
+
 go
-print 'Populate direct work'
-go
-declare @stats_date smalldatetime,
-	@proj_id tinyint
-select @stats_date = LAST_STATS_DATE,
-		@proj_id = PROJECT_ID
-	from Projects
-	where NAME = "${1}"
-select @stats_date = isnull(@stats_date, getdate())
-
-update Email_Rank
-	set WORK_TODAY = dm.SIZE,
-		WORK_TOTAL = WORK_TOTAL + dm.SIZE,
-		LAST_DATE = @stats_date
-	from Email_Contrib_Day dm, STATS_Participant sp
-	where Email_Rank.ID = dm.ID
-		and Email_Rank.ID = sp.ID
-		and dm.ID = sp.ID
-		and Email_Rank.PROJECT_ID = @proj_id
-		and dm.PROJECT_ID = @proj_id
-		and sp.retire_to = 0
-
-print 'Populate retired work'
+print 'Populate work'
 go
 create table #retired_work
 (
@@ -102,28 +70,24 @@ create table #retired_work
 	WORK_TODAY	numeric(20, 0)
 )
 go
-declare @stats_date smalldatetime,
-	@proj_id tinyint
-select @stats_date = LAST_STATS_DATE,
-		@proj_id = PROJECT_ID
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
 	from Projects
-	where NAME = 'OGR'
+	where PROJECT_ID = ${1}
 
 insert #retired_work
-	select sp.RETIRE_TO, sum(dm.SIZE)
-	from Email_Contrib_Day dm, STATS_Participant sp
-	where dm.EMAIL = sp.EMAIL
-		and sp.RETIRE_TO > 0
-		and dm.PROJECT_ID = @proj_id
-	group by sp.RETIRE_TO
+	select CREDIT_ID, sum(dm.SIZE)
+	from Email_Contrib_Today ect
+	where ect.PROJECT_ID = ${1}
+	group by ect.CREDIT_ID
 
 update Email_Rank
-	set WORK_TODAY = Email_Rank.WORK_TODAY + rw.WORK_TODAY,
+	set WORK_TODAY = rw.WORK_TODAY,
 		WORK_TOTAL = WORK_TOTAL + rw.WORK_TODAY,
 		LAST_DATE = @stats_date
 	from #retired_work rw
 	where rw.ID = Email_Rank.ID
-		and Email_Rank.PROJECT_ID = @proj_id
+		and Email_Rank.PROJECT_ID = ${1}
 
 drop table #retired_work
 go
@@ -136,15 +100,10 @@ create table #rank_assign
 	WORK_UNITS numeric(20, 0)
 )
 go
-declare @proj_id tinyint
-select @proj_id = PROJECT_ID
-	from Projects
-	where NAME = "${1}"
-
 insert #rank_assign (ID, WORK_UNITS)
 	select ID, WORK_TODAY
 	from Email_Rank
-	where PROJECT_ID = @proj_id
+	where PROJECT_ID = ${1}
 	order by WORK_TODAY desc, ID desc
 
 create clustered index iWORK_UNITS on #rank_assign(WORK_UNITS)
@@ -155,11 +114,6 @@ create table #rank_tie
 	rank int
 )
 go
-declare @proj_id tinyint
-select @proj_id = PROJECT_ID
-	from Projects
-	where NAME = "${1}"
-
 insert #rank_tie
 	select WORK_UNITS, min(IDENT)
 	from #rank_assign
@@ -170,7 +124,7 @@ update Email_Rank
 	from #rank_tie, #rank_assign
 	where #rank_tie.WORK_UNITS = #rank_assign.WORK_UNITS
 		and Email_Rank.ID = #rank_assign.ID
-		and Email_Rank.PROJECT_ID = @proj_id
+		and Email_Rank.PROJECT_ID = ${1}
 
 drop table #rank_assign
 drop table #rank_tie
@@ -187,6 +141,7 @@ go
 insert #rank_assign (ID, WORK_UNITS)
 	select ID, WORK_TOTAL
 	from Email_Rank
+	where PROJECT_ID = ${1}
 	order by WORK_TOTAL desc, ID desc
 
 create clustered index iWORK_UNITS on #rank_assign(WORK_UNITS)
@@ -207,6 +162,7 @@ update Email_Rank
 	from #rank_tie, #rank_assign
 	where #rank_tie.WORK_UNITS = #rank_assign.WORK_UNITS
 		and Email_Rank.ID = #rank_assign.ID
+		and Email_Rank.PROJECT_ID = ${1}
 
 drop table #rank_assign
 drop table #rank_tie
@@ -218,4 +174,7 @@ go
 print ' Rebuild indexes on _Email_Rank'
 drop index Email_Rank.iDAY_RANK
 drop index Email_Rank.iOVERALL_RANK
+go
+create index iDAY_RANK on Email_Rank(PROJECT_ID, DAY_RANK)
+create index iOVERALL_RANK on Email_Rank(PROJECT_ID, OVERALL_RANK)
 go
