@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.22 2003/04/29 19:57:15 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.23 2003/04/29 20:14:12 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -179,9 +179,12 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
         die;
       }
       while (<SQL>) {
-        my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
-        print "$ts $_";
-        $bufstorage = "$bufstorage$ts $_";
+        my $buf = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]) . $_;
+        chomp $buf;
+        if ( $buf ne '') {
+          stats::log($project,0,$buf);
+          $bufstorage = "$bufstorage$ts $_";
+        }
         if( $_ =~ /^Msg|ERROR/ ) {
           $psqlsuccess = 1;
         } elsif ( $_ =~ /^ Total rows: *(\d+)/ ) {
