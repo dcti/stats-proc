@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.3 2000/10/30 00:54:16 decibel Exp $
+# $Id: tm_update.sql,v 1.4 2000/10/30 13:26:02 decibel Exp $
 
 TM_RANK
 
@@ -13,7 +13,7 @@ M Remove members with listmode >= 10
 M Clear yesterday member info
 M Populate today contrib for existing members
 M Flag existing members (in temp table)
-M Insert nonflagged members and their contrib for today
+M Insert nonflagged members and their contrib for today and total (remember team '0' work)
 
 T Build temp table of all contrib of each team (from member temp table)
 T Remove (hide) teams with listmode >= 10
@@ -21,6 +21,8 @@ T Flag existing teams (in temp table)
 T Insert nonflagged teams
 T Clear yesterday team info
 T Populate today info for existing teams
+T Insert info for new teams *with a 0 for WORK_TOTAL, since that will be updated by the next step*
+T Update all teams where new records for the team were inserted into Team_Members
 
 M TODO: Rank members within each team (cursor required)
 
@@ -115,10 +117,13 @@ select @stats_date = LAST_STATS_DATE
 	where PROJECT_ID = ${1}
 insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select ${1}, ID, TEAM_ID, @stats_date, @stats_date, tmw.WORK_TODAY, tmw.WORK_TODAY,
+	select ${1}, ec.ID, ec.TEAM_ID, min(ec.DATE), @stats_date, sum(tmw.WORK_TODAY), sum(ec.WORK_UNITS),
 		1000000, 1000000, 1000000, 1000000
-	from #TeamMemberWork tmw
+	from #TeamMemberWork tmw, Email_Contrib ec
 	where IS_NEW = 1
+		and ec.ID = tmw.ID
+		and ec.TEAM_ID = tmw.TEAM_ID
+	group by tmw.ID, tmw.TEAM_ID
 go
 
 /*
@@ -196,10 +201,32 @@ select @max_rank = max_rank from #maxrank
 insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
 		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
-	select ${1}, tw.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY,
+	select ${1}, tw.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, 0,
 			@max_rank, @max_rank, @max_rank, @max_rank, 0, 0, 0
 	from #TeamWork tw
 	where tw.IS_NEW = 1
+
+print " Update FIRST_DATE and WORK_TOTAL to reflect new additions to Team_Members"
+go
+
+select tm.TEAM_ID, min(tm.FIRST_DATE) as FIRST_DATE, sum(tm.WORK_TOTAL) as WORK_TOTAL
+	into #TeamWorkUpdate
+	from Team_Members tm, #TeamMemberWork tmw
+	where tm.TEAM_ID = tmw.TEAM_ID
+		and tm.ID = tmw.ID
+		and tmw.IS_NEW = 1
+	group by TEAM_ID
+go
+
+update Team_Rank
+	set WORK_TOTAL = Team_Rank.WORK_TOTAL + twu.WORK_TOTAL
+	from #TeamWorkUpdate twu
+	where Team_Rank.TEAM_ID = twu.TEAM_ID
+update Team_Rank
+	set FIRST_DATE = twu.FIRST_DATE
+	from #TeamWorkUpdate twu
+	where Team_Rank.TEAM_ID = twu.TEAM_ID
+		and twu.FIRST_DATE < Team_Rank.FIRST_DATE
 
 /*
 ** TODO: team join should log, so this script can refer to team membership
