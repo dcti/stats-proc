@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.23 2002/05/15 06:02:14 decibel Exp $
+# $Id: integrate.sql,v 1.24 2002/07/27 00:27:01 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -235,6 +235,14 @@ go
 /* Do the exact same stuff for Platform_Contrib_Today */
 print "Rolling up platform contributions"
 go
+
+/* First, make sure we don't have any crap in the logs */
+update import_bcp set CPU = 0
+	where CPU > (select max(CPU)+20 from STATS_os)
+update import_bcp set OS = 0
+	where OS > (select max(OS)+20 from STATS_os)
+go
+
 create table #Platform_Contrib_Today
 (
 	PROJECT_ID	tinyint		not NULL,
