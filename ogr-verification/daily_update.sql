@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.18 2003/12/12 19:18:08 nerf Exp $
+-- $Id: daily_update.sql,v 1.19 2004/01/28 20:18:14 decibel Exp $
 
 select now();
 
@@ -206,28 +206,68 @@ id integer NOT NULL
 
 ANALYZE retire_today;
 
+-- We need to build a list of work that has been done by newly retired participants that can no longer
+-- be considered valid because a stub has been done multiple times by the same persone
+--
+-- Here are the scenarios:
+-- Assume id 2 and 3 both retired into id 1
+-- a) The same stub has been done by 1 and 2 or 1 and 3; reduce count be one
+-- b) Same stub done by 1, 2, and 3; reduce count by 2
+-- c) Same stub done by 2 and 3; reduce by 1
+
+-- Grab all data involved:
+/*
+SELECT stub_id, nodecount, rslt.id, rt.stats_id
+    INTO retired_data
+    FROM OGR_results rslt, retire_today rt
+    WHERE rslt.id = rt.id OR rslt.id = rt.stats_id
+;
+For case a:
+stub 1, nodecount 1, 1, 1
+stub 1, nodecount 1, 1, 2 (or stub 1, nodecount 1, 1, 3)
+
+b:
+stub 1, nodecount 1, 1, 1
+stub 1, nodecount 1, 1, 2
+stub 1, nodecount 1, 1, 3
+
+c:
+stub 1, nodecount 1, 1, 2
+stub 1, nodecount 1, 1, 3
+
+Given that set, the delta we need to apply to each stub_id/nodecount combo is
+-(count(*) - count(DISTINCT stats_id)) but of course count(DISTINCT stats_id) will always be 1 so what we
+want is:
+
+SELECT stub_id, nodecount, count(*)-1 as correction
+    FROM retired_data
+    GROUP BY stub_id, nodecount
+;
+
+*/
+
 SET enable_seqscan = false;
 --explain analyze
 INSERT INTO retired_stub_id
-  SELECT DISTINCT stub_id, nodecount, id
-    -- Get list of all work done by everyone who's retiring, along with their stats_id
-    -- Doing this as a subquery is faster because it limits the amount of processing the main query
-    -- has to do.
-    FROM (SELECT DISTINCT stub_id, nodecount, rslt.id, rt.stats_id
-          FROM OGR_results rslt, retire_today rt
-          WHERE rslt.id = rt.id
-        ) AS w
-    -- In the final list we only want work that would duplicate other work by this participant
-    -- This means we just have to see if there's any results for each stub/nodecount that were done
-    -- by anyone in the retire-chain *except for the id that's newly retired*
-    WHERE EXISTS (SELECT 1
-                FROM OGR_results r, OGR_idlookup l
-                WHERE r.id = l.id
-                  AND r.stub_id = w.stub_id
-                  AND r.nodecount = w.nodecount
-                  AND l.stats_id = w.stats_id
-                  AND l.id != w.id
-              )
+    -- Get the list of all work done by the IDs involved in retires
+    SELECT stub_id, nodecount, id
+        FROM
+            -- Build a list of all the IDs we might need. This removes the need for an OR so it should be faster
+            (
+                SELECT stats_id, id FROM retire_today
+                    UNION
+                SELECT stats_id, stats_id FROM retire_today
+            ) AS ids
+            , OGR_results r
+        WHERE r.id = ids.id
+            -- But we only need work if it has been done by someone else in our retire chain
+            AND EXISTS (SELECT *
+                        FROM OGR_results r2, ids
+                        WHERE r2.id = ids.id
+                            AND r2.stub_id = r.stub_id
+                            AND r2.nodecount = r.nodecount
+                            AND r2.id != r.id
+                      )
 ;
 SET enable_seqscan = true;
 
