@@ -1,4 +1,4 @@
--- $Id: incr.sql,v 1.4 2003/08/01 18:37:06 decibel Exp $ --
+-- $Id: incr.sql,v 1.5 2003/08/02 12:58:42 nerf Exp $ --
 ----------------
 -- day_results and retire_today will probably be handled somewhere else
 -- in the future, but it's here for not to facilitate testing
@@ -114,7 +114,8 @@ FROM (SELECT stub_id, nodecount, count(*) AS duplicated_ids
 WHERE ogr_summary.stub_id = dw.stub_id
 AND ogr_summary.nodecount = dw.nodecount;
 
-create temp table day_summary (
+-- Create a summary, like OGR_summary, but just with today's data
+CREATE TEMP TABLE day_summary (
  stub_id       integer  NOT NULL,
  nodecount     bigint   NOT NULL,
  ids  integer  NOT NULL,
@@ -128,11 +129,16 @@ SELECT stub_id, nodecount, count(DISTINCT l.stats_id) AS ids,
     FROM day_results dr, OGR_idlookup l, platform p
     WHERE l.id = dr.id
         AND p.platform_id = dr.platform_id
-AND NOT EXISTS (SELECT * FROM ogr_results r WHERE r.stub_id = dr.stub_id AND r.nodecount = dr.nodecount AND r.id = dr.id)
+AND NOT EXISTS (
+	SELECT * FROM ogr_results r
+		WHERE r.stub_id = dr.stub_id
+		AND r.nodecount = dr.nodecount
+		AND r.id = dr.id)
     GROUP BY stub_id, nodecount
 ;
 select now();
-create index day_stubnode on day_summary (stub_id,nodecount);
+CREATE INDEX day_stubnode ON day_summary (stub_id,nodecount)
+    WHERE ds.in_ogr_summary;
 
 analyze day_summary;
 select now();
