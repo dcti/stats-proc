@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.10 2003/08/25 19:27:54 decibel Exp $
+ * $Id: logmod.cpp,v 1.11 2003/08/25 19:30:01 gregh Exp $
  */
 
 #include <assert.h>
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
                 status    = "0";      // coreid is ignored
                 break;
             case OGR:
-                projectid = fields[0]+1;
+                projectid = fields[0];
                 projectid[2] = 0;
                 if (atoi(projectid) == 26) {
                     projectid = "25";
