@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.9 2000/07/19 15:04:53 decibel Exp $
+# $Id: integrate.sql,v 1.10 2000/07/20 00:56:31 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -159,7 +159,7 @@ delete Email_Contrib_Today
 insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
 	select PROJECT_ID, sum(WORK_UNITS), ID, 0, 0
 	from #Email_Contrib_Today
-	group by ID
+	group by PROJECT_ID, ID
 commit transaction
 
 drop table #Email_Contrib_Today
@@ -183,9 +183,11 @@ insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	group by PROJECT_ID, CPU, OS, VER
 
 insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
-	select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
-	from Platform_Contrib_Today
-	group by PROJECT_ID, CPU, OS, VER
+	select pct.PROJECT_ID, pct.CPU, pct.OS, pct.VER, sum(pct.WORK_UNITS)
+	from Platform_Contrib_Today pct, #Projects p
+	where pct.PROJECT_ID = p.PROJECT_ID 
+-- Removed by JN: the data in PCT should already be summed.
+--	group by PROJECT_ID, CPU, OS, VER
 go
 
 print "Moving data from temptable to Platform_Contrib_Today"
