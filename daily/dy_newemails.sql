@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_newemails.sql,v 1.8 2000/06/25 21:36:05 decibel Exp $
+# $Id: dy_newemails.sql,v 1.9 2000/06/28 02:19:19 bwilson Exp $
 #
 # Adds new participants to stats_participant
 #
@@ -60,14 +60,20 @@ declare @idoffset int
 
 select @idoffset = max(id)
 	from STATS_Participant
-	where id < 5000000
 
--- [BW] If we switch to retire_to = id as the normal condition,
---	this insert should insert (id, EMAIL, retire_to)
---	from ID + @idoffset, EMAIL, ID + @idoffset
+/*
+** [BW] If we switch to retire_to = id as the normal condition,
+**	this insert should insert (id, EMAIL, retire_to)
+**	from ID + @idoffset, EMAIL, ID + @idoffset
+*/
 insert into STATS_participant (ID, EMAIL)
 	select ID + @idoffset, EMAIL
 	from #dayemails
+
+update Email_Contrib_Today
+	set ID = #dayemails.ID + @idoffset
+	from #dayemails
+	where #dayemails.EMAIL = Email_Contrib_Today.EMAIL
 go
 drop table #dayemails
 go
