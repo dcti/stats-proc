@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.23 2000/10/05 00:17:18 decibel Exp $
+# $Id: daily.pl,v 1.24 2000/10/30 01:11:23 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -81,8 +81,10 @@ sub sqsh {
     my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
     my $buf = $_;
     chomp $buf;
-    stats::log($project,0,$buf);
-    $bufstorage = "$bufstorage$ts $_";
+    if ($buf != "") {
+      stats::log($project,0,$buf);
+      $bufstorage = "$bufstorage$ts $_";
+    }
     if( $_ =~ /^Msg/ ) {
       $sqshsuccess = 1;
     }
