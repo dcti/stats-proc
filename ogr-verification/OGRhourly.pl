@@ -1,7 +1,7 @@
 #!/usr/bin/perl -I../global
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: OGRhourly.pl,v 1.1 2003/01/18 07:47:11 nerf Exp $
+# $Id: OGRhourly.pl,v 1.2 2003/01/19 07:56:57 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -183,11 +183,11 @@ sub spawn_daily {
   my ($f_project) = @_;
 
   stats::log($f_project,1,"Spawning movedata.sql");
-  if ( ($_ = system("psql ogr -f ./movedata.sql")) != 0 ) {
-    stats::log($f_project,1,"movedata.sql generated an error code of $_, \"$!\"!");
+  if ( ($_ = system("./daily.sh")) != 0 ) {
+    stats::log($f_project,1,"daily.sh generated an error code of $_, \"$!\"!");
     die;
   }
-  stats::log($f_project,1,"movedata.sql complete for $f_project");
+  stats::log($f_project,1,"daily.sh complete for $f_project");
 
 }
 
