@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # 11/28/2002 - Joel Von Holdt for distributed.net
-# $Id: filter.pl,v 1.4 2002/12/22 21:24:19 joel Exp $
+# $Id: filter.pl,v 1.5 2002/12/27 22:33:52 joel Exp $
 
 use strict;
 my ( $var, $fn, $fn24, $fn25, $reject, $numargs, $i );
@@ -41,15 +41,10 @@ $var = @ARGV[$i];
         	if (($blocktime, $blockip, $email, $stub_id, $nodecount, $os_type, $cpu_type, $version, $core) = split(/,/, $a))
                 {
 
-		# -> All OGR work submitted by multithreaded clients pre 8014 is invalid
-		#    (I know that the bug manifests itself very rarely. But IMHO there is no
-		#     100% safe way to tell if a submitted result is valid without
-		#     reprocessing the stub with a fixed client!) - (State of OGR email from coders@ on 11/27/02)
-
 # Do we need to do email verification?
 # if( $email =~ m/^[A-Za-z0-9\_-]+@[A-za-z0-9\_-]+.[A-Za-z0-9\_-]+.*/ ) || ( $email =~ m/^[A-Za-z0-9\_-]+.[A-Za-z0-9\_-]+@[A-za-z0-9\_-]+.[A-Za-z0-9\_-]+.* ) {
 
-                if ( $version < 8014 )
+                if ( $version < 8012 && $os_type == 1 )
                         {
                        	# throw this block out
                        	print REJ "$email, $stub_id, $nodecount, $os_type, $cpu_type, $version\n";
