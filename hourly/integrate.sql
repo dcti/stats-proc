@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.27 2002/12/05 05:58:22 decibel Exp $
+# $Id: integrate.sql,v 1.28 2002/12/06 16:45:33 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -257,8 +257,14 @@ create table #Platform_Contrib_Today
 	WORK_UNITS	numeric(20, 0)	not NULL
 )
 go
+/* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
+   want to try and multiply outside the sum, it won't do what we want at all. */
 insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
-	select i.PROJECT_ID, i.CPU, i.OS, i.VER, sum(i.WORK_UNITS)
+	select i.PROJECT_ID, i.CPU, i.OS, i.VER, sum(i.WORK_UNITS) * (select WORK_UNIT_IMPORT_MULTIPLIER
+										from Projects p
+										where p.PROJECT_ID = i.PROJECT_ID
+									)
+
 	from import_bcp i, Project_statsrun p
 	where i.PROJECT_ID = p.PROJECT_ID
 		and i.TIME_STAMP = p.LAST_HOURLY_DATE
