@@ -22,7 +22,7 @@ my @prefilter   = ("./logmod_ogr.pl",
 
 `rm $workdir*`;
 
-for (my $i = 0; $i < @projectlist; $i++) {
+for (my $i = 1; $i < @projectlist; $i++) {
   my $project = $projectlist[$i];
   my $lastlog = `cat ~/var/lastlog.$project`;
   my $logtoload = "29991231-23";
@@ -31,7 +31,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
 
   print "Project $i is $project.\nMy last log was $lastlog\n";
 
-  open LS, "ssh $server[0] ls $server[1]$project*|";
+  open LS, "tcsh -c 'ssh $server[0] \"ls $server[1]$project*\"'|";
   my $linecount = 0;
   my $qualcount = 0;
 
