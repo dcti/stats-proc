@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.12 2003/04/29 04:57:39 nerf Exp $
+# $Id: OGRhourly.pl,v 1.13 2003/08/21 18:39:07 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -55,7 +55,7 @@ my $outbuf = "";
 my @server = split /:/, $sourcelist;
 
 # Check to see if workdir is empty
-opendir WD, "$workdir" or die;
+opendir WD, "$workdir" or die "no workdir: $workdir";
 my @wdcontents = grep !/^(CVS|\.\.?)$/, readdir WD;
 closedir WD;
 
