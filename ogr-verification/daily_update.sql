@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.6 2003/09/27 21:16:41 nerf Exp $
+-- $Id: daily_update.sql,v 1.7 2003/09/28 16:53:24 nerf Exp $
 
 select now();
 
@@ -175,7 +175,7 @@ id integer NOT NULL
 ANALYZE retire_today;
 
 SET enable_seqscan = false;
-explain analyze
+--explain analyze
 INSERT INTO retired_stub_id
   SELECT DISTINCT stub_id, nodecount, id
     -- Get list of all work done by everyone who's retiring, along with their stats_id
@@ -211,7 +211,8 @@ BEGIN;
 -- reduce the number of participants for a given stub, but only if what
 -- we previous thought was two different people are now (because of retires)
 -- seen as a single person
-explain analyze UPDATE OGR_summary
+--explain analyze
+UPDATE OGR_summary
 SET participants = participants - duplicated_ids
 FROM (
   SELECT stub_id, nodecount, count(*) AS duplicated_ids
@@ -229,7 +230,8 @@ CREATE TEMP TABLE day_summary (
   in_OGR_summary boolean NOT NULL DEFAULT FALSE
 ) WITHOUT OIDS;
 
-explain analyze INSERT INTO day_summary (stub_id,nodecount,ids,max_version)
+--explain analyze
+INSERT INTO day_summary (stub_id,nodecount,ids,max_version)
 SELECT stub_id, nodecount, count(DISTINCT l.stats_id) AS ids,
   max(p.version) AS max_version
   FROM day_results dr, OGR_idlookup l, platform p
@@ -252,7 +254,8 @@ analyze day_summary;
 -- Since we're going to update the ones that are there, then insert the
 -- ones that are not, this saves us having to do the same EXISTS
 -- statement twice
-explain analyze UPDATE day_summary
+--explain analyze
+UPDATE day_summary
 SET in_OGR_summary = true
 WHERE exists
 (SELECT * FROM OGR_summary WHERE OGR_summary.stub_id = day_summary.stub_id
@@ -260,7 +263,8 @@ WHERE exists
     );
 
 -- If it's threre already, update it
-explain analyze UPDATE OGR_summary
+--explain analyze
+UPDATE OGR_summary
   SET participants = participants + ids
     , max_client = max(max_client, max_version)
   FROM day_summary ds
@@ -271,13 +275,15 @@ explain analyze UPDATE OGR_summary
 
 -- If it's not there, add it
 -- Note that most of the stubs will fall under this category
-explain analyze INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
+--explain analyze
+INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
   SELECT stub_id, nodecount, ids, max_version
   FROM day_summary ds
   WHERE NOT ds.in_OGR_summary
 ;
 
 COMMIT;
+select now();
 
 BEGIN;
   select doOGRstatsrun( :RUNDATE ::DATE);
