@@ -1,4 +1,7 @@
 #!/usr/bin/perl -Tw -I../global
+#
+# $Id: hourly.pl,v 1.35 2000/07/20 00:32:47 decibel Exp $
+
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
 use statsconf;
