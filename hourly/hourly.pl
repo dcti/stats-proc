@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.25 2003/04/29 21:52:16 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.26 2003/09/02 18:36:50 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -270,9 +270,13 @@ sub findlog {
   my $logtoload = "29991231-23";
   my $logext;
   my $lastlog = stats::lastlog($project);
-  chomp($lastlog);
 
-  stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
+  if (defined($lastlog) ) {
+    stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
+  } else {
+    stats::log($project,131,"Warning: It appears that no logs have ever been loaded for this project.");
+    $lastlog='';
+  }
 
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
@@ -380,4 +384,4 @@ sub rate_calc {
   return $f_outstr;
 }
 
-# vi: sw=2 ts=2
+# vi:expandtab sw=2 ts=2

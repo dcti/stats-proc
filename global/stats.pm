@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.28.2.10 2003/05/05 14:20:16 decibel Exp $
+# $Id: stats.pm,v 1.28.2.11 2003/09/02 18:36:50 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -12,6 +12,22 @@ package stats;
 
 require IO::Socket;
 require statsconf;
+use DBI;
+#use Data::Dumper;
+
+BEGIN {
+    # Connect to sybase
+    if (not ($dbh = DBI->connect("DBI:Pg:dbname=$statsconf::database", $statsconf::sqllogin)) ) {
+        stats::log($project,131,"Unable to connect to database '$statsconf::database' using login '$statsconf::sqllogin'!");
+        die;
+    }
+
+    $dbh->{HandleError} = sub {
+        stats::log($project,131,"Database error: $_[0], $_[1]");
+        die;
+    }
+}
+
 
 sub log {
 
@@ -164,22 +180,32 @@ sub lastlog ($) {
     # lastlog("ogr","20001231-01") will set lastlog value to 31-Dec-2000 01:00 UTC
 
     my ($f_project_type) = @_;
+    my @result;
 
-    $_ = `psql -d $statsconf::database -t -c "select to_char(max(log_timestamp), 'YYYYMMDD-HH24') from Projects p, Log_Info l WHERE l.project_id = p.project_id AND lower(p.project_type)=lower('$f_project_type')"`;
-    s/ *//;
-    chomp;
-    return $_;
+    my $stmt = $stats::dbh->prepare("SELECT to_char(max(log_timestamp), 'YYYYMMDD-HH24') FROM Projects p, Log_Info l WHERE l.project_id = p.project_id AND lower(p.project_type)=lower(?)");
+    $stmt->execute($f_project_type);
+    if (! (@result = $stmt->fetchrow_array) ) {
+        stats::log($project,131,'Unable to retrieve lastlog information from database!');
+        die;
+    }
+
+    return $result[0];
 }
 
 sub lastday {
-  # This function will either return or store the lastlog value for the specified project.
-  #
-  # lastday("ogr") will return lastday value for all ogr project_ids
+    # This function will either return or store the lastlog value for the specified project.
+    #
+    # lastday("ogr") will return lastday value for all ogr project_ids
 
-  my ($f_project_type) = @_;
+    my ($f_project_type) = @_;
+    my @result;
 
-  $_ = `psql -d $statsconf::database -t -c "SELECT to_char(max(date), 'YYYYMMDD') FROM projects p, daily_summary d WHERE d.project_id = p.project_id AND lower(p.project_type)=lower('$f_project_type')"`;
-  s/[^0123456789]//g;
-  chomp;
-  return $_;
+    my $stmt = $stats::dbh->prepare("SELECT to_char(max(date), 'YYYYMMDD') FROM projects p, daily_summary d WHERE d.project_id = p.project_id AND lower(p.project_type)=lower(?)");
+    $stmt->execute($f_project_type);
+    if (! (@result = $stmt->fetchrow_array ) ) {
+        stats::log($project,131,'Unable to retrieve lastday information from database!');
+        die;
+    }
+
+    return $result[0];
 }
