@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.34 2003/07/31 22:52:03 decibel Exp $
+# $Id: integrate.sql,v 1.35 2003/08/23 14:39:08 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -19,7 +19,7 @@ go
 */
 print "Updating LAST_STATS_DATE for ${1}"
 select p.PROJECT_ID,  isnull(min(TIME_STAMP), dateadd(hh, ${3}, "${2}")) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK,
-        count(*) as TOTAL_LINES
+        count(i.project_id) as TOTAL_LINES
 	into #Projects
 	from import_bcp i, Projects p
 	where p.PROJECT_ID *= i.PROJECT_ID
