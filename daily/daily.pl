@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.28 2001/12/29 07:35:12 decibel Exp $
+# $Id: daily.pl,v 1.29 2002/02/15 14:27:09 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -73,7 +73,7 @@ sub sqsh {
   my $sqshsuccess = 0;
   my $starttime = (gmtime);
   my $secs_start = int `date "+%s"`;
-  if(!open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -i $sqlfile 2>&1 |") {
+  if(!open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -a 1 -i $sqlfile 2>&1 |") {
     stats::log($project,131,"Failed to launch $sqlfile -- aborting.");
     die;
   }
