@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.15 2003/04/05 00:25:16 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.16 2003/04/07 02:45:09 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -12,7 +12,7 @@
 # the right directory.  This is inelegant and needs to be cleaned up.
 #
 # the 2> redirect of stderr seems to be necessary, although I'm not certain why.
-# Without it, the script is unable to spawn bcp or sqsh claiming the inability
+# Without it, the script is unable to spawn bcp or psql claiming the inability
 # to access /dev/stderr.  *shrug*
 
 use strict;
@@ -167,41 +167,41 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       }
 
       my $bufstorage = "";
-      my $sqshsuccess = 0;
+      my $psqlsuccess = 0;
       my $rowsnext = 0;
       my $sqlrows = 0;
       if(!open SQL, "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |") {
-        stats::log($project,139,"Error launching sqsh, aborting hourly run.");
+        stats::log($project,139,"Error launching psql, aborting hourly run.");
         die;
       }
       while (<SQL>) {
-	my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
+        my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
         print "$ts $_";
         $bufstorage = "$bufstorage$ts $_";
-	if ( $rowsnext == 1 ) {
-	  if ( $_ =~ /(\d+)/ ) {
-	    $sqlrows = $1;
-	    $rowsnext = 2;
-	  } else {
-	    stats::log($project,131,"SQL format error, rowcount isn't where it should be.");
-	    $sqshsuccess = 1;
-	  }
-	}
+        if ( $rowsnext == 1 ) {
+          if ( $_ =~ /DELETE (\d+)/ ) {
+            $sqlrows = $1;
+            $rowsnext = 2;
+          } else {
+            stats::log($project,131,"SQL format error, rowcount isn't where it should be.");
+            $psqlsuccess = 1;
+          }
+        }
         if( $_ =~ /^Msg/ ) {
-          $sqshsuccess = 1;
-        } elsif ( $_ =~ /^Total rows in import table:/ ) {
-	  if ( $rowsnext == 0 ) {
-	    $rowsnext = 1;
-	  } else {
-	    stats::log($project,131,"SQL format error, rowcount appearing twice.");
-	    $sqshsuccess = 1;
-	  }
-	}
+          $psqlsuccess = 1;
+        } elsif ( $_ =~ /^Clearing import table/ ) {
+          if ( $rowsnext == 0 ) {
+            $rowsnext = 1;
+          } else {
+            stats::log($project,131,"SQL format error, rowcount appearing twice.");
+            $psqlsuccess = 1;
+          }
+        }
       }
       close SQL;
-      if( $sqshsuccess > 0) {
-        stats::log($project,139,"integrate.sql failed on $basefn - aborting.  Details are in $workdir\sqsh_errors");
-        open SQERR, ">$workdir\sqsh_errors";
+      if( $psqlsuccess > 0) {
+        stats::log($project,139,"integrate.sql failed on $basefn - aborting.  Details are in $workdir\psql_errors");
+        open SQERR, ">$workdir\psql_errors";
         print SQERR "$bufstorage";
         close SQERR;
         die;
