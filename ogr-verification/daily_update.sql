@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.14 2003/11/05 14:19:56 nerf Exp $
+-- $Id: daily_update.sql,v 1.15 2003/11/05 14:21:03 nerf Exp $
 
 select now();
 
@@ -140,8 +140,7 @@ SET in_results = true
 WHERE exists
 (SELECT * FROM OGR_results WHERE day_results.id = OGR_results.id AND
     day_results.stub_id = OGR_results.stub_id AND
-    day_results.nodecount = OGR_results.nodecount AND
-    day_results.platform_id = OGR_results.platform_id);
+    day_results.nodecount = OGR_results.nodecount AND);
 select now();
 
 analyze day_results;
