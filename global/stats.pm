@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.16 2000/09/13 07:45:17 decibel Exp $
+# $Id: stats.pm,v 1.17 2000/09/13 18:42:37 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -179,7 +179,7 @@ sub lastday {
     close TMP;
     my $lastdaynewval = `sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -w 999 -h -i /tmp/sqsh.tmp.$f_project`;
     $lastdaynewval =~ s/[^0123456789]//g;
-    chomp;
+    chomp $lastdaynewval;
     return $lastdaynewval;
   }
 }
