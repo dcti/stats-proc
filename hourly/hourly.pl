@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw 
 use strict;
-$ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
+$ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
 use stats;
 
 my $yyyy = (localtime(time-3600))[5]+1900;
@@ -9,52 +9,37 @@ my $dd = (localtime(time-3600))[3];
 my $hh = (localtime(time-3600))[2];
 my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
+my @projectlist = ("ogr",
+                   "rc5");
+my @sourcelist  = ("LOGS-SOURCE-FQDN:/home/master/logs/",
+                   "LOGS-SOURCE-FQDN:/home/master/logs/");
 
-my $project = "csc";
-my $incoming = $stats::incoming{$project};
+for (my $i = 0; $i < @projectlist; $i++) {
+  my $project = $projectlist[$i];
+  my $lastlog = `cat ~/var/lastlog.$project`;
+  my @server = split /:/, $sourcelist[$i];
+  chomp($lastlog);
 
-my $file = "$incoming/$project$datestr.log.gz";
-print "$file\n\n";
-stats::log($project,0,"Looking for $file");
-if (!-e $file) {
- stats::log($project,1,"Hmmmm.  I would have expected to see the -$hh log by now.");
+  print "Project $i is $project.\n  My last log was $lastlog\n";
 
-  # Pull directory listing of the project's incoming directory. SORT DESC!
-  opendir INFILE, $incoming;
-  my @infiles = grep /^$project/, readdir INFILE;
-  closedir INFILE;
-  my @insort = sort { $b cmp $a } @infiles;
+  # my @files = split /\n/, `ssh $server[0] 'ls $server[1]$project*.gz'`;
+  #my $fcount = int @files;
 
-  for (my $i = 1; $i < 512; $i++) {
-    my $yyyy = (localtime(time-(3600*$i)))[5]+1900;
-    my $mm =   (localtime(time-(3600*$i)))[4]+1;
-    my $dd =   (localtime(time-(3600*$i)))[3];
-    my $hh =   (localtime(time-(3600*$i)))[2];
-    my $today = sprintf("%04s%02s%02s%02s", $yyyy, $mm, $dd, $hh);
+  #`/usr/local/bin/ssh $server[0] 'ls $server[1]$project*.gz'>~/var/filelist.$project`;
+  #`wc -l ~/var/filelist.$project`;
 
-    if ("$insort[0]" =~ m/^$project(\d\d\d\d\d\d\d\d)-(\d\d)/ ) {
-      my $lastlog = "$1$2";
-      if ("$lastlog" == "$today") {
-        if ( $i > 20 ) {
-          stats::log($project,139,"Holy fsck!  It's been $i hours since I got a log file!");
-        } else {
-          if ( $i > 12 ) {
-            stats::log($project,3,"It's been $i hours since I got a log file.");
-          } else {
-            if ( $i > 3 ) {
-              stats::log($project,1,"It's been $i hours since I got a log file.");
-            }
-          }
-        }
-        $i = 512;
+  open LS, "ssh $server[0] ls $server[1]$project*|";
+  my $linecount = 0;
+
+  while (<LS>) {
+    if( $_ =~ /.*\/$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
+      my $lastdate = $1;
+      if($lastdate gt $lastlog) {
+        print "  I need to load $1\n";
       }
-    } 
-  } 
-} else {
-  my $retcode = system "gzip", "-tv",$file;
-  if ( $retcode > 0 ) {
-    stats::log($project,139,"The -$hh file seems to be corrupt.");
-  } else {
-    stats::log($project,1,"The -$hh logfile looks fine.");
+    }
+    $linecount++;
   }
+  print "  (I saw $linecount lines)\n";
 }
+
