@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.14 2000/09/07 19:00:07 decibel Exp $
+# $Id: daily.pl,v 1.15 2000/09/11 17:57:24 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -24,7 +24,7 @@ my $respawn = 0;
 my $workdir = "./workdir/";
 
 if(!$ARGV[0]) {
-  stats::log("stats",132,"Some darwin just called daily.pl without supplying a project code!");
+  stats::log("stats",131,"Some darwin just called daily.pl without supplying a project code!");
   die;
 }
 my $project = $ARGV[0];
@@ -35,7 +35,7 @@ if (-e '/home/incoming/newlogs-rc5/nologs.lck') {
   die;
 }
 
-stats::log($project,1,"Beginning daily processing routines");
+stats::log($project,5,"Beginning daily processing routines");
 
 if(!$statsconf::prids{$project}) {
   stats::log($project,131,"I've never heard of project class $project!");
@@ -57,7 +57,7 @@ if(!$statsconf::prids{$project}) {
     sqsh("backup.sql $project_id");
   }
   my $newlastday = stats::lastday($project);
-  stats::log($project,1,"New last day value for project class $project is $newlastday");
+  stats::log($project,5,"Daily processing for $newlastday has completed");
 }
 
 sub sqsh {
