@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.115 2004/04/11 02:06:38 nugget Exp $
+# $Id: hourly.pl,v 1.116 2004/05/12 15:10:54 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -127,10 +127,11 @@ while ($respawn == 1 and not -e 'stop') {
       }
       while (<SCP>) {
         stats::debug(5, "SCP output: $_");
-        if ($_ =~ /Transferred: stdin (\d+), stdout (\d+), stderr (\d+) bytes in (\d+.\d) seconds/) {
-          my $rate = rate_calc($2,$4);
-          my $size = num_format($2);
-          my $time = num_format($4);
+        if ($_ =~ /Transferred: stdin \d+, stdout \d+, stderr \d+ bytes in (\d+.\d) seconds/) {
+          my $size = -s "$workdir$basefn";
+          my $rate = rate_calc($size,$1);
+          $size = num_format($size);
+          my $time = num_format($1);
           $outbuf = "$basefn received: $size bytes in $time seconds ($rate)";
         }
       }
@@ -155,12 +156,12 @@ while ($respawn == 1 and not -e 'stop') {
           }
         }
       } elsif ( $logext =~ /.bz2$/ ) {
-        my $orgsize=(stat "$workdir$basefn")[7];
+        my $orgsize = -s "$workdir$basefn";
         system("bzip2 -d $workdir$basefn");
         if ($? == 0) {
           $rawfn = $basefn;
           $rawfn =~ s/.bz2//i;
-          my $newsize=(stat "$workdir$rawfn")[7];
+          my $newsize = -s "$workdir$rawfn";
           if ( $newsize == 0 ) {
             stats::log($project,1,"$basefn successfully decompressed, and the file is empty.");
           } else {
