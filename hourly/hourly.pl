@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.71 2000/10/04 07:07:15 decibel Exp $
+# $Id: hourly.pl,v 1.72 2000/10/04 07:12:10 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -157,7 +157,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         my $rate = rate_calc($2,$4);
         my $size = num_format($2);
         my $time = num_format($4);
-        $outbuf = "$basefn received: $size bytes in $time seconds ($rate)\n";
+        $outbuf = "$basefn received: $size bytes in $time seconds ($rate)";
       }
     }
     close SCP;
