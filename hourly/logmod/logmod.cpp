@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.13 2004/05/14 17:37:06 decibel Exp $
+ * $Id: logmod.cpp,v 1.14 2004/06/23 22:18:51 decibel Exp $
  */
 
 #include <assert.h>
@@ -30,6 +30,9 @@ void error(int line, const char *msg, char *buf, int len)
         }
     }
     buf[len] = 0;
+    char *eol = strchr(buf, '\0');
+    if (eol > buf && *(eol - 1) == '\n') *(eol - 1) = '\0';
+
     fprintf(stderr, "BADLOG: line %d: (%s) %s\n", line, msg, buf);
 }
 
@@ -80,10 +83,16 @@ int main(int argc, char *argv[])
         // first field is date/time stamp
         char *date = p;
         int date_year, date_month, date_day;
-        if (sscanf(date, "%d/%d/%d", &date_month, &date_day, &date_year) != 3) {
+        if (
+                sscanf(date, "%d/%d/%d", &date_month, &date_day, &date_year) != 3
+                && sscanf(date, "%d-%d-%d", &date_year, &date_month, &date_day) != 3
+            )
+        {
+            error(line, "invalid date format", buf, len);
             goto next;
         }
         if (date_year < 0 || date_month < 1 || date_day < 1) {
+            error(line, "invalid date (negative numbers not allowed)", buf, len);
             goto next;
         }
         if (date_year < 97) {
@@ -314,3 +323,5 @@ next:
     }
     return 0;
 }
+
+// vi: expandtab sw=4 ts=4
