@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.17 2003/12/05 18:53:51 nerf Exp $
+-- $Id: daily_update.sql,v 1.18 2003/12/12 19:18:08 nerf Exp $
 
 select now();
 
@@ -91,7 +91,8 @@ CREATE TEMP TABLE day_results (
   nodecount BIGINT,
   platform_id INT,
   return_count INT,
-  in_results bool DEFAULT false NOT NULL
+  in_results bool DEFAULT false NOT NULL,
+  exclude_from_summary bool DEFAULT false NOT NULL
 ) WITHOUT OIDS;
 
 analyze logdata;
@@ -147,6 +148,37 @@ select now();
 analyze day_results;
 
 BEGIN;
+
+-- Now we have some updates to exclude_from_summary.  Setting this flag to true
+-- now means that those records will not make it into ogr_summary.  Use
+-- this for cases where we want separate results in ogr_results, but
+-- they aren't different enough to warrant two entries (or a participant
+-- count of 2 in ogr_summary
+
+-- update day_results.exclude_from_summary for stubs that were done by someone
+-- under a different id, but that we now know is the same person (due
+-- to retires)
+
+UPDATE day_results
+SET exclude_from_summary = true
+WHERE exists
+(SELECT * FROM OGR_results, ogr_idlookup i1, ogr_idlookup i2
+    WHERE i1.stats_id = i2.stats_id AND
+    i1.id = day_results.id AND i2.id = ogr_results.id AND
+    day_results.id != ogr_results.id AND
+    day_results.stub_id = OGR_results.stub_id AND
+    day_results.nodecount = OGR_results.nodecount AND
+    day_results.platform_id = OGR_results.platform_id);
+
+-- update where stub_id, nodecount, id are equal but platform is different
+-- We have decided that this should not count as having been done twice.
+UPDATE day_results
+SET exclude_from_summary = true
+WHERE day_results.id = ogr_results.id
+    AND day_results.stub_id = ogr_results.stub_id
+    AND day_results.nodecount = ogr_results.nodecount
+    AND day_results.platform_id != ogr_results.platform_id
+;
 
     UPDATE OGR_results
     SET return_count = COALESCE(OGR_results.return_count,0) + dr.return_count
@@ -219,36 +251,6 @@ FROM (
 WHERE OGR_summary.stub_id = dw.stub_id
   AND OGR_summary.nodecount = dw.nodecount;
 
--- Now we have some updates to in_results.  Setting this flag to true
--- now means that those records will not make it into ogr_summary.  Use
--- this for cases where we want separate results in ogr_results, but
--- they aren't different enough to warrant two entries (or a participant
--- count of 2 in ogr_summary
-
--- update day_results.in_results for stubs that were done by someone
--- under a different id, but that we now know is the same person (due
--- to retires)
-
-UPDATE day_results
-SET in_results = true
-WHERE exists
-(SELECT * FROM OGR_results, ogr_idlookup i1, ogr_idlookup i2
-    WHERE i1.stats_id = i2.stats_id AND
-    i1.id = day_results.id AND i2.id = ogr_results.id AND
-    day_results.id != ogr_results.id AND
-    day_results.stub_id = OGR_results.stub_id AND
-    day_results.nodecount = OGR_results.nodecount AND
-    day_results.platform_id = OGR_results.platform_id);
-
--- update where stub_id, nodecount, id are equal but platform is different
--- We have decided that this should not count as having been done twice.
-UPDATE day_results
-SET id = NULL
-WHERE day_results.id = ogr_results.id
-    AND day_results.stub_id = ogr_results.stub_id
-    AND day_results.nodecount = ogr_results.nodecount
-    AND day_results.platform_id != ogr_results.platform_id
-;
 
 -- Create a summary, like OGR_summary, but just with today's data
 CREATE TEMP TABLE day_summary (
@@ -266,7 +268,8 @@ SELECT stub_id, nodecount, count(DISTINCT l.stats_id) AS ids,
   FROM day_results dr, OGR_idlookup l, platform p
   WHERE l.id = dr.id
     AND p.platform_id = dr.platform_id
-    AND NOT dr.in_results
+    AND NOT (dr.exclude_from_summary
+      OR dr.in_results)
   GROUP BY stub_id, nodecount
 ;
 
@@ -308,6 +311,16 @@ INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
     SELECT stub_id, nodecount, ids, max_version
     FROM day_summary ds
     WHERE NOT ds.in_OGR_summary
+;
+
+UPDATE ogr_summary
+SET max_client = p.version
+  FROM platform p, day_results dr
+  WHERE p.platform_id = dr.platform_id
+    AND dr.exclude_from_summary
+    AND max_client < p.version
+    AND dr.stub_id = OGR_summary.stub_id
+    AND dr.nodecount = OGR_summary.nodecount
 ;
 
 COMMIT;
