@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.37 2003/11/17 16:19:40 decibel Exp $
+# $Id: integrate.sql,v 1.38 2003/11/19 20:55:18 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -158,9 +158,9 @@ create TEMP table TEMP_dayemails
 \echo Final roll-up by email
 /* First, put the latest set of logs in */
 insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
-    select PROJECT_ID, EMAIL, 0, sum(WORK_UNITS)
+    select PROJECT_ID, max(EMAIL), 0, sum(WORK_UNITS)
     from TEMP_import
-    group by PROJECT_ID, EMAIL
+    group by PROJECT_ID, lower(EMAIL)
 ;
 
 /* Assign ID's for everyone who has an ID */
