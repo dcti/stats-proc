@@ -63,7 +63,7 @@ create table #TeamWork
 )
 go
 insert #TeamMemberWork (ID, TEAM_ID, WORK_TODAY, IS_NEW)
-	select ect.CREDIT_ID, odm.TEAM_ID, sum(ect.WORK_UNITS), 1
+	select ect.CREDIT_ID, sp.TEAM, sum(ect.WORK_UNITS), 1
 	from Email_Contrib_Today ect, STATS_Participant sp, STATS_Team st
 	where ect.ID = sp.ID
 		and ect.TEAM_ID = tm.TEAM_ID
@@ -84,7 +84,7 @@ insert #TeamWork (TEAM_ID, WORK_TODAY, IS_NEW)
 	select TEAM_ID, sum(WORK_TODAY), 1
 	from #TeamMemberWork
 	group by TEAM_ID
-	
+
 update #TeamWork
 	set IS_NEW = 0
 	from Team_Rank tr
@@ -122,10 +122,10 @@ select @stats_date = LAST_STATS_DATE
 	from Projects
 	where PROJECT_ID = ${1}
 
-insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, 
-		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS, 
+insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
+		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
 		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_LISTED)
-	select ${1}, dm.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY, 
+	select ${1}, dm.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY,
 			1000000, 1000000, 1000000, 1000000, 0, 0, 0
 	from #TeamWork tw
 	where tw.IS_NEW = 1
