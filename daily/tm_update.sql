@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.14 2000/11/09 06:12:23 decibel Exp $
+# $Id: tm_update.sql,v 1.15 2000/11/09 06:18:25 decibel Exp $
 
 TM_RANK
 
@@ -145,7 +145,7 @@ select @stats_date = LAST_STATS_DATE
 	where PROJECT_ID = ${1}
 insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select ${1}, ws.ID, ws.TEAM_ID, min(ws.DATE), @stats_date, sum(tmw.WORK_TODAY), sum(ws.WORK_UNITS),
+	select ${1}, ws.ID, ws.TEAM_ID, min(ws.FIRST_DATE), @stats_date, sum(tmw.WORK_TODAY), sum(ws.WORK_UNITS),
 		1000000, 1000000, 1000000, 1000000
 	from #TeamMemberWork tmw, #Work_Summary ws
 	where tmw.IS_NEW = 1
