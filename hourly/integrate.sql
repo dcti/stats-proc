@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.8 2003/04/05 00:26:32 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.9 2003/04/05 00:31:27 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -160,9 +160,10 @@ create TEMP table TEMP_Email_Contrib_Today
 	WORK_UNITS	numeric(20, 0)	not NULL
 )
 ;
+create temporary sequence Email;
 create TEMP table TEMP_dayemails
 (
-	ID		numeric(10, 0)	not NULL,
+	ID		    int	        not NULL DEFAULT nextval('Email'),
 	EMAIL		varchar(64)	not NULL
 )
 ;
@@ -194,9 +195,8 @@ update TEMP_Email_Contrib_Today
 \echo Adding new participants
 
 /* First, copy all new participants to TEMP_dayemails to do the identity assignment */
-create temporary sequence Email;
-insert into TEMP_dayemails (EMAIL, ID)
-	select distinct EMAIL, nextval('Email')
+insert into TEMP_dayemails (EMAIL)
+	select distinct EMAIL
 	from TEMP_Email_Contrib_Today
 	where ID = 0
 	order by EMAIL
