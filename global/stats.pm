@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.4 2000/06/22 23:10:37 nugget Exp $
+# $Id: stats.pm,v 1.5 2000/07/13 23:57:44 nugget Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -41,42 +41,28 @@ sub log {
 	print LOGFILE $ts," ",@par,"\n";
 	close LOGFILE;
 
+	# Display to stdout, of course.
 	print $ts," ",@par,"\n";
+
+	# Cycle through configured irc channels and send to any that qualify
+	for (my $i = 0; $i < @statsconf::ircchannels; $i++) {
+		my ($bitmask,$channel,$port,$msg,$notify) = split /:/, $statsconf::ircchannels[$i];
+		my $pass = $msg;
+		if($dest & 128) {
+			$pass = $notify;
+		}
+		if($dest & $bitmask) {
+			DCTIeventsay($port, "$pass", "$project", @par);
+		}
+	}
+
+	# Special "pagers" section
 	if ($dest & 8) {
                 #pagers
 
 		#open PAGER, "|mail \"-s$statsconf::logtag/$project\" nugget-pager\@slacker.com";
 		#print PAGER "@par\n";
                 #close PAGER;
-
-	}
-	if ($dest & 1) {
-		#dcti-logs
-		if ($dest & 128) {
-			$pass = "PASS2";
-		} else {
-			$pass = "PASS1";
-		}
-                DCTIeventsay("999", "$pass", "$project", @par);
-
-	}
-	if ($dest & 2) {
-		#dcti
-		if ($dest & 128) {
-			$pass = "PASS2";
-		} else {
-			$pass = "PASS1";
-		}
-		DCTIeventsay("998", "$pass", "$project", @par);
-	}
-	if ($dest & 4) {
-		#distributed
-		if ($dest & 128) {
-			$pass = "PASS002";
-		} else {
-			$pass = "PASS0001";
-		}
-		DCTIeventsay("997", "$pass", "$project", @par);
 
 	}
 }
@@ -87,15 +73,12 @@ sub DCTIeventsay {
 	# 2 password
 	# 3 message
 
-#	my $hub = "localhost";
-	my $hub = "DCTIEVENT-FQDN-GOES-HERE!!";
-	
 	my $port = shift;
 	my $password = shift;
 	my $project = shift;
 	my $message = shift;
 
-	my $iaddr = gethostbyname( $hub ); 
+	my $iaddr = gethostbyname( $statsconf::dctievent ); 
 	my $proto = getprotobyname('tcp') || die "getproto: $!\n";
 	my $paddr = Socket::sockaddr_in($port, $iaddr);
 	socket(S, &Socket::PF_INET, &Socket::SOCK_STREAM, $proto) || die "socket: $!";
