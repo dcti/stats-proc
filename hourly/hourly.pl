@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.70 2000/10/04 07:06:10 decibel Exp $
+# $Id: hourly.pl,v 1.71 2000/10/04 07:07:15 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -124,7 +124,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
     my $lastday = stats::lastday($project);
     chomp $lastday;
 
-    if ($lastday = "") {
+    if ($lastday == "") {
       stats::log($project,131,"Warning: It appears that there has never been a daily run for this project.");
     } else {
       my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
