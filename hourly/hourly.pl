@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.24 2003/04/29 20:35:38 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.25 2003/04/29 21:52:16 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -226,7 +226,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
   }
 }
 
-if ($respawn > 0) {
+if ($respawn > 0 and not -e 'stop') {
   exec "./hourly.pl";
 }
 
