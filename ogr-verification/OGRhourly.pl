@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.17 2004/04/08 18:50:12 nugget Exp $
+# $Id: OGRhourly.pl,v 1.18 2004/04/13 17:39:57 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -143,7 +143,7 @@ if( $qualcount > 0 ) {
 	}
     }
 
-    if ( ($_ = system ("psql ogr -U $statsconf::pglogin -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" ")) != 0 )
+    if ( ($_ = system ("psql ogr -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" ")) != 0 )
     {
       stats::log($project,131,"Copy from generated error code of $_, aborting OGRhourly run.");
       die;
