@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.79 2000/10/26 00:10:57 decibel Exp $
+# $Id: hourly.pl,v 1.80 2000/11/01 19:53:23 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -38,7 +38,7 @@ my $respawn = 0;
 
 my $workdir = "./workdir/";
 
-for (my $i = 0; $i < @statsconf::projects; $i++) {
+RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
   my $project = $statsconf::projects[$i];
   # This is a big-time kludge to make sure we don't walk on the RC5 run
   if (-e '/home/incoming/newlogs-rc5/nologs.lck') {
@@ -69,7 +69,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
   if(@wdcontents > 0) {
     stats::log($project,131,"Workdir is not empty!  I refuse to proceed with hourly processing.");
-    die;
+    next RUNPROJECTS;
   }
 
   stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
