@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.7 2003/02/16 19:15:05 nerf Exp $
+# $Id: OGRhourly.pl,v 1.8 2003/02/23 00:41:23 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -68,21 +68,6 @@ my ($logtoload,$logext,$qualcount) = findlog($project);
 
 if( $qualcount > 0 ) {
   my ($yyyymmdd, $hh) = split /-/, $logtoload;
-
-  my $lastday = stats::lastday($project);
-  chomp $lastday;
-
-  if ($lastday eq "") {
-    stats::log($project,131,"Warning: It appears that there has never been a daily run for this project.");
-  } else {
-    my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
-    my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
-  
-    if ( $lasttime != ($logtime - 86400)) {
-      stats::log($project,139,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
-      die;
-    }
-  }
 
   if($qualcount > 1) {
      # We should respawn at the end to catch up...
@@ -152,7 +137,7 @@ if( $qualcount > 0 ) {
 	}
     }
 
-    if ( ($_ = system ("psql ogr -U $sqllogin -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" ")) != 0 )
+    if ( ($_ = system ("psql ogr -U $statsconf::sqllogin -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" ")) != 0 )
     {
       stats::log($project,131,"Copy from generated error code of $_, aborting OGRhourly run.");
       die;
@@ -191,7 +176,7 @@ sub spawn_daily {
   my ($f_project) = @_;
 
   stats::log($f_project,1,"Spawning daily.sh");
-  if ( ($_ = system("./daily.sh $sqluser $sqlpasswd")) != 0 ) {
+  if (($_=system("./daily.sh $statsconf::sqluser $statsconf::sqlpasswd"))!=0) {
     stats::log($f_project,1,"daily.sh generated an error code of $_, \"$!\"!");
     die;
   }
