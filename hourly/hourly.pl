@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.102 2002/08/08 23:34:21 decibel Exp $
+# $Id: hourly.pl,v 1.103 2002/08/11 21:35:20 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -58,7 +58,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     die;
   }
 
-  my ($logtoload,$qualcount) = findlog($project);
+  my ($logtoload,$logext,$qualcount) = findlog($project);
 
   if( $qualcount > 0 ) {
     my ($yyyymmdd, $hh) = split /-/, $logtoload;
@@ -83,8 +83,8 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
        $respawn = 1;
     }
 
-    my $fullfn = "$server[1]$project$logtoload.log.gz";
-    my $basefn = "$project$logtoload.log.gz";
+    my $fullfn = "$server[1]$project$logtoload$logext";
+    my $basefn = "$project$logtoload$logext";
 
     # Go ahead and set the lock now
     if($_ = stats::semflag('hourly',"hourly.pl") ne "OK") {
@@ -109,13 +109,25 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       stats::log($project,1,$outbuf);
     }
 
-    open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
     my $rawfn = "";
-    while (<GZIP>) {
-      if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
-        $rawfn = $2;
-        stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
-      }
+    if ( $logext =~ /.gz$/ ) {
+	open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
+	while (<GZIP>) {
+	  if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
+	    $rawfn = $2;
+	    stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
+	  }
+	}
+    } elsif ( $logext =~ /.bz2$/ ) {
+	#my $orgsize=(stat $workdir$basefn)[7];
+	system("bzip2 -d $workdir$basefn");
+	if ($? == 0) {
+	    $rawfn = $basefn;
+	    $rawfn =~ s/.bz2//i;
+	    #my $newsize=(stat "$workdir$project$rawfn")[7];
+	    #stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
+	    stats::log($project,1,"$basefn successfully decompressed");
+	}
     }
     if( $rawfn eq "" ) {
       stats::log($project,130,"$basefn failed decompression!");
@@ -267,6 +279,7 @@ sub findlog {
   #
   # Returns
   #    log to work with, or empty string if none.
+  #    trailing end of logfile (everything after the timestamp)
   #    number of logs left to process
 
   scalar(@_) == 1 or die "Improper number of arguments (" . scalar(@_) . ") passed to findlog";
@@ -282,6 +295,7 @@ sub findlog {
   my $hh = (gmtime(time-3600))[2];
   my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
   my $logtoload = "29991231-23";
+  my $logext;
   my $lastlog = stats::lastlog($project,"get");
   chomp($lastlog);
 
@@ -298,8 +312,9 @@ sub findlog {
   my $qualcount = 0;
 
   while (<LS>) {
-    if( $_ =~ /-(...)(...)(...).*$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
+    if( $_ =~ /-(...)(...)(...).*$project(\d\d\d\d\d\d\d\d-\d\d)(.*)/ ) {
       my $lastdate = $4;
+      my $lastext = $5;
 
       # Found a log. Is it newer than the last log we processed?
       if($lastdate gt $lastlog) {
@@ -325,6 +340,7 @@ sub findlog {
 	    return "",0;
           }
           $logtoload = $lastdate;
+	  $logext = $lastext;
         }
       }
     }
@@ -333,7 +349,7 @@ sub findlog {
 
   if($linecount == 0) {
     stats::log($project,131,"No log files found!");
-    return "",0;
+    return "","",0;
   }
 
   if($qualcount == 1) {
@@ -342,7 +358,7 @@ sub findlog {
     stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
   }
 
-  return $logtoload,$qualcount;
+  return $logtoload,$logext,$qualcount;
 }
 
 sub num_format {
