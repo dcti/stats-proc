@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: logmod_ogr.pl,v 1.7 2000/07/18 07:58:58 decibel Exp $
+# $Id: logmod_ogr.pl,v 1.8 2000/07/19 16:03:55 decibel Exp $
 #
 #
 # ogr logfile sample:
@@ -57,7 +57,7 @@ while(<>) {
 
   # Strip the workunit id information, leaving only the project id.
   my $projectid;
-  if (not $projectid = ($blockid =~ /^(\d+)/)) {
+  if (not ($projectid) = ($blockid =~ /^(\d+)/)) {
     print STDERR "BLOCKID NOT FOUND($blockid): $buf\n";
 #    print ERR "$buf\n";
     next;
