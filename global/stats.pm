@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.26 2002/06/11 05:08:01 decibel Exp $
+# $Id: stats.pm,v 1.27 2002/06/11 05:10:37 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -11,7 +11,7 @@
 package stats;
 
 require IO::Socket;
-require statsconf.pm;
+require statsconf;
 
 sub log {
 
