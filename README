@@ -1,9 +1,14 @@
-#
-# $Id: README,v 1.8 2000/08/12 16:58:51 decibel Exp $
-#
-# This tree is intended to be the homedirectory for the statproc user on
-# statsbox.
-#
+$Id: README,v 1.9 2003/12/15 22:22:14 decibel Exp $
+
+GETTING STARTED
+
+You will need a stats database to run from. See stats-sql/build.
+
+In global, copy statsconf.pm.default to statsconf.pm.
+
+%logsource: where your log files can be found.
+
+*** OLD INFO PERTAINING TO BLOWER ***
 
 *** How to run daily stats ***
 You will want to run ~decibel/stats-proc/daily/runday *project_id*, which
