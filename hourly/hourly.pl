@@ -12,20 +12,12 @@ my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my $workdir = "./workdir/";
 
-# This could easily be populated from somewhere else.
-# I don't see a big downside to simply hard-coding, however.
-
-#my @projectlist = ("ogr",
-#                   "rc5");
-
-my @projectlist = ("ogr");
-
 # Insert code here to look for droppings in $workdir
 
 `rm $workdir*`;
 
-for (my $i = 0; $i < @projectlist; $i++) {
-  my $project = $projectlist[$i];
+for (my $i = 0; $i < @statsconf::projects; $i++) {
+  my $project = $statsconf::projects[$i];
   my $sourcelist = $statsconf::logsource{$project};
   my $prefilter = $statsconf::prefilter{$project};
   my $lastlog = lastlog($project,"get");
