@@ -1,15 +1,13 @@
-$Id: TODO,v 1.12 2003/01/18 23:40:50 nerf Exp $
+$Id: TODO,v 1.13 2003/02/16 19:15:27 nerf Exp $
 
-rename query3.sql
-make sure indexes are correct (especially on nodes)
+make sure indexes are correct
 modify scripts that create tables to delete them if they already exist
-clean up temp tables when done with them
 error checking
-write script to download logs hourly
-
-normalize os,cpu,version into a single value
 
 modify filter.pl to validate email addresses (?)
 modify filter.pl to validate other fields (?)
 
 create filter script for id_lookup to escape bad chars
+
+instead of recreating summary table every day, be smart and only add
+  the work that has been done that day.
