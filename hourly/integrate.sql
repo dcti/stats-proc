@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.10 2000/07/20 00:56:31 decibel Exp $
+# $Id: integrate.sql,v 1.11 2000/07/20 01:08:52 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -183,7 +183,7 @@ insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	group by PROJECT_ID, CPU, OS, VER
 
 insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
-	select pct.PROJECT_ID, pct.CPU, pct.OS, pct.VER, sum(pct.WORK_UNITS)
+	select pct.PROJECT_ID, pct.CPU, pct.OS, pct.VER, pct.WORK_UNITS
 	from Platform_Contrib_Today pct, #Projects p
 	where pct.PROJECT_ID = p.PROJECT_ID 
 -- Removed by JN: the data in PCT should already be summed.
