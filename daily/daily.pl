@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.35 2004/04/08 18:50:12 nugget Exp $
+# $Id: daily.pl,v 1.36 2004/04/11 01:48:49 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -21,8 +21,11 @@ my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my $respawn = 0;
 
-($ENV{'HOME'} . '/workdir/hourly/') =~ /([A-Za-z0-9_\-\/]+)/;
+($ENV{'HOME'} . '/workdir/daily/') =~ /([A-Za-z0-9_\-\/]+)/;
 my $workdir = $1;
+
+($ENV{'HOME'} . '/stats-proc/misc/pcpages') =~ /([A-Za-z0-9_\-\/]+)/;
+my $pcpages = $1;
 
 if(! -d $workdir) {
   stats::log("stats",131,"Hey! Someone needs to mkdir $workdir!");
@@ -59,7 +62,7 @@ if(!$statsconf::prids{$project}) {
     psql("tm_rank.sql", $project_id);
     psql("platform.sql", $project_id);
     psql("dy_dailyblocks.sql", $project_id);
-    system "sudo pcpages $project_id";
+    system "sudo $pcpages $project_id";
     psql("audit.sql", $project_id);
 
     psql("clearday.sql", $project_id);
