@@ -1,5 +1,5 @@
 /*
-# $Id: newjoin.sql,v 1.13.2.10 2003/04/28 03:38:27 decibel Exp $
+# $Id: newjoin.sql,v 1.13.2.11 2003/09/03 23:02:57 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -7,6 +7,7 @@
 #       ProjectID
 */
 \set ON_ERROR_STOP 1
+set sort_mem=128000;
 
 \echo :: Assigning old work to current team
 

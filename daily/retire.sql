@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.25.2.9 2003/04/28 19:13:45 decibel Exp $
+# $Id: retire.sql,v 1.25.2.10 2003/09/03 23:02:57 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -7,6 +7,7 @@
 #       ProjectID
 */
 \set ON_ERROR_STOP 1
+set sort_mem=128000;
 
 \echo Build a list of blocked participants
 SELECT id

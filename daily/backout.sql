@@ -1,5 +1,5 @@
 /*
- $Id: backout.sql,v 1.8.2.6 2003/07/14 00:51:01 decibel Exp $
+ $Id: backout.sql,v 1.8.2.7 2003/09/03 23:02:57 decibel Exp $
 
  This script will back out all stats data to a given date
 
@@ -9,6 +9,7 @@
 */
 
 \set ON_ERROR_STOP 1
+set sort_mem=128000;
 set enable_seqscan = off;
 
 BEGIN;

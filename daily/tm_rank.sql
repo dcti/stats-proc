@@ -1,6 +1,6 @@
 /*
 #
-# $Id: tm_rank.sql,v 1.23.2.4 2003/05/16 03:57:46 decibel Exp $
+# $Id: tm_rank.sql,v 1.23.2.5 2003/09/03 23:02:58 decibel Exp $
 #
 # Does the team ranking
 #
@@ -8,6 +8,7 @@
 #       Project_id
 */
 \set ON_ERROR_STOP 1
+set sort_mem=128000;
 
 \echo !! Begin team ranking
 --\echo  Drop indexes on team_rank

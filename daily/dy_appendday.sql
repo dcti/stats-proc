@@ -1,5 +1,5 @@
 /*
-# $Id: dy_appendday.sql,v 1.23.2.3 2003/04/27 20:53:07 decibel Exp $
+# $Id: dy_appendday.sql,v 1.23.2.4 2003/09/03 23:02:57 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -7,6 +7,7 @@
 #       PROJECT_ID
 */
 \set ON_ERROR_STOP 1
+set sort_mem=128000;
 
 \echo !! Appending day's activity to master tables
 

@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_rank.sql,v 1.22.2.5 2003/05/16 03:54:01 decibel Exp $
+# $Id: em_rank.sql,v 1.22.2.6 2003/09/03 23:02:57 decibel Exp $
 #
 # Does the participant ranking
 #
@@ -8,6 +8,7 @@
 #       Project_id
 */
 \set ON_ERROR_STOP 1
+set sort_mem=128000;
 
 \echo !! Begin e-mail ranking
 --\echo  Drop indexes on email_rank

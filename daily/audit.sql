@@ -1,6 +1,6 @@
--- $Id: audit.sql,v 1.32.2.4 2003/04/27 20:53:07 decibel Exp $
+-- $Id: audit.sql,v 1.32.2.5 2003/09/03 23:02:57 decibel Exp $
 \set ON_ERROR_STOP 1
-
+set sort_mem=128000;
 \t
 
 CREATE TEMP TABLE audit (
