@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.10 2000/11/08 17:07:06 decibel Exp $
+# $Id: tm_update.sql,v 1.11 2000/11/08 18:04:01 decibel Exp $
 
 TM_RANK
 
@@ -202,7 +202,7 @@ select @max_rank = max_rank from #maxrank
 insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
 		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
-	select ${1}, tw.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY
+	select ${1}, tw.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY,
 			@max_rank, @max_rank, @max_rank, @max_rank, 0, 0, 0
 	from #TeamWork tw
 	where tw.IS_NEW = 1
