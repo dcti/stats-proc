@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.14 2003/04/07 02:44:50 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.15 2003/04/07 02:50:14 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -234,29 +234,6 @@ insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 ;
 --go
 
-/* Finally, remove the previous records from Email_Contrib_Today and insert the new
-** data from the temp table. (It seems there should be a better way to do this...)
-*/
-\echo Moving data from temptable to Email_Contrib_Today
-begin;
-delete from Email_Contrib_Today
-	where PROJECT_ID IN (SELECT project_id
-                                                FROM TEMP_Projects p
-                                            )
-;
-
-/*
-** dy_appendday.sql depends on setting CREDIT_ID = ID
-*/
-insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
-	select PROJECT_ID, sum(WORK_UNITS), ID, 0, ID
-	from TEMP_Email_Contrib_Today
-	group by PROJECT_ID, ID
-;
-commit;
-
-drop table TEMP_Email_Contrib_Today
-;
 --go
 
 /* Do the exact same stuff for Platform_Contrib_Today */
@@ -306,7 +283,6 @@ insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 --go
 
 \echo Moving data from temptable to Platform_Contrib_Today
-begin;
 delete from Platform_Contrib_Today
 	where PROJECT_ID IN (SELECT project_id
                                                 FROM TEMP_Projects p
@@ -318,12 +294,33 @@ insert into Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	from TEMP_Platform_Contrib_Today
 	group by PROJECT_ID, CPU, OS, VER
 ;
-commit;
 
 drop table TEMP_Platform_Contrib_Today
 ;
 --go
 
+/* Finally, remove the previous records from Email_Contrib_Today and insert the new
+** data from the temp table. (It seems there should be a better way to do this...)
+*/
+\echo Moving data from temptable to Email_Contrib_Today
+begin;
+delete from Email_Contrib_Today
+	where PROJECT_ID IN (SELECT project_id
+                                                FROM TEMP_Projects p
+                                            )
+;
+
+/*
+** dy_appendday.sql depends on setting CREDIT_ID = ID
+*/
+insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
+	select PROJECT_ID, sum(WORK_UNITS), ID, 0, ID
+	from TEMP_Email_Contrib_Today
+	group by PROJECT_ID, ID
+;
+
+drop table TEMP_Email_Contrib_Today
+;
 /*
   Store info in Log_Info table
 */
@@ -346,3 +343,4 @@ delete from import_bcp
                             FROM TEMP_Projects p
                         )
 ;
+commit;
