@@ -1,5 +1,5 @@
 #!/usr/local/bin/sqsh -i
--- $Id: clearday.sql,v 1.4 2001/12/29 08:50:50 decibel Exp $
+-- $Id: clearday.sql,v 1.5 2002/01/09 20:07:21 decibel Exp $
 
 print "Dropping indexes"
 go
@@ -11,4 +11,12 @@ print "Deleting data"
 go
 delete Email_Contrib_Today where project_id=${1}
 delete Platform_Contrib_Today where project_id=${1}
+go
+
+print "Updating Project_statsrun"
+go
+update Project_statsrun
+	set LOGS_FOR_DAY = 0,
+		WORK_FOR_DAY = 0
+	where PROJECT_ID=${1}
 go
