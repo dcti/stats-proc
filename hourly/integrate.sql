@@ -1,11 +1,12 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.29 2003/03/26 22:59:19 decibel Exp $
+# $Id: integrate.sql,v 1.30 2003/04/19 03:27:58 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
 # Arguments:
 #       Project Type (OGR, RC5, etc.)
+#       Log timestamp
 #       Log Hour
 
 set flushmessage on
@@ -17,7 +18,7 @@ go
 **	Email_Contrib_Today format but not import_bcp format.
 */
 print "Updating LAST_STATS_DATE for ${1}"
-select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK,
+select p.PROJECT_ID,  isnull(min(TIME_STAMP), dateadd(hh, ${3}, ${2})) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK,
         count(*) as TOTAL_LINES
 	into #Projects
 	from import_bcp i, Projects p
@@ -301,7 +302,7 @@ go
 
 print "Adding data to Log_Info"
 insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
-    select PROJECT_ID, dateadd(hour, ${2}, STATS_DATE), TOTAL_WORK, TOTAL_LINES ,0
+    select PROJECT_ID, dateadd(hour, ${3}, STATS_DATE), TOTAL_WORK, TOTAL_LINES ,0
     from #Projects
     group by PROJECT_ID
 go
