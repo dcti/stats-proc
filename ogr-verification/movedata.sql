@@ -1,4 +1,6 @@
--- $Id: movedata.sql,v 1.28 2003/06/10 20:56:00 nerf Exp $
+-- $Id: movedata.sql,v 1.29 2003/07/21 00:14:12 nerf Exp $
+DROP TABLE logdata_yesterday;
+
 \set ON_ERROR_STOP 1
 
 select now();
@@ -20,13 +22,6 @@ WHERE NOT EXISTS (SELECT * FROM platform WHERE
 			L.version = platform.version);
 select now();
 
-CREATE TEMP TABLE day_results_normal (
-	id INT,
-	stub_id INTEGER,
-	nodecount BIGINT,
-	platform_id INT
-) WITHOUT OIDS;
-
 CREATE TEMP TABLE day_results (
 	id INT,
 	stub_id INTEGER,
@@ -37,24 +32,24 @@ CREATE TEMP TABLE day_results (
 ) WITHOUT OIDS;
 select now();
 
--- normalize all the data
-INSERT INTO day_results_normal
-SELECT I.id, S.stub_id, L.nodecount, P.platform_id
-	FROM logdata L, OGR_idlookup I, OGR_stubs S, platform P
-	WHERE lower(L.email) = lower(I.email)
-	AND L.stub_marks = S.stub_marks
-	AND L.os_type = P.os_type
-	AND L.cpu_type = P.cpu_type
-	AND L.version = P.version
-;
-select now();
-
--- now aggregate it
+-- aggregate and normalize data
 INSERT INTO day_results
-SELECT *,count(*)
-	FROM day_results_normal drn
-	GROUP BY id, stub_id, nodecount, platform_id
-;
+SELECT I.id, S.stub_id, L.nodecount, P.platform_id, sum(rowcount)
+	FROM (
+		SELECT lower(email) AS email, stub_marks, nodecount, 
+		os_type, cpu_type, version, count(*) AS rowcount
+		FROM logdata
+		GROUP BY 
+		lower(email), stub_marks, nodecount, os_type, cpu_type, version) L,
+	OGR_idlookup I, OGR_stubs S, platform P
+	WHERE 
+		L.email = lower(I.email)
+		AND L.stub_marks = S.stub_marks
+		AND L.os_type = P.os_type
+		AND L.cpu_type = P.cpu_type
+		AND L.version = P.version
+	GROUP BY
+		I.id, S.stub_id, L.nodecount, P.platform_id;
 select now();
 
 CREATE UNIQUE INDEX dayresults_all ON day_results
@@ -92,7 +87,7 @@ select now();
 	WHERE dr.in_results = false;
 select now();
 
-	DROP TABLE logdata;
+	ALTER TABLE logdata RENAME TO logdata_yesterday;
 
 	CREATE TABLE logdata (
 	email VARCHAR(64),
@@ -105,6 +100,6 @@ select now();
 
 COMMIT;
 
-analyze ogr_results;
+ANALYZE ogr_results;
 
 select now();
