@@ -1,5 +1,5 @@
 /*
- $Id: tm_update.sql,v 1.33 2003/09/11 01:41:02 decibel Exp $
+ $Id: tm_update.sql,v 1.34 2004/08/24 05:25:31 decibel Exp $
 
 TM_RANK
 
@@ -95,9 +95,19 @@ UPDATE team_work
 
 
 \echo :: Update team_members
-\echo  Clear today info in team_members
 BEGIN;
     SELECT stats_set_last_update(:ProjectID, 'm', NULL);
+
+    \echo  Remove hidden teams from team_members table
+    DELETE FROM team_members
+        WHERE EXISTS (SELECT 1
+                            FROM stats_team_blocked stb
+                            WHERE stb.team_id = team_members.team_id
+                        )
+            AND project_id = :ProjectID
+    ;
+
+    \echo  Clear today info in team_members
     UPDATE team_members
         SET work_today = 0,
             day_rank = 1000000,
