@@ -1,9 +1,9 @@
--- $Id: movedata.sql,v 1.2 2002/12/20 23:55:45 nerf Exp $ --
+-- $Id: movedata.sql,v 1.3 2002/12/21 21:13:22 joel Exp $ --
 
-INSERT INTO nodes
+INSERT INTO stubs
 SELECT DISTINCT email , stub_id, stub_string_id , nodecount, os_type, cpu_type, version
 FROM logdata;
 
-CREATE INDEX nodes_email ON nodes(email);
-CREATE INDEX nodes_stub_id ON nodes(stub_id);
-CREATE INDEX nodes_nodecount ON nodes(nodecount);
+CREATE INDEX stubs_email ON stubs(email);
+CREATE INDEX stubs_stub_id ON stubs(stub_id);
+CREATE INDEX stubs_nodecount ON stubs(nodecount);

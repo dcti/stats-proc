@@ -1,4 +1,4 @@
--- $Id: create_id_lookup.sql,v 1.2 2002/12/20 23:55:45 nerf Exp $ --
+-- $Id: create_id_lookup.sql,v 1.3 2002/12/21 21:13:22 joel Exp $ --
 
 DROP TABLE id_lookup;
 

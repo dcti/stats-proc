@@ -1,4 +1,4 @@
 #!/bin/sh
-# $Id: initial.sh,v 1.2 2002/12/20 23:55:45 nerf Exp $
+# $Id: initial.sh,v 1.3 2002/12/21 21:13:22 joel Exp $
 #
-psql -d ogrstats -f create_nodes.sql
+psql -d ogrstats -f create_stubs.sql

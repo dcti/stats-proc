@@ -1,5 +1,5 @@
--- $Id: move.sql,v 1.2 2002/12/20 23:55:45 nerf Exp $ --
+-- $Id: move.sql,v 1.3 2002/12/21 21:13:22 joel Exp $ --
 
-INSERT INTO nodes
+INSERT INTO stubs
 SELECT DISTINCT email , stub_id , nodecount, os_type, cpu_type, version
 FROM logdata;

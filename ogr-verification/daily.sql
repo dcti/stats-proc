@@ -1,4 +1,4 @@
--- $Id: daily.sql,v 1.2 2002/12/20 23:55:45 nerf Exp $ --
+-- $Id: daily.sql,v 1.3 2002/12/21 21:13:22 joel Exp $ --
 
 --Create the logdata table and fill it with filtered(filter.pl) data. (addlog.sql)
 DROP TABLE logdata;
@@ -29,25 +29,25 @@ stats_id BIGSERIAL,
 email VARCHAR(50),
 PRIMARY KEY (stats_id));
 
-INSERT INTO id_lookup SELECT nextval('stats_id'), email FROM nodes GROUP BY email;
+INSERT INTO id_lookup SELECT nextval('stats_id'), email FROM stubs GROUP BY email;
 
 CREATE INDEX id_lookup_email_idx on id_lookup (email);
 
 
---Insert only valid data into nodes. (movedata.sql)
-INSERT INTO nodes
+--Insert only valid data into stubs. (movedata.sql)
+INSERT INTO stubs
 SELECT DISTINCT email , stub_id , nodecount, os_type, cpu_type, version FROM logdata;
 
---CREATE INDEX nodes_email ON nodes(email);
---CREATE INDEX nodes_stub_id ON nodes(stub_id);
---CREATE INDEX nodes_nodecount ON nodes(nodecount);
---CREATE INDEX nodes_os_type ON nodes(os_type);
---CREATE INDEX nodes_cpu_type ON nodes(cpu_type);
---CREATE INDEX nodes_version ON nodes(version);
+--CREATE INDEX stubs_email ON stubs(email);
+--CREATE INDEX stubs_stub_id ON stubs(stub_id);
+--CREATE INDEX stubs_nodecount ON stubs(nodecount);
+--CREATE INDEX stubs_os_type ON stubs(os_type);
+--CREATE INDEX stubs_cpu_type ON stubs(cpu_type);
+--CREATE INDEX stubs_version ON stubs(version);
 
---Create donenodes table. (donenodes.sql)
-DROP TABLE donenodes;
-CREATE TABLE donenodes (
+--Create donestubs table. (donestubs.sql)
+DROP TABLE donestubs;
+CREATE TABLE donestubs (
  stub_id    TEXT,
  nodecount  BIGINT,
 participants INTEGER);
@@ -55,9 +55,8 @@ participants INTEGER);
 
 
 --Run (query2.sql) the big query.
-INSERT INTO donenodes
+INSERT INTO donestubs
 SELECT DISTINCT stub_id, nodecount, (select count(distinct p.stats_id)
-FROM nodes B, id_lookup p
+FROM stubs B, id_lookup p
 WHERE p.email = B.email AND B.nodecount = A.nodecount) AS participants
-from nodes A;
-
+from stubs A;
