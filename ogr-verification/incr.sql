@@ -69,17 +69,31 @@ id integer NOT NULL
 --ANALYZE OGR_results;
 ANALYZE retire_today;
 
-explain analyze INSERT INTO retired_stub_id
-SELECT DISTINCT stub_id, nodecount, o.id
-    FROM OGR_results o, retire_today r
-    WHERE o.id = r.id
-        AND EXISTS (SELECT 1
-                            FROM ogr_results o2
-                            WHERE o2.stub_id = o.stub_id
-                                AND o2.nodecount = o.nodecount
-                                AND o2.id = r.stats_id
-                        )
+SET enable_seqscan = false;
+explain analyze
+INSERT INTO retired_stub_id
+    SELECT DISTINCT stub_id, nodecount, id
+        -- Get list of all work done by everyone who's retiring, along with their stats_id
+        -- Doing this as a subquery is faster because it limits the amount of processing the main query
+        -- has to do.
+        FROM (SELECT DISTINCT stub_id, nodecount, rslt.id, rt.stats_id
+                    FROM OGR_results rslt, retire_today rt
+                    WHERE rslt.id = rt.id
+                ) AS w
+        -- In the final list we only want work that would duplicate other work by this participant
+        -- This means we just have to see if there's any results for each stub/nodecount that were done
+        -- by anyone in the retire-chain *except for the id that's newly retired*
+        WHERE EXISTS (SELECT 1
+                                FROM ogr_results r, ogr_idlookup l
+                                WHERE r.id = l.id
+                                    AND r.stub_id = w.stub_id
+                                    AND r.nodecount = w.nodecount
+                                    AND l.stats_id = w.stats_id
+                                    AND l.id != w.id
+                            )
 ;
+SET enable_seqscan = true;
+
 select now();
 select * from retired_stub_id;
 
