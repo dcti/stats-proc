@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.9 2003/09/29 02:30:33 nerf Exp $
+-- $Id: daily_update.sql,v 1.10 2003/10/04 13:14:25 nerf Exp $
 
 select now();
 
@@ -235,11 +235,6 @@ SELECT stub_id, nodecount, count(DISTINCT l.stats_id) AS ids,
   FROM day_results dr, OGR_idlookup l, platform p
   WHERE l.id = dr.id
     AND p.platform_id = dr.platform_id
-AND NOT EXISTS (
-  SELECT * FROM OGR_results r
-    WHERE r.stub_id = dr.stub_id
-      AND r.nodecount = dr.nodecount
-      AND r.id = dr.id)
   GROUP BY stub_id, nodecount
 ;
 
