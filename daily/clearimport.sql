@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: clearimport.sql,v 1.1 2000/02/09 16:13:56 nugget Exp $
+# $Id: clearimport.sql,v 1.2 2000/02/10 15:13:54 bwilson Exp $
 #
 # Recreates the import table
 #
@@ -12,13 +12,13 @@ go
 
 create table ${1}_import (
 	timestamp datetime,
-	ip char (15) NULL ,
-	email char (64) NULL ,
-	blockid char (24) NOT NULL ,
+	ip varchar (15) NULL ,
+	email varchar (64) NULL ,
+	blockid varchar (24) NOT NULL ,
 	size int NULL ,
 	os int NULL ,
 	cpu int NULL ,
-	ver int NULL 
+	ver int NULL
 )
 go
 

@@ -1,0 +1,25 @@
+Hourly.pl
+
+X = [last log we processed]
+Y = X + [most logs we can skip] - 1
+J = NULL
+for (I = Y; I > X; I++)
+	if exists (I) on keymaster
+		J = I
+next I
+
+If J is not NULL
+	if (datepart(day, J)) > (datepart(day, X))
+		run daily.pl and wait for it to finish
+			(daily.pl must clear out daytables when finished)
+	endif
+
+	copy J from keymaster to tally
+	unzip J (Abort with error if unzip fails)
+	preprocess J (cut blockid column)
+	bcp in J
+	SQL to move J into holding tables
+	write J as X
+	goto top (is there another log waiting?)
+endif
+wait for next scheduled run

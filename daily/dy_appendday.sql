@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: dy_appendday.sql,v 1.2 2000/02/10 15:13:54 bwilson Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -13,7 +13,7 @@ go
 print "::  Appending into csc_master"
 go
 insert into ${1}_master (date, id, team, blocks)
-select distinct
+select
   d.timestamp as date,
   p.id,
   p.team,
@@ -26,7 +26,7 @@ go
 print ":: Appending into csc_platform"
 go
 insert into ${1}_platform (date, cpu, os, ver, blocks)
-select distinct
+select
   timestamp as date,
   cpu,
   os,
