@@ -1,5 +1,5 @@
 /*
-# $Id: tm_rank.sql,v 1.12 2000/06/28 10:59:02 decibel Exp $
+# $Id: tm_rank.sql,v 1.13 2000/07/14 23:37:09 decibel Exp $
 
 TM_RANK
 
@@ -50,6 +50,7 @@ select ect.CREDIT_ID, sp.TEAM, ect.WORK_UNITS
 	where ect.ID = sp.ID
 		and ect.TEAM_ID = st.team
 		and sp.TEAM = st.team
+		and sp.TEAM = ect.TEAM_ID	-- Give the optimizer some more options
 		and ect.TEAM_ID > 0
 		and sp.LISTMODE <= 9	/* Don't insert hidden people */
 		and st.LISTMODE <= 9	/* Don't insert hidden teams */
