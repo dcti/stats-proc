@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.77 2000/10/25 23:52:51 decibel Exp $
+# $Id: hourly.pl,v 1.78 2000/10/25 23:58:53 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -207,7 +207,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 	} elsif ($buf =~ /\d+ rows sent to SQL Server./) {
 	  print ".";
 	} else {
-	  print $buf;
+	  print "$buf\n";
 	}
       }
       close BCP;
