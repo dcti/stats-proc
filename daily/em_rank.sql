@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_rank.sql,v 1.22.2.1 2003/04/23 02:45:22 decibel Exp $
+# $Id: em_rank.sql,v 1.22.2.2 2003/04/23 04:38:58 decibel Exp $
 #
 # Does the participant ranking
 #
@@ -9,9 +9,9 @@
 */
 
 \echo !! Begin e-mail ranking
---\echo  Drop indexes on Email_Rank
---drop index Email_Rank.iDAY_RANK
---drop index Email_Rank.iOVERALL_RANK
+--\echo  Drop indexes on email_rank
+--drop index email_rank.iDAY_RANK
+--drop index email_rank.iOVERALL_RANK
 --;
 
 \echo  Create rank table for overall
@@ -42,7 +42,7 @@ SELECT work_units, min(raw_rank) AS rank INTO TEMP rank_tie_today
 CREATE UNIQUE INDEX work_units_today ON rank_tie_today(work_units)
 ;
 
-\echo  Update Email_Rank with new rankings
+\echo  Update email_rank with new rankings
 BEGIN;
     UPDATE email_rank
         SET overall_rank = o.rank, day_rank = d.rank
@@ -69,9 +69,9 @@ COMMIT;
 
 --\echo  update statistics
 --;
---update statistics Email_Rank
+--update statistics email_rank
 --;
---\echo  Rebuild indexes on Email_Rank
---create index iDAY_RANK on Email_Rank(PROJECT_ID, DAY_RANK)
---create index iOVERALL_RANK on Email_Rank(PROJECT_ID, OVERALL_RANK)
+--\echo  Rebuild indexes on email_rank
+--create index iDAY_RANK on email_rank(PROJECT_ID, DAY_RANK)
+--create index iOVERALL_RANK on email_rank(PROJECT_ID, OVERALL_RANK)
 --;
