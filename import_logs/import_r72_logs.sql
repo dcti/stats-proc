@@ -1,19 +1,9 @@
--- $Id: import_r72_logs.sql,v 1.1 2004/08/15 18:36:12 nerf Exp $
+-- $Id: import_r72_logs.sql,v 1.2 2005/02/16 21:03:22 decibel Exp $
 
-CREATE TEMP TABLE import_r572 (
-	return_time	timestamp NOT NULL,
-	ip_address	inet NOT NULL,
-	email		charactervarying(64) NOT NULL,
-	key_block	charactervarying(20) NOT NULL,
-	iter		integer NOT NULL,
-	os_type		integer NOT NULL,
-	cpu_type	integer NOT NULL,
-	version		integer NOT NULL,
-	core		integer NOT NULL,
-	cmclast		charactervarying(20) NOT NULL,
-	cmccount	integer NOT NULL,
-	cmcok		smallint NOT NULL
-);
+TRUNCATE TABLE import;
 
-COPY import_logs from :IMPORTFILE DELIMITER ',' ;
+COPY import_logs(return_time, ip_address, email, key_block, iter, os_type, cpu_type, version, core, cmc_last, cmc_count, cmc_ok)
+    FROM :IMPORTFILE DELIMITER ','
+;
 
+-- vi:expandtab sw=4 ts=4 nobackup
