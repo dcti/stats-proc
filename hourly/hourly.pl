@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.27 2003/09/03 23:03:22 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.28 2003/09/05 15:10:13 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -30,7 +30,7 @@ my $respawn = 1;
 
 my $workdir = "./workdir/";
 
-while ($respawn = 1 and not -e 'stop') {
+while ($respawn == 1 and not -e 'stop') {
   $respawn = 0;
   RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     my $project = $statsconf::projects[$i];
