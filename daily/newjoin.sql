@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.11 2000/11/09 06:42:32 decibel Exp $
+# $Id: newjoin.sql,v 1.12 2000/11/09 07:35:39 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -25,7 +25,7 @@ select id, team_id
 		and (LAST_DATE = NULL or LAST_DATE >= @proj_date)
 go
 
-select sp.id, sp_retire_to, nj.team_id
+select sp.id, sp.retire_to, nj.team_id
 	into #nj_ids
 	from STATS_Participant sp, #newjoins nj
 	where sp.retire_to = nj.id
