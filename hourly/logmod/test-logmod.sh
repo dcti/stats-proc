@@ -14,4 +14,4 @@ run_test () {
 }
 
 run_test rc572
-
+run_test ogr
