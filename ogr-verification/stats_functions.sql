@@ -1,10 +1,10 @@
--- $Id: stats_functions.sql,v 1.1 2003/09/12 20:31:34 nerf Exp $
+-- $Id: stats_functions.sql,v 1.2 2003/09/27 21:18:00 nerf Exp $
 -- Functions/procedures used for OGR stats processing
 
 CREATE OR REPLACE FUNCTION doOGRstatsrun(date) returns int as '
 DECLARE
 my_counter int DEFAULT 0;
-my_rundate alias for $1
+my_rundate alias for $1;
 BEGIN
   FOR project_id IN 24..25 LOOP
     perform get_OGRstats(my_rundate,project_id) ;
@@ -67,19 +67,20 @@ where ly.stub_marks = s.stub_marks
 AND project_id = f_project_id;
 
 select count(*) into f_in_complete
-FROM OGR_complete s
+FROM OGR_complete c
 WHERE c.project_id = f_project_id
-AND c.rundate = f_rundate;
+AND c.rundate = my_rundate;
 
-IF f_in_complete > 0 IS NULL THEN
+IF f_in_complete > 0 THEN
   RAISE WARNING ''OGR-VER: Stats for rundate % already exist!'', my_rundate;
+  RAISE WARNING ''OGR-VER: project_id = %'', f_project_id;
   RAISE WARNING ''OGR-VER: Check to see if this run has already been done'';
+  RETURN NULL;
 END IF;
 
-PERFORM
-INSERT INTO ogr_complete
-SELECT my_rundate as rundate,f_project_id, f_count as count, 
-    f_pass1 as Pass1, f_pass2 as Pass2,
-  f_stubs_returned as Stubs_Returned;
+INSERT INTO ogr_complete (rundate,project_id,count,pass1,pass2,stubs_returned)
+values (my_rundate,f_project_id, f_count, f_pass1, f_pass2, f_stubs_returned);
+
+RETURN (f_pass2::float/f_count::float)::float;
 
 END; '  LANGUAGE 'plpgsql' ;
