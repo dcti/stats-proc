@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.66 2000/09/19 23:56:57 decibel Exp $
+# $Id: hourly.pl,v 1.67 2000/09/21 02:01:57 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -281,8 +281,8 @@ sub spawn_daily {
   my ($f_project) = @_;
   chdir "../daily/";
   stats::log($f_project,1,"Spawning daily.pl for $f_project");
-  system "./daily.pl $f_project" or die;
-  if ($!) {
+  if ( ($_ = system("./daily.pl $f_project")) != 0 ) {
+    stats::log($f_project,1,"daily.pl generated an error code of $_, \"$!\"!");
     die;
   }
   stats::log($f_project,1,"daily.pl complete for $f_project");
