@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_dailyblocks.sql,v 1.6 2000/04/14 21:32:55 bwilson Exp $
+# $Id: dy_dailyblocks.sql,v 1.7 2000/06/26 16:43:01 bwilson Exp $
 #
 # Inserts the daily totals
 #
@@ -63,7 +63,7 @@ update Daily_Summary
 
 update Daily_Summary
 	set TOP_OTEAM = r.TEAM_ID,
-		TOP_OTEAMRANK = r.WORK_TOTAL
+		TOP_OTWORK = r.WORK_TOTAL
 	from Team_Rank r
 	where Daily_Summary.date = @stats_date
 		and Daily_Summary.PROJECT_ID = ${1}
@@ -72,7 +72,7 @@ update Daily_Summary
 
 update Daily_Summary
 	set TOP_YTEAM = r.TEAM_ID,
-		TOP_YTEAMRANK = r.WORK_TODAY
+		TOP_YTWORK = r.WORK_TODAY
 	from Team_Rank r
 	where Daily_Summary.date = @stats_date
 		and Daily_Summary.PROJECT_ID = ${1}

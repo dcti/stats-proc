@@ -152,7 +152,7 @@ insert #TeamWork (TEAM_ID, WORK_TODAY, IS_NEW)
 	group by TEAM_ID
 
 print " Remove hidden teams from work table and rank table"
-delete #Team_Work
+delete #TeamWork
 	from STATS_Team
 	where STATS_Team.TEAM = #TeamWork.TEAM_ID
 		and STATS_Team.listmode >= 10
@@ -198,7 +198,7 @@ update Team_Rank
 insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
 		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_LISTED)
-	select ${1}, dm.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY,
+	select ${1}, tw.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY,
 			1000000, 1000000, 1000000, 1000000, 0, 0, 0
 	from #TeamWork tw
 	where tw.IS_NEW = 1
