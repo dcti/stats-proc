@@ -12,10 +12,6 @@ my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my $workdir = "./workdir/";
 
-# Insert code here to look for droppings in $workdir
-
-`rm $workdir*`;
-
 for (my $i = 0; $i < @statsconf::projects; $i++) {
   my $project = $statsconf::projects[$i];
   my $sourcelist = $statsconf::logsource{$project};
@@ -25,6 +21,15 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
   my $outbuf = "";
   my @server = split /:/, $sourcelist;
   chomp($lastlog);
+
+  opendir WD, "$workdir" or die;
+  my @wdcontents = grep !/^(CVS|\.\.?)$/, readdir WD;
+  closedir WD;
+
+  if(@wdcontents > 0) {
+    stats::log($project,131,"Workdir is not empty!  I refuse to proceed with hourly processing.");
+    die;
+  }
 
   stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
 
@@ -91,7 +96,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         stats::log($project,1,"$basefn successfully filtered through $prefilter.");
       }
 
-      open BCP, "bcp import_bcp in $finalfn -ebcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, 2> /dev/stderr |";
+      open BCP, "bcp import_bcp in $finalfn -e$workdir\bcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, 2> /dev/stderr |";
 
       my $rows = 0;
       my $rate = 0;
@@ -114,7 +119,15 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       }
       close BCP;
 
-      # call bruce's code here
+      opendir WD, "$workdir" or die;
+      my @wdcontents = grep /bcp_errors/, readdir WD;
+      closedir WD;
+
+      if(@wdcontents > 0) {
+        stats::log($project,131,"Errors encountered during BCP!  Check bcp_errors file.  Aborting.");
+        die;
+      }
+
       open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
       while (<SQL>) {
 	printf("[%02s:%02s:%02s] ",(localtime)[2],(localtime)[1],(localtime)[0]);
@@ -127,6 +140,9 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       # If hour = 23 or day > lastlog(day)
       # queue daily processing for this project
+
+      # It's always good to clean up after ourselves for the next run.
+      unlink $finalfn, $rawfn;
 
       lastlog($project,$logtoload);
     }
