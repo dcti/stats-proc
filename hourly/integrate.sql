@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.3 2000/06/25 22:01:10 decibel Exp $
+# $Id: integrate.sql,v 1.4 2000/06/26 20:13:56 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -76,6 +76,7 @@ insert #Email_Contrib_Today (EMAIL, WORK_UNITS)
 	select EMAIL, sum(WORK_UNITS)
 	from Email_Contrib_Today
 	where PROJECT_ID = ${1}
+	group by EMAIL
 
 /* Finally, remove the previous records from Email_Contrib_Today and insert the new
 ** data from the temp table. (It seems there should be a better way to do this...)
