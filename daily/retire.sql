@@ -1,43 +1,41 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.25 2002/06/22 21:22:45 decibel Exp $
+# $Id: retire.sql,v 1.25.2.1 2003/04/07 23:55:39 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
 # Arguments:
-#       Project_id
+#       ProjectID
 
-use stats
-set rowcount 0
-go
-
-print 'Build a list of blocked participants'
-go
-select ID into #Blocked
+\echo Build a list of blocked participants
+;
+select ID into TEMP Blocked
 	from STATS_Participant
 	where LISTMODE >= 10
-go
-insert into #Blocked(ID)
+;
+insert into Blocked(ID)
 	select sp.ID
-	from STATS_Participant sp, #Blocked b
+	from STATS_Participant sp, Blocked b
 	where sp.RETIRE_TO > 0
 		and sp.RETIRE_TO = b.ID
-go
+;
 
-print 'Update STATS_Participant_Blocked'
-go
+\echo Update STATS_Participant_Blocked
+
 insert into STATS_Participant_Blocked(ID)
 	select distinct ID
-	from #Blocked b
+	from Blocked b
 	where not exists (select *
 				from STATS_Participant_Blocked spb
 				where spb.ID = b.ID)
+;
 delete from STATS_Participant_Blocked
-	where ID not in (select ID from #Blocked)
-go
+	where ID not in (select ID from Blocked)
+;
 
-print 'Update STATS_Team_Blocked'
-go
+
+\echo Update STATS_Team_Blocked
+
 insert into STATS_Team_Blocked(TEAM_ID)
 	select TEAM
 	from STATS_Team st
@@ -46,226 +44,192 @@ insert into STATS_Team_Blocked(TEAM_ID)
 					from STATS_Team_Blocked stb
 					where stb.TEAM_ID = st.TEAM
 				)
-
+;
 delete from STATS_Team_Blocked
 	where not exists (select *
 				from STATS_Team
 				where LISTMODE >= 10
 			)
-go
+;
 
-print 'Remove retired or hidden participants from Email_Rank'
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
-select RETIRE_TO, WORK_TOTAL, FIRST_DATE, LAST_DATE
-	into #temp
+\echo Remove retired or hidden participants from Email_Rank
+;
+select RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, max(LAST_DATE) as LAST_DATE
+	into TEMP NewRetiresER
 	from Email_Rank er, STATS_Participant sp
 	where sp.ID = er.ID
 		and sp.RETIRE_TO >= 1
-		and sp.RETIRE_DATE = @stats_date
+		and sp.RETIRE_DATE = (SELECT last_hourly_date FROM Project_statsrun WHERE project_id = :ProjectID)
 		and not exists (select *
 					from STATS_Participant_Blocked spb
 					where spb.ID = sp.ID
 						and spb.ID = er.ID
 				)
-		and er.PROJECT_ID = ${1}
-
-select RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, max(LAST_DATE) as LAST_DATE
-	into #NewRetiresER
-	from #temp
+		and er.PROJECT_ID = :ProjectID
 	group by RETIRE_TO
-go
-drop table #temp
---select * from #NewRetiresER
-go
+;
 
-print "Begin update"
-set flushmessage on
-go
-begin transaction
-print "Update Email_Rank with new information"
-update Email_Rank
-	set Email_Rank.WORK_TOTAL = Email_Rank.WORK_TOTAL + nr.WORK_TOTAL
-	from #NewRetiresER nr
-	where Email_Rank.ID = nr.RETIRE_TO
-		and Email_Rank.PROJECT_ID = ${1}
-update Email_Rank
-	set Email_Rank.FIRST_DATE = nr.FIRST_DATE
-	from #NewRetiresER nr
-	where Email_Rank.ID = nr.RETIRE_TO
-		and Email_Rank.FIRST_DATE > nr.FIRST_DATE
-		and Email_Rank.PROJECT_ID = ${1}
-update Email_Rank
-	set Email_Rank.LAST_DATE = nr.LAST_DATE
-	from #NewRetiresER nr
-	where Email_Rank.ID = nr.RETIRE_TO
-		and Email_Rank.LAST_DATE < nr.LAST_DATE
-		and Email_Rank.PROJECT_ID = ${1}
+\echo Begin update
 
-print ""
-print ""
-print "Delete retires and blocked participants from Email_Rank"
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
+BEGIN;
+    \echo Update Email_Rank with new information
+    UPDATE Email_Rank
+        SET WORK_TOTAL = Email_Rank.WORK_TOTAL + nr.WORK_TOTAL
+        FROM NewRetiresER nr
+        WHERE Email_Rank.ID = nr.RETIRE_TO
+            and Email_Rank.PROJECT_ID = :ProjectID
+    ;
+    UPDATE Email_Rank
+        SET FIRST_DATE = nr.FIRST_DATE
+        FROM NewRetiresER nr
+        WHERE Email_Rank.ID = nr.RETIRE_TO
+            and Email_Rank.FIRST_DATE > nr.FIRST_DATE
+            and Email_Rank.PROJECT_ID = :ProjectID
+    ;
+    UPDATE Email_Rank
+        SET LAST_DATE = nr.LAST_DATE
+        FROM NewRetiresER nr
+        WHERE Email_Rank.ID = nr.RETIRE_TO
+            and Email_Rank.LAST_DATE < nr.LAST_DATE
+            and Email_Rank.PROJECT_ID = :ProjectID
+    ;
 
-delete Email_Rank
-	from STATS_Participant
-	where convert(int, STATS_Participant.ID) = Email_Rank.ID
-		and STATS_Participant.RETIRE_TO >= 1
-		and STATS_Participant.RETIRE_DATE = @stats_date
-		and Email_Rank.PROJECT_ID = ${1}
+    \echo 
+    \echo 
+    \echo Delete retires and blocked participants from Email_Rank
+    DELETE FROM Email_Rank
+        where project_id = :ProjectID
+            and id IN  (SELECT id
+                            FROM STATS_Participant sp
+                            WHERE retire_to >= 1
+                                and retire_date = (SELECT last_hourly_date FROM Project_statsrun WHERE project_id = :ProjectID)
+                        )
+    ;
 
-delete Email_Rank
-	from STATS_Participant_Blocked spb
-	where spb.ID = Email_Rank.ID
-		and Email_Rank.PROJECT_ID = ${1}
+    DELETE FROM Email_Rank
+        WHERE project_id = :ProjectID
+            and id IN (SELECT id FROM STATS_Participant_Blocked)
+    ;
 
--- The following code should ensure that any "retire_to chains" eventually get eliminated
--- It is also needed in case someone retires to an address that hasnt done any work in
--- this contest.
-print "Insert remaining retires"
-delete #NewRetiresER
-	from Email_Rank er
-	where #NewRetiresER.RETIRE_TO = er.ID
-		and er.PROJECT_ID = ${1}
+    -- The following code should ensure that any "retire_to chains" eventually get eliminated
+    -- It is also needed in case someone retires to an address that hasnt done any work in
+    -- this contest.
+    \echo Insert remaining retires
+    DELETE FROM NewRetiresER
+        WHERE retire_to IN (SELECT id
+                                FROM Email_Rank er
+                                WHERE er.PROJECT_ID = :ProjectID
+                            )
+    ;
 
-insert into Email_Rank(PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
-	select ${1}, RETIRE_TO, FIRST_DATE, LAST_DATE, WORK_TOTAL
-	from #NewRetiresER
+    INSERT into Email_Rank(PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
+        SELECT :ProjectID, RETIRE_TO, FIRST_DATE, LAST_DATE, WORK_TOTAL
+        FROM NewRetiresER
+    ;
+COMMIT;
 
---select * from #NewRetiresER
+\echo Remove retired participants from Team_Members
 
-commit transaction
-go
-
-set flushmessage off
-print 'Remove retired participants from Team_Members'
-go
-print 'Select new retires'
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
-select RETIRE_TO, TEAM_ID, WORK_TOTAL, FIRST_DATE, LAST_DATE
-	into #temp
-	from Team_Members tm, STATS_Participant sp
-	where sp.ID = tm.ID
+\echo Select new retires
+SELECT retire_to, team_id, sum(work_total) as work_total, min(first_date) as first_date, max(last_date) as last_date
+	INTO TEMP NewRetiresTM
+	FROM Team_Members tm, STATS_Participant sp
+	WHERE sp.ID = tm.ID
 		and sp.RETIRE_TO >= 1
-		and sp.RETIRE_DATE = @stats_date
+		and sp.RETIRE_DATE = (SELECT last_hourly_date FROM Project_statsrun WHERE project_id = :ProjectID)
 		and not exists (select *
 					from STATS_Participant_Blocked spb
 					where spb.ID = sp.ID
 						and spb.ID = tm.ID
 				)
-		and tm.PROJECT_ID = ${1}
-
-select RETIRE_TO, TEAM_ID, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, max(LAST_DATE) as LAST_DATE
-	into #NewRetiresTM
-	from #temp
+		and tm.PROJECT_ID = :ProjectID
 	group by RETIRE_TO, TEAM_ID
-go
-drop table #temp
---select * from #NewRetiresTM
-go
+;
 
-set flushmessage on
-print "Begin update"
-go
-begin transaction
-print "Update Team_Members with new information for retires"
-update Team_Members
-	set Team_Members.WORK_TOTAL = Team_Members.WORK_TOTAL + nr.WORK_TOTAL
-	from #NewRetiresTM nr
-	where Team_Members.ID = nr.RETIRE_TO
-		and Team_Members.TEAM_ID = nr.TEAM_ID
-		and Team_Members.PROJECT_ID = ${1}
-update Team_Members
-	set Team_Members.FIRST_DATE = nr.FIRST_DATE
-	from #NewRetiresTM nr
-	where Team_Members.ID = nr.RETIRE_TO
-		and Team_Members.TEAM_ID = nr.TEAM_ID
-		and Team_Members.PROJECT_ID = ${1}
-		and Team_Members.FIRST_DATE > nr.FIRST_DATE
-update Team_Members
-	set Team_Members.LAST_DATE = nr.LAST_DATE
-	from #NewRetiresTM nr
-	where Team_Members.ID = nr.RETIRE_TO
-		and Team_Members.TEAM_ID = nr.TEAM_ID
-		and Team_Members.PROJECT_ID = ${1}
-		and Team_Members.LAST_DATE < nr.LAST_DATE
+\echo Begin update
 
-print "Delete retires from Team_Members"
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
+BEGIN;
+    \echo Update Team_Members with new information for retires
+    UPDATE Team_Members
+        SET WORK_TOTAL = Team_Members.WORK_TOTAL + nr.WORK_TOTAL
+        FROM NewRetiresTM nr
+        WHERE Team_Members.ID = nr.RETIRE_TO
+            and Team_Members.TEAM_ID = nr.TEAM_ID
+            and Team_Members.PROJECT_ID = :ProjectID
+    ;
+    UPDATE Team_Members
+        SET FIRST_DATE = nr.FIRST_DATE
+        FROM NewRetiresTM nr
+        WHERE Team_Members.ID = nr.RETIRE_TO
+            and Team_Members.TEAM_ID = nr.TEAM_ID
+            and Team_Members.PROJECT_ID = :ProjectID
+            and Team_Members.FIRST_DATE > nr.FIRST_DATE
+    ;
+    UPDATE Team_Members
+        SET LAST_DATE = nr.LAST_DATE
+        FROM NewRetiresTM nr
+        WHERE Team_Members.ID = nr.RETIRE_TO
+            and Team_Members.TEAM_ID = nr.TEAM_ID
+            and Team_Members.PROJECT_ID = :ProjectID
+            and Team_Members.LAST_DATE < nr.LAST_DATE
+    ;
 
-delete Team_Members
-	from STATS_Participant sp
-	where sp.ID = Team_Members.ID
-		and sp.RETIRE_TO >= 1
-		and sp.RETIRE_DATE = @stats_date
-		and Team_Members.PROJECT_ID = ${1}
+    \echo Delete retires from Team_Members
+    DELETE FROM Team_Members
+        WHERE Team_Members.PROJECT_ID = :ProjectID
+            and id IN (SELECT id
+                            FROM STATS_Participant sp, Project_statsrun ps
+                            WHERE sp.RETIRE_TO >= 1
+                                and sp.RETIRE_DATE = ps.last_hourly_date
+                                and ps.project_id = :ProjectID
+                        )
+    ;
 
--- This code *must* stay in order to handle retiring participants old team affiliations
-print ""
-print ""
-print "Insert remaining retires"
-delete #NewRetiresTM
-	from Team_Members tm
-	where #NewRetiresTM.RETIRE_TO = tm.ID
-		and #NewRetiresTM.TEAM_ID = tm.TEAM_ID
-		and tm.PROJECT_ID = ${1}
+    -- This code *must* stay in order to handle retiring participants old team affiliations
+    \echo 
+    \echo 
+    \echo Insert remaining retires
+    DELETE FROM NewRetiresTM
+        WHERE (retire_to, team_id) IN (SELECT id, team_id
+                                            FROM Team_Members tm
+                                            WHERE tm.PROJECT_ID = :ProjectID
+                                        )
+    ;
+    INSERT into Team_Members(PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
+        SELECT :ProjectID, RETIRE_TO, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL
+        FROM NewRetiresTM
+    ;
+COMMIT;
 
-insert into Team_Members(PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
-	select ${1}, RETIRE_TO, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL
-	from #NewRetiresTM
+\echo Remove hidden participants
 
---select * from #NewRetiresTM
+\echo Select IDs to remove
+SELECT DISTINCT spb.ID
+	INTO BadIDs
+	FROM Team_Members tm, STATS_Participant_Blocked spb
+	WHERE tm.ID = spb.ID
+		and PROJECT_ID = :ProjectID
+;
 
-commit transaction
-go
+\echo Summarize team work to be removed
+SELECT TEAM_ID, sum(WORK_TOTAL) as BAD_WORK_TOTAL
+	INTO BadWork
+	FROM Team_Members tm, BadIDs b
+	WHERE tm.ID = b.ID
+		and PROJECT_ID = :ProjectID
+	GROUP BY TEAM_ID
+;
 
-set flushmessage off
-print "Remove hidden participants"
-go
-print "Select IDs to remove"
-select distinct spb.ID
-	into #BadIDs
-	from Team_Members tm, STATS_Participant_Blocked spb
-	where tm.ID = spb.ID
-		and PROJECT_ID = ${1}
-go
-
-print "Summarize team work to be removed"
-select TEAM_ID, sum(WORK_TOTAL) as BAD_WORK_TOTAL
-	into #BadWork
-	from Team_Members tm, #BadIDs b
-	where tm.ID = b.ID
-		and PROJECT_ID = ${1}
-	group by TEAM_ID
-go
-
-set flushmessage on
-go
-begin transaction
-print "Update Team_Rank to account for removed IDs"
-update Team_Rank
-	set WORK_TOTAL = WORK_TOTAL - BAD_WORK_TOTAL
-	from #BadWork bw
-	where Team_Rank.TEAM_ID = bw.TEAM_ID
-
-print "Delete from Team_Members"
-delete Team_Members
-	from #BadIDs b
-	where Team_Members.ID = b.ID
-		and Team_Members.PROJECT_ID = ${1}
-commit transaction
-go
+BEGIN;
+    \echo Update Team_Rank to account for removed IDs
+    UPDATE Team_Rank
+        SET WORK_TOTAL = WORK_TOTAL - BAD_WORK_TOTAL
+        FROM BadWork bw
+        WHERE Team_Rank.TEAM_ID = bw.TEAM_ID
+    ;
+    \echo Delete from Team_Members
+    DELETE FROM Team_Members
+        WHERE project_id = :ProjectID
+            and id IN (SELECT id FROM BadIDs)
+    ;
+COMMIT;
