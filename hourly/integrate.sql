@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.13 2000/10/04 06:06:30 decibel Exp $
+# $Id: integrate.sql,v 1.14 2000/10/29 10:04:42 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -9,49 +9,6 @@
 
 set flushmessage on
 go
-
-/*
-**	Moved e-mail cleanup here, to aggregate the data more quickly
-*/
-print "Checking for bad emails"
-go
-
-/*
-**	Make sure they don't have any leading spaces
-*/
-update import_bcp
-	set EMAIL = ltrim(EMAIL)
-	where EMAIL <> ltrim(EMAIL)
-/*
-** TODO: Strip out any text in <brackets>, per the RFC for email addresses
-*/
-
-/*
-**	Correct some common garbage combinations
-**	It's going to table-scan anyway, so we might as well
-**	do all the tests we can
-*/
-update import_bcp
-	set EMAIL = 'rc5-bad@distributed.net'
-	where EMAIL not like '%@%'	/* Must have @ */
-		or EMAIL like '%[ <>]%'	/* Must not contain space, &gt or &lt */
-		or EMAIL like '@%'	/* Must not begin with @ */
-		or EMAIL like '%@'	/* Must not end with @ */
-/*
-**	Only one @.  Must test after we know they have at least one @
-*/
-update import_bcp
-	set EMAIL = 'rc5-bad@distributed.net'
-	where substring(EMAIL, charindex('@', EMAIL) + 1, 64) like '%@%'
-go
-/* [BW] Processing all projects at once is a Bad Thing (TM) because we may not have
-**	the same number of logs for all projects, and even if that doesn't cause a
-**	problem, it would make it harder to run hourly for one the same time as
-**	daily for another, if we need to.  I need to think about this more, but
-**	even if we do it all in one fell swoop, there might be performance benefits
-**	to stepping through each project in a cursor.
-*/
-
 
 /* Create a temp table that lets us know what project(s) we're working on here */
 /* [BW] If this step wasn't here, it would be possible to run integrate without
@@ -71,6 +28,63 @@ update Projects
 	from #Projects p
 	where Projects.PROJECT_ID = p.PROJECT_ID
 go
+
+print "Rolling up data from import_bcp"
+create table #import
+(
+	PROJECT_ID	tinyint		not NULL,
+	EMAIL		varchar (64)	not NULL,
+	WORK_UNITS	numeric(20, 0)	not NULL
+)
+go
+insert #import (PROJECT_ID, EMAIL, WORK_UNITS)
+	select PROJECT_ID, EMAIL, sum(WORK_UNITS)
+	from import_bcp
+	group by PROJECT_ID, EMAIL
+go
+
+/*
+**	Moved e-mail cleanup here, to aggregate the data more quickly
+*/
+print "Checking for bad emails"
+go
+
+/*
+**	Make sure they don't have any leading spaces
+*/
+update import
+	set EMAIL = ltrim(EMAIL)
+	where EMAIL <> ltrim(EMAIL)
+/*
+** TODO: Strip out any text in <brackets>, per the RFC for email addresses
+*/
+
+/*
+**	Correct some common garbage combinations
+**	It's going to table-scan anyway, so we might as well
+**	do all the tests we can
+*/
+update import
+	set EMAIL = 'rc5-bad@distributed.net'
+	where EMAIL not like '%@%'	/* Must have @ */
+		or EMAIL like '%[ <>]%'	/* Must not contain space, &gt or &lt */
+		or EMAIL like '@%'	/* Must not begin with @ */
+		or EMAIL like '%@'	/* Must not end with @ */
+/*
+**	Only one @.  Must test after we know they have at least one @
+*/
+update import
+	set EMAIL = 'rc5-bad@distributed.net'
+	where substring(EMAIL, charindex('@', EMAIL) + 1, 64) like '%@%'
+go
+/* [BW] Processing all projects at once is a Bad Thing (TM) because we may not have
+**	the same number of logs for all projects, and even if that doesn't cause a
+**	problem, it would make it harder to run hourly for one the same time as
+**	daily for another, if we need to.  I need to think about this more, but
+**	even if we do it all in one fell swoop, there might be performance benefits
+**	to stepping through each project in a cursor.
+*/
+
 
 /*
 Assign project id
@@ -93,11 +107,11 @@ create table #dayemails
 )
 go
 /* Put EMAIL data into temp table */
-print "Moving data to temp table"
+print "Final roll-up by email"
 /* First, put the latest set of logs in */
 insert #Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 	select PROJECT_ID, EMAIL, 0, sum(WORK_UNITS)
-	from import_bcp
+	from import
 	group by PROJECT_ID, EMAIL
 go
 
