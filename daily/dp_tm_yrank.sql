@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dp_tm_yrank.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: dp_tm_yrank.sql,v 1.2 2000/03/29 18:22:10 bwilson Exp $
 #
 # Ranks the teams (yesterday)
 #
@@ -16,17 +16,17 @@ use stats
 set rowcount 0
 go
 
-while exists (select * from sysobjects where id = object_id(\\'${1}_CACHE_tm_YRANK_old\\'))
+while exists (select * from sysobjects where id = object_id('${1}_CACHE_tm_YRANK_old'))
 	drop table ${1}_CACHE_tm_YRANK_old
 go
 
-while exists (select * from sysobjects where id = object_id(\\'${1}_CACHE_tm_YRANK\\'))
-	EXEC sp_rename \\'${1}_CACHE_tm_YRANK\\', \\'${1}_CACHE_tm_YRANK_old\\'
+while exists (select * from sysobjects where id = object_id('${1}_CACHE_tm_YRANK'))
+	EXEC sp_rename '${1}_CACHE_tm_YRANK', '${1}_CACHE_tm_YRANK_old'
 go
 
 print "::  Creating ${1}_CACHE_tm_YRANK table"
 go
-create table ${1}_CACHE_tm_YRANK 
+create table ${1}_CACHE_tm_YRANK
 (       Idx numeric (10,0) IDENTITY NOT NULL,
         Team numeric (10,0) NULL ,
 	Name varchar (64) NULL ,
@@ -67,15 +67,15 @@ go
 
 select C.team, S.name, C.first, C.last, C.blocks,
   0 as rank, 0 as change,
-  S.listmode 
+  S.listmode
 into #TYRANKb
 from #TYRANKa C, STATS_team S
 where C.team = S.team
-go 
+go
 
 print "::  Populating ${1}_CACHE_tm_YRANK live table"
 go
-insert into ${1}_CACHE_tm_YRANK 
+insert into ${1}_CACHE_tm_YRANK
   (team,name,first,last,blocks,days_working,rank,change,listmode)
 select distinct team, max(name),min(first),max(last),sum(blocks),1 as days_working,min(rank),min(change),max(listmode)
 from #TYRANKb

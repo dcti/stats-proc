@@ -1,8 +1,10 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_maxdate.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: dy_maxdate.sql,v 1.2 2000/03/29 18:22:10 bwilson Exp $
 
-select convert(char(8),max(date),112) as maxdate from ${1}_master 
+select LAST_STATS_DATE
+	from Projects
+	where NAME = '${1}'
 # turn off header and rows affected output
 go -f -h
 

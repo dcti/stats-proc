@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: cleardaytable.sql,v 1.4 2000/02/29 16:22:27 bwilson Exp $
+# $Id: cleardaytable.sql,v 1.5 2000/03/29 18:22:10 bwilson Exp $
 #
 # Recreates the daytables
 #
@@ -9,10 +9,15 @@
 
 if object_id('statproc_daytable') is not NULL
 begin
-	drop procedure statproc_cleardaytable
+	drop procedure statproc_${1}_ClearDay
 end
 go
-create procedure statproc_cleardaytable
+create procedure statproc_${1}_ClearDay
 as
 begin
-	drop index
+/* TODO: Decide which indexes to drop */
+	drop index ${1}_Day_Master.
+end
+go
+print 'Finished.'
+go

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.3 2000/02/21 03:47:06 bwilson Exp $
+# $Id: dy_appendday.sql,v 1.4 2000/03/29 18:22:10 bwilson Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -15,7 +15,7 @@ go
 declare @proj_id tinyint
 select @proj_id = PROJECT_ID
 	from Projects
-	where PROJECT = \\'${1}\\'
+	where PROJECT = '${1}'
 
 insert into ${1}_master (date, PROJECT_ID, id, team, blocks)
 select
@@ -34,7 +34,7 @@ go
 declare @proj_id tinyint
 select @proj_id = PROJECT_ID
 	from Projects
-	where PROJECT = \\'${1}\\'
+	where PROJECT = '${1}'
 
 insert into ${1}_platform (date, PROJECT_ID, cpu, os, ver, blocks)
 select

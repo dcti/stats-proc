@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dp_tm_rank.sql,v 1.2 2000/02/21 03:47:06 bwilson Exp $
+# $Id: dp_tm_rank.sql,v 1.3 2000/03/29 18:22:10 bwilson Exp $
 #
 # Ranks the teams (overall)
 #
@@ -16,12 +16,12 @@ use stats
 set rowcount 0
 go
 
-while exists (select * from sysobjects where id = object_id(\\'${1}_CACHE_tm_RANK_old\\'))
+while exists (select * from sysobjects where id = object_id('${1}_CACHE_tm_RANK_old'))
 	drop table ${1}_CACHE_tm_RANK_old
 go
 
-while exists (select * from sysobjects where id = object_id(\\'${1}_CACHE_tm_RANK\\'))
-	EXEC sp_rename \\'${1}_CACHE_tm_RANK\\', \\'${1}_CACHE_tm_RANK_old\\'
+while exists (select * from sysobjects where id = object_id('${1}_CACHE_tm_RANK'))
+	EXEC sp_rename '${1}_CACHE_tm_RANK', '${1}_CACHE_tm_RANK_old'
 go
 
 print "::  Creating ${1}_CACHE_tm_RANK table"

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_members.sql,v 1.2 2000/02/21 03:47:06 bwilson Exp $
+# $Id: dy_members.sql,v 1.3 2000/03/29 18:22:10 bwilson Exp $
 #
 # Create the team membership tables
 #
@@ -60,7 +60,7 @@ print ":: Populating PREBUILD_${1}_tm_MEMBERS table"
 go
 insert into PREBUILD_${1}_tm_MEMBERS
   (id,team,first,last,blocks)
-select distinct id, team, min(first), max(last), sum(blocks)
+select id, team, min(first), max(last), sum(blocks)
 from #RANKb
 group by id, team
 go

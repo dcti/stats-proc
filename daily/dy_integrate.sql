@@ -1,13 +1,8 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_integrate.sql,v 1.4 2000/02/29 16:22:27 bwilson Exp $
+# $Id: dy_integrate.sql,v 1.5 2000/03/29 18:22:10 bwilson Exp $
 #
 # Move data from the import table to the daytables
-#
-# TODO: Resummarize on each pass so SQL can work with smaller chunks for the rest of the script
-#	insert #temp select * from _import union select * from _daytable
-#	delete daytable
-#	insert daytable select * from #temp
 #
 # Arguments:
 #       Project
@@ -43,6 +38,15 @@ update ${1}_import
 	where substring(email, charindex('@', email) + 1, 64) like '%@%'
 go
 
+/* Store the stats date here, instead of in every row of _Day_Master and _Day_Platform */
+declare @stats_date smalldatetime
+select @stats_date = max(timestamp)
+	from ${1}_import
+update Projects
+	set LAST_STATS_DATE = @stats_date
+	where NAME = '${1}'
+go
+
 /*
 Assign contest id
 	Insert in holding table, or set bit or date field in STATS_Participant
@@ -50,23 +54,80 @@ Assign contest id
 daytable contains id instead of email
 password assign automatic
 */
-
+create table #Day_Master
+(
+	email varchar (64) NULL,
+	size numeric(20, 0) NULL
+)
+go
 declare @proj_id tinyint
 
 select @proj_id = PROJECT_ID
 	from Projects
-	where PROJECT = \\'${1}\\'
+	where NAME = '${1}'
 
-insert into ${1}_daytable_master (timestamp, PROJECT_ID, email, size)
-select convert(varchar, timestamp, 112) as timestamp, @proj_id, email, sum(size) as size
-from ${1}_import
-group by convert(varchar, timestamp, 112), @proj_id, email
+/* Put email data into temp table */
+insert #Day_Master (email, size)
+	select email, sum(size)
+	from ${1}_import
+	group by email
 
-insert into ${1}_daytable_platform (timestamp, PROJECT_ID, cpu, os, ver, size)
-select convert(varchar, timestamp, 112) as timestamp, @proj_id, cpu, os, ver, sum(size) as size
-from ${1}_import
-group by convert(varchar, timestamp, 112), @proj_id, cpu, os, ver
+insert #Day_Master (email, size)
+	select email, sum(size)
+	from ${1}_Day_Master
+	where PROJECT_ID = @proj_id
+
+begin transaction
+delete ${1}_Day_Master
+	where PROJECT_ID = @proj_id
+
+insert into ${1}_Day_Master (PROJECT_ID, EMAIL, SIZE, TEAM)
+	select @proj_id, email, sum(size), 0
+	from #Day_Master
+	group by email
+commit transaction
+
+drop table #Day_Master
 go
 
-delete ${1}_import where 1 = 1
+create table #Day_Platform
+(
+	CPU smallint not NULL,
+	OS smallint not NULL,
+	VER smallint not NULL,
+	SIZE numeric(20, 0) not NULL
+)
+go
+declare @proj_id tinyint
+
+select @proj_id = PROJECT_ID
+	from Projects
+	where NAME = '${1}'
+
+insert #Day_Platform (cpu, os, ver, size)
+	select cpu, os, ver, sum(size)
+	from ${1}_import
+	group by cpu, os, ver
+
+insert #Day_Platform (cpu, os, ver, size)
+	select cpu, os, ver, sum(size)
+	from ${1}_Day_Platform
+	where PROJECT_ID = @proj_id
+	group by cpu, os, ver
+
+begin transaction
+delete ${1}_Day_Platform
+	where PROJECT_ID = @proj_id
+
+insert ${1}_Day_Platform (PROJECT_ID, CPU, OS, VER, SIZE)
+	select @proj_id, CPU, OS, VER, sum(size)
+	from #Day_Platform
+	group by CPU, OS, VER
+commit transaction
+
+drop table #Day_Platform
+go
+
+delete ${1}_import
+	where 1 = 1
 go

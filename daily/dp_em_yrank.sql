@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dp_em_yrank.sql,v 1.2 2000/02/21 03:47:06 bwilson Exp $
+# $Id: dp_em_yrank.sql,v 1.3 2000/03/29 18:22:10 bwilson Exp $
 #
 # Rank the participants (yesterday)
 #
@@ -17,7 +17,7 @@ go
 print "::  Creating PREBUILT_${1}_CACHE_em_YRANK table"
 go
 
-if object_id(\\'PREBUILT_${1}_CACHE_em_RANK\\') is not NULL
+if object_id('PREBUILT_${1}_CACHE_em_RANK') is not NULL
 begin
 	drop table PREBUILT_${1}_CACHE_em_RANK
 end
@@ -132,8 +132,8 @@ go
 print ":: Moving tables, backing up old data"
 go
 
-if (object_id(\\'${1}_CACHE_em_YRANK_backup\\') is not NULL
-	and object_id(\\'PREBUILT_${1}_CACHE_em_YRANK\\') is not NULL)
+if (object_id('${1}_CACHE_em_YRANK_backup') is not NULL
+	and object_id('PREBUILT_${1}_CACHE_em_YRANK') is not NULL)
 begin
 	if exists (select * from PREBUILT_${1}_CACHE_em_YRANK)
 	begin
@@ -142,7 +142,7 @@ begin
 end
 go
 
-if object_id(\\'PREBUILT_${1}_CACHE_em_YRANK\\') is not NULL
+if object_id('PREBUILT_${1}_CACHE_em_YRANK') is not NULL
 	if exists (select * from PREBUILT_${1}_CACHE_em_YRANK)
 	begin
 #		-- Do a select into instead of a rename so that the stored procs dont keep hitting
@@ -150,6 +150,6 @@ if object_id(\\'PREBUILT_${1}_CACHE_em_YRANK\\') is not NULL
 		select * into ${1}_CACHE_em_YRANK_backup from ${1}_CACHE_em_YRANK
 		revoke select on ${1}_CACHE_em_YRANK to public
 		drop table ${1}_CACHE_em_YRANK
-		EXEC sp_rename \\'PREBUILT_${1}_CACHE_em_YRANK\\', \\'${1}_CACHE_em_YRANK\\'
+		EXEC sp_rename 'PREBUILT_${1}_CACHE_em_YRANK', '${1}_CACHE_em_YRANK'
 	end
 go
