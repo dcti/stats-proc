@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.8 2000/11/02 10:06:57 decibel Exp $
+# $Id: tm_update.sql,v 1.9 2000/11/08 17:04:03 decibel Exp $
 
 TM_RANK
 
@@ -202,7 +202,7 @@ select @max_rank = max_rank from #maxrank
 insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
 		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
-	select ${1}, tw.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, 0,
+	select ${1}, tw.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY
 			@max_rank, @max_rank, @max_rank, @max_rank, 0, 0, 0
 	from #TeamWork tw
 	where tw.IS_NEW = 1
@@ -210,7 +210,9 @@ insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_T
 print " Update FIRST_DATE and WORK_TOTAL to reflect new additions to Team_Members"
 go
 
-select tm.TEAM_ID, min(tm.FIRST_DATE) as FIRST_DATE, sum(tm.WORK_TOTAL) as WORK_TOTAL
+# New members work for today will have already been added to WORK_TOTAL by the update above, so
+# don't include it in the amount of work to add to WORK_TOTAL.
+select tm.TEAM_ID, min(tm.FIRST_DATE) as FIRST_DATE, sum(tm.WORK_TOTAL-tm.WORK_TODAY) as WORK_TOTAL
 	into #TeamWorkUpdate
 	from Team_Members tm, #TeamMemberWork tmw
 	where tm.TEAM_ID = tmw.TEAM_ID
