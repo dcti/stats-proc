@@ -1,5 +1,5 @@
 /*
- $Id: backout.sql,v 1.8.2.2 2003/04/30 06:27:41 decibel Exp $
+ $Id: backout.sql,v 1.8.2.3 2003/04/30 06:31:49 decibel Exp $
 
  This script will back out all stats data to a given date
 
@@ -7,8 +7,9 @@
     ProjectID
     KeepDate - last date to KEEP in the database
 */
-\set ON_ERROR_STOP 1
 
+\set ON_ERROR_STOP 1
+set enable_seqscan = off;
 
 BEGIN;
     \echo Deleting from email_contrib where date > :KeepDate
