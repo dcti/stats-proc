@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: logmod_ogr.pl,v 1.4 2000/06/20 18:23:30 nugget Exp $
+# $Id: logmod_ogr.pl,v 1.5 2000/07/15 16:47:00 nugget Exp $
 #
 #
 # ogr logfile sample:
@@ -14,6 +14,14 @@ use strict;
 while(<>) {
   my $buf = $_;
   chomp $buf;
+
+  # This chunk of code attempts to correct commas in email addresses.  This
+  # should, of course, never exist.  The proxies and master should fix this
+  # but for some reason the cleanup isn't occuring on ogr logs.  Until cow
+  # fixes the problem, this code will catch most instances of it.
+  while( $buf =~ /^([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*)/ ) {
+    $buf = "$1,$2,$3.$4,$5,$6,$7,$8,$9";
+  }
 
   # Strip the workunit id information, leaving only the project id.
   $buf =~ s/\/\d+-[^,]+//;
