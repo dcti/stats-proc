@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.11 2003/10/04 13:16:32 nerf Exp $
+-- $Id: daily_update.sql,v 1.12 2003/10/04 13:17:29 nerf Exp $
 
 select now();
 
@@ -249,9 +249,10 @@ analyze OGR_summary;
 UPDATE day_summary
 SET in_OGR_summary = true
 WHERE exists
-(SELECT * FROM OGR_summary WHERE OGR_summary.stub_id = day_summary.stub_id
-    AND OGR_summary.nodecount = day_summary.nodecount
-    );
+    (SELECT * FROM OGR_summary WHERE OGR_summary.stub_id = day_summary.stub_id
+        AND OGR_summary.nodecount = day_summary.nodecount
+    )
+;
 
 CREATE INDEX day_stubnode ON day_summary (stub_id,nodecount)
   WHERE in_OGR_summary;
@@ -259,21 +260,21 @@ CREATE INDEX day_stubnode ON day_summary (stub_id,nodecount)
 -- If it's threre already, update it
 --explain analyze
 UPDATE OGR_summary
-  SET participants = participants + ids
-    , max_client = max(max_client, max_version)
-  FROM day_summary ds
-  WHERE ds.in_OGR_summary 
-  AND ds.stub_id = OGR_summary.stub_id
-  AND ds.nodecount = OGR_summary.nodecount
+    SET participants = participants + ids,
+      max_client = max(max_client, max_version)
+    FROM day_summary ds
+    WHERE ds.in_OGR_summary 
+    AND ds.stub_id = OGR_summary.stub_id
+    AND ds.nodecount = OGR_summary.nodecount
 ;
 
 -- If it's not there, add it
 -- Note that most of the stubs will fall under this category
 --explain analyze
 INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
-  SELECT stub_id, nodecount, ids, max_version
-  FROM day_summary ds
-  WHERE NOT ds.in_OGR_summary
+    SELECT stub_id, nodecount, ids, max_version
+    FROM day_summary ds
+    WHERE NOT ds.in_OGR_summary
 ;
 
 COMMIT;
