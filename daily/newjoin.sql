@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.5 2000/11/08 17:34:02 decibel Exp $
+# $Id: newjoin.sql,v 1.6 2000/11/08 17:46:43 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -37,6 +37,7 @@ begin transaction
 declare @id int, @retire_to int, @team_id int
 declare @work numeric(20,0), @first smalldatetime, @last smalldatetime
 declare @eff_id int, @curfirst smalldatetime, @curlast smalldatetime
+declare @day_rank int, @overall_rank int
 declare @update_ids int, @total_ids int, @idrows int, @total_rows int
 select @update_ids = 0, @total_ids = 0, @total_rows = 0
 open ids
@@ -93,13 +94,13 @@ begin
 		end
 		else
 		begin
+			select @day_rank = count(*) from Team_Members where PROJECT_ID = ${1} and TEAM_ID = @team_id
+			select @overall_rank = min(OVERALL_RANK) - 1 from Team_Members
+				where PROJECT_ID = ${1} and TEAM_ID = @team_id and WORK_TOTAL < @work
 			insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
-					DAY_RANK, DAY_RANK_PREVIOUS,
-					OVERALL_RANK, OVERALL_RANK_PREVIOUS)
+					DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
 				values ( ${1}, @eff_id, @team_id, @first, @last, 0, @work,
-					(select count(*) from Team_Members where PROJECT_ID = ${1} and TEAM_ID = @team_id), 0,
-					(select min(OVERALL_RANK) - 1 from Team_Members
-						where PROJECT_ID = ${1} and TEAM_ID = @team_id and WORK_TOTAL < @work), 0 )
+					@day_rank, 0, @overall_rank, 0 )
 		end
 # Update Team_Rank
 		if exists (select * from Team_Rank where PROJECT_ID = ${1} and TEAM_ID = @team_id)
@@ -126,13 +127,14 @@ begin
 		end
 		else
 		begin
+			select @day_rank = count(*) + 1 from Team_Rank where PROJECT_ID = ${1}
+			select @overall_rank = min(OVERALL_RANK) - 1 from Team_Rank
+					where PROJECT_ID = ${1} and WORK_TOTAL < @work
 			insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 					DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
 					MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
 			values ( ${1}, @team_id, @first, @last, 0, @work,
-				(select count(*) + 1 from Team_Rank where PROJECT_ID = ${1}), 0,
-				(select min(OVERALL_RANK) - 1 from Team_Rank
-					where PROJECT_ID = ${1} and WORK_TOTAL < @work), 0, 0, 1, 1)
+				@day_rank, 0, @overall_rank, 0, 0, 0, 0 )
 		end
 
 		print "  %1! rows processed for ID %2!, TEAM_ID %3!", @idrows, @id, @team_id
