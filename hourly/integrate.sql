@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.36 2003/09/11 01:41:02 decibel Exp $
+# $Id: integrate.sql,v 1.37 2003/11/17 16:19:40 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -289,8 +289,8 @@ delete from Email_Contrib_Today
 /*
 ** dy_appendday.sql depends on setting CREDIT_ID = ID
 */
-insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
-    select PROJECT_ID, sum(WORK_UNITS), ID, 0, ID
+insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, CREDIT_ID)
+    select PROJECT_ID, sum(WORK_UNITS), ID, ID
     from TEMP_Email_Contrib_Today
     group by PROJECT_ID, ID
 ;
