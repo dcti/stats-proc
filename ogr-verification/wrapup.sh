@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: wrapup.sh,v 1.2 2004/05/03 15:52:01 nerf Exp $
+# $Id: wrapup.sh,v 1.3 2004/05/04 20:20:23 nerf Exp $
 
 # Generate a stublist for each project.  These will be sent off to be
 # processed on another machine, eventually creating a new list for
@@ -28,3 +28,4 @@ EOF
 gzip -9 $OUTFILE &
 COPYFILES="$COPYFILES $OUTFILE.gz"
 done
+wait
