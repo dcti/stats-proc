@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.7 2003/04/05 00:23:02 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.8 2003/04/05 00:26:32 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -133,7 +133,7 @@ update TEMP_import
 */
 update TEMP_import
 	set EMAIL = 'rc5-bad@distributed.net'
-	where like '%@%@%'
+	where EMAIL like '%@%@%'
 ;
 --go
 /* [BW] Processing all projects at once is a Bad Thing (TM) because we may not have
