@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.4 2000/06/26 20:13:56 decibel Exp $
+# $Id: integrate.sql,v 1.5 2000/06/28 10:59:02 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -10,6 +10,8 @@
 /*
 **	Moved e-mail cleanup here, to aggregate the data more quickly
 */
+print "Checking for bad emails"
+go
 
 /*
 **	Make sure they don't have any leading spaces
@@ -60,23 +62,78 @@ password assign automatic
 */
 create table #Email_Contrib_Today
 (
-	EMAIL varchar (64) NULL,
-	WORK_UNITS numeric(20, 0) NULL
+	EMAIL		varchar (64)	not NULL,
+	ID		int		not NULL,
+	WORK_UNITS	numeric(20, 0)	not NULL
+)
+create table #dayemails
+(
+	ID		numeric(10, 0)	identity,
+	EMAIL		varchar(64)	not NULL
 )
 go
 /* Put EMAIL data into temp table */
+print "Move data to temp table"
+go
 /* First, put the latest set of logs in */
-insert #Email_Contrib_Today (EMAIL, WORK_UNITS)
-	select EMAIL, sum(WORK_UNITS)
+insert #Email_Contrib_Today (EMAIL, ID, WORK_UNITS)
+	select EMAIL, 0, sum(WORK_UNITS)
 	from import_bcp
 	group by EMAIL
+go
+
+/* Assign ID's for everyone who has an ID */
+print "Assign IDs"
+go
+-- NOTE: At some point we might want to set TEAM_ID and CREDIT_ID here as well
+update #Email_Contrib_Today
+	set ID = sp.ID
+	from STATS_Participant sp
+	where sp.EMAIL = #Email_Contrib_Today.EMAIL
+go
+
+/* Add new participants to STATS_Participant */
+print "Add new participants"
+go
+
+/* First, copy all new participants to #dayemails to do the identity assignment */
+insert #dayemails (EMAIL)
+	select distinct EMAIL
+	from #Email_Contrib_Today
+	where ID = 0
+	order by EMAIL
+go
+
+/* Figure out where to start assigning at */
+declare @idoffset int
+select @idoffset = max(id)
+	from STATS_Participant
+
+-- [BW] If we switch to retire_to = id as the normal condition,
+--	this insert should insert (id, EMAIL, retire_to)
+--	from ID + @idoffset, EMAIL, ID + @idoffset
+insert into STATS_participant (ID, EMAIL)
+	select ID + @idoffset, EMAIL
+	from #dayemails
+
+/* Assign the new IDs to the new participants */
+-- JCN: where Email_Contrib_Today might be faster here...
+update #Email_Contrib_Today
+	set ID = sp.ID
+	from STATS_Participant sp, #dayemails de
+	where sp.EMAIL = #Email_Contrib_Today.EMAIL
+		and sp.EMAIL = de.EMAIL
+		and de.EMAIL = #Email_Contrib_Today.EMAIL
+go
 
 /* Now, add the stuff from the previous hourly runs */
-insert #Email_Contrib_Today (EMAIL, WORK_UNITS)
-	select EMAIL, sum(WORK_UNITS)
+print "Copy Email_Contrib_Today into temptable"
+go
+-- JCN: Removed sum() and group by.. data in Email_Contrib_Today should be summed already
+insert #Email_Contrib_Today (EMAIL, ID, WORK_UNITS)
+	select "", ID, WORK_UNITS
 	from Email_Contrib_Today
 	where PROJECT_ID = ${1}
-	group by EMAIL
 
 /* Finally, remove the previous records from Email_Contrib_Today and insert the new
 ** data from the temp table. (It seems there should be a better way to do this...)
@@ -85,16 +142,18 @@ begin transaction
 delete Email_Contrib_Today
 	where PROJECT_ID = ${1}
 
-insert into Email_Contrib_Today (PROJECT_ID, EMAIL, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
-	select ${1}, EMAIL, sum(WORK_UNITS), 0, 0, 0
+insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
+	select ${1}, sum(WORK_UNITS), ID, 0, 0
 	from #Email_Contrib_Today
-	group by EMAIL
+	group by ID
 commit transaction
 
 drop table #Email_Contrib_Today
 go
 
 /* Do the exact same stuff for Platform_Contrib_Today */
+print "Roll up platform contributions"
+go
 create table #Platform_Contrib_Today
 (
 	CPU smallint not NULL,
@@ -126,9 +185,13 @@ commit transaction
 
 drop table #Platform_Contrib_Today
 go
+
+print "Clear import_bcp"
+go
 delete import_bcp
 	where 1 = 1
 
-/* This line produces the number of rows imported for logging */
+/* This line produces the number of rows imported for logging. The print is for the benefit of hourly.pl */
+print "Total rows in import table:"
 select @@rowcount
 go -f -h

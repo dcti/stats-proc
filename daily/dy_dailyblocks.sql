@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_dailyblocks.sql,v 1.7 2000/06/26 16:43:01 bwilson Exp $
+# $Id: dy_dailyblocks.sql,v 1.8 2000/06/28 10:59:02 decibel Exp $
 #
 # Inserts the daily totals
 #
@@ -16,20 +16,28 @@ select @stats_date = LAST_STATS_DATE
 	where PROJECT_ID = ${1}
 
 insert Daily_Summary (DATE, PROJECT_ID, WORK_UNITS,
-		PARTICIPANTS, TOP_OPARTICIPANT, TOP_OPWORK, TOP_YPARTICIPANT, TOP_YPWORK,
-		TEAMS, TOP_OTEAM, TOP_OTWORK, TOP_YTEAM, TOP_YTWORK)
+		PARTICIPANTS, PARTICIPANTS_NEW, TOP_OPARTICIPANT, TOP_OPWORK, TOP_YPARTICIPANT, TOP_YPWORK,
+		TEAMS, TEAMS_NEW, TOP_OTEAM, TOP_OTWORK, TOP_YTEAM, TOP_YTWORK)
 	values (@stats_date, ${1}, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0)
+		0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0)
 
 select @work = sum(WORK_UNITS),
 		@count = count(*)
 	from Email_Contrib_Today
 	where PROJECT_ID = ${1}
-
 update Daily_Summary
 	set WORK_UNITS = @work,
 		PARTICIPANTS = @count
+	where Daily_Summary.date = @stats_date
+		and Daily_Summary.PROJECT_ID = ${1}
+
+select @count = count(*)
+	from Email_Rank
+		where FIRST_DATE = @stats_date
+			and PROJECT_ID = ${1}
+update Daily_Summary
+	set PARTICIPANTS_NEW = @count
 	where Daily_Summary.date = @stats_date
 		and Daily_Summary.PROJECT_ID = ${1}
 
@@ -37,9 +45,17 @@ select @count = count(distinct TEAM_ID)
 	from Email_Contrib_Today
 	where TEAM_ID >= 1
 		and PROJECT_ID = ${1}
-
 update Daily_Summary
 	set teams = @count
+	where Daily_Summary.date = @stats_date
+		and Daily_Summary.PROJECT_ID = ${1}
+
+select @count = count(*)
+	from Team_Rank
+		where FIRST_DATE = @stats_date
+			and PROJECT_ID = ${1}
+update Daily_Summary
+	set TEAMS_NEW = @count
 	where Daily_Summary.date = @stats_date
 		and Daily_Summary.PROJECT_ID = ${1}
 

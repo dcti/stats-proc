@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.8 2000/06/27 06:24:26 decibel Exp $
+# $Id: dy_appendday.sql,v 1.9 2000/06/28 10:59:02 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -8,6 +8,27 @@
 #       PROJECT_ID
 
 print "!! Appending day's activity to master tables"
+go
+
+print "::  Assigning CREDIT_ID and TEAM in Email_Contrib_Today"
+go
+/*
+** When team-joins are handled as requests instead of live updates,
+** the TEAM update will be handled from the requests table instead.
+**
+** CREDIT_ID holds RETIRE_TO or ID.  Not unique, but guaranteed to
+** be the ID that should get credit for this work.
+*/
+
+update Email_Contrib_Today
+	set TEAM_ID = sp.TEAM,
+		CREDIT_ID = (abs(sign(sp.RETIRE_TO)) * sp.RETIRE_TO) + ((1 - abs(sign(sp.RETIRE_TO))) * sp.ID)
+	from STATS_Participant sp
+	where sp.ID = Email_Contrib_Today.ID
+		and PROJECT_ID = ${1}
+
+create unique clustered index iID on Email_Contrib_Today(PROJECT_ID,ID)
+create index iTEAM_ID on Email_Contrib_Today(PROJECT_ID,TEAM_ID)
 go
 
 print "::  Appending into Email_Contrib"

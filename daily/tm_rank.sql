@@ -1,5 +1,5 @@
 /*
-# $Id: tm_rank.sql,v 1.11 2000/06/27 02:04:33 decibel Exp $
+# $Id: tm_rank.sql,v 1.12 2000/06/28 10:59:02 decibel Exp $
 
 TM_RANK
 
@@ -361,7 +361,7 @@ go
 */
 
 insert #CurrentMembers (TEAM_ID, OVERALL, ACTIVE, CURR)
-	select tm.TEAM_ID, count(*), sum(sign(WORK_TODAY)), sum(abs(sign(sp.team - tm.TEAM_ID)))
+	select tm.TEAM_ID, count(*), sum(sign(WORK_TODAY)), sum(1-abs(sign(sp.team - tm.TEAM_ID)))
 	from Team_Members tm, STATS_Participant sp
 	where sp.ID = tm.ID
 		and tm.PROJECT_ID = ${1}
