@@ -1,5 +1,5 @@
 /*
-# $Id: newjoin.sql,v 1.13.2.3 2003/04/18 22:26:13 decibel Exp $
+# $Id: newjoin.sql,v 1.13.2.4 2003/04/20 22:07:21 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -16,8 +16,8 @@
 SELECT id, team_id
 	INTO TEMP newjoins
 	FROM Team_Joins tj, Project_statsrun ps
-	WHERE tj.join_date = ps.last_hourly_date
-		AND (last_date = NULL OR last_date >= ps.last_hourly_date)
+	WHERE tj.join_date = ps.last_date
+		AND (last_date = NULL OR last_date >= ps.last_date)
 ;
 
 -- Get the retire_to info

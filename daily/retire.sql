@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.25.2.2 2003/04/15 04:24:12 decibel Exp $
+# $Id: retire.sql,v 1.25.2.3 2003/04/20 22:07:21 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -59,7 +59,7 @@ select RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, 
 	from Email_Rank er, STATS_Participant sp
 	where sp.ID = er.ID
 		and sp.RETIRE_TO >= 1
-		and sp.RETIRE_DATE = (SELECT last_hourly_date FROM Project_statsrun WHERE project_id = :ProjectID)
+		and sp.RETIRE_DATE = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
 		and not exists (select *
 					from STATS_Participant_Blocked spb
 					where spb.ID = sp.ID
@@ -102,7 +102,7 @@ BEGIN;
             and id IN  (SELECT id
                             FROM STATS_Participant sp
                             WHERE retire_to >= 1
-                                and retire_date = (SELECT last_hourly_date FROM Project_statsrun WHERE project_id = :ProjectID)
+                                and retire_date = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
                         )
     ;
 
@@ -136,7 +136,7 @@ SELECT retire_to, team_id, sum(work_total) as work_total, min(first_date) as fir
 	FROM Team_Members tm, STATS_Participant sp
 	WHERE sp.ID = tm.ID
 		and sp.RETIRE_TO >= 1
-		and sp.RETIRE_DATE = (SELECT last_hourly_date FROM Project_statsrun WHERE project_id = :ProjectID)
+		and sp.RETIRE_DATE = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
 		and not exists (select *
 					from STATS_Participant_Blocked spb
 					where spb.ID = sp.ID
@@ -180,7 +180,7 @@ BEGIN;
             and id IN (SELECT id
                             FROM STATS_Participant sp, Project_statsrun ps
                             WHERE sp.RETIRE_TO >= 1
-                                and sp.RETIRE_DATE = ps.last_hourly_date
+                                and sp.RETIRE_DATE = ps.last_date
                                 and ps.project_id = :ProjectID
                         )
     ;
