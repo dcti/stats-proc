@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.114 2004/04/11 01:48:49 nugget Exp $
+# $Id: hourly.pl,v 1.115 2004/04/11 02:06:38 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -60,6 +60,7 @@ while ($respawn == 1 and not -e 'stop') {
       $logprefix = $statsconf::logprefix{$project};
       stats::debug (2, "custom log prefix '$logprefix' used for project $project\n");
     }
+    my $logdir = $statsconf::logdir{$project};
 
     my $sourcelist = $statsconf::logsource{$project};
     stats::debug(2,"sourcelist: $sourcelist\n");
@@ -175,7 +176,7 @@ while ($respawn == 1 and not -e 'stop') {
           stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
           $finalfn = $rawfn;
         } else {
-    `cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> $workdir/filter_$project.err`;
+    `cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> $logdir/filter_$project.err`;
     if ($? == 0) {
         stats::log($project,1,"$rawfn successfully filtered through $prefilter.");
     } else {

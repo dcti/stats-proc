@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.16 2004/02/19 21:37:24 decibel Exp $
+# $Id: statsconf.pm.default,v 1.17 2004/04/11 02:06:38 nugget Exp $
 #
 # Stats global configuration
 #
@@ -36,7 +36,7 @@ $lockfile = "$homedir/log/statsrun.lck";
 );
 
 %prefilter = (
-	"r72"	=> "./logmod/logmod -rc5",
+	"r72"	=> "./logmod/logmod -rc572",
 	"ogr"	=> "./logmod/logmod -ogr",
 );
 
