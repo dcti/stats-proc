@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.112 2004/04/08 16:26:07 nugget Exp $
+# $Id: hourly.pl,v 1.113 2004/04/08 18:50:12 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -28,7 +28,12 @@ use stats;
 
 my $respawn = 1;
 
-my $workdir = $ENV{'HOME'} . '/workdir/hourly/';
+($ENV{'HOME'} . '/workdir/hourly/') =~ /([A-Za-z0-9_\-\/]+)/;
+my $workdir = $1;
+if(! -d $workdir) {
+  stats::log("stats",131,"Hey! Someone needs to mkdir $workdir!");
+  die;
+}
 
 while ($respawn == 1 and not -e 'stop') {
   $respawn = 0;
