@@ -27,7 +27,7 @@ my @prefilter   = ("./logmod_ogr.pl",
 
 for (my $i = 0; $i < @projectlist; $i++) {
   my $project = $projectlist[$i];
-  my $lastlog = `cat ~/var/lastlog.$project`;
+  my $lastlog = lastlog($project,"get");
   my $logtoload = "29991231-23";
   my $outbuf = "";
   my @server = split /:/, $sourcelist[$i];
@@ -67,7 +67,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
         my $rate = rate_calc($2,$4);
         my $size = num_format($2);
         my $time = num_format($4);
-        $outbuf = "$fullfn received: $size bytes in $time seconds ($rate)\n";
+        $outbuf = "$basefn received: $size bytes in $time seconds ($rate)\n";
       }
     }
     close SCP;
@@ -78,7 +78,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
     while (<GZIP>) {
       if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
         $rawfn = $2;
-        stats::log($project,1,"$rawfn successfully decompressed ($1% compression)");
+        stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
       }
     }
     if( $rawfn eq "" ) {
@@ -90,10 +90,32 @@ for (my $i = 0; $i < @projectlist; $i++) {
         $finalfn = $rawfn;
       } else {
         `cat $rawfn | $prefilter[$i] > $finalfn`;
-        stats::log($project,1,"$rawfn successfully filtered through $prefilter[$i].");
+        stats::log($project,1,"$basefn successfully filtered through $prefilter[$i].");
       }
       # bcp goes here
+
+      # call bruce's code here
+
+      # perform sanity checking here
+
+      lastlog($project,$logtoload);
     }
+    close GZIP;
+  }
+}
+
+sub lastlog {
+  # This function will either return or store the lastlog value for the specified project.
+  #
+  # lastlog("ogr","get") will return lastlog value.
+  # lastlog("ogr","20001231-01") will set lastlog value to 31-Dec-2000 01:00 UTC
+
+  my ($f_project, $f_action) = @_;
+
+  if( $f_action =~ /get/i) {
+    return `cat ~/var/lastlog.$f_project`;
+  } else {
+    return `echo $f_action > ~/var/lastlog.$f_project`;
   }
 }
 
