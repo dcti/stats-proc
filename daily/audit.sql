@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.38 2004/11/08 05:26:32 decibel Exp $
+-- $Id: audit.sql,v 1.39 2004/11/08 06:00:37 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -115,7 +115,7 @@ UPDATE audit
     SET PCsumtoday = (select coalesce(sum(work_units), 0)
         FROM platform_contrib
         WHERE project_id = :ProjectID
-            AND date <= audit.date)
+            AND date = audit.date)
 ;
 SELECT PCsumtoday FROM audit
 ;
