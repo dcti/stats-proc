@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.9 2000/08/16 19:32:06 nugget Exp $
+# $Id: daily.pl,v 1.10 2000/08/16 19:42:50 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -35,12 +35,9 @@ if(!$statsconf::prids{$project}) {
   stats::log($project,131,"I've never heard of project class $project!");
   die;
 } else {
-  my $qs_update = "select convert(char(8),max(DATE),112) from Platform_Contrib where 2=1";
-
   my @pridlist = split /:/, $statsconf::prids{$project};
   for (my $i = 0; $i < @pridlist; $i++) {
     my $project_id = int $pridlist[$i];
-    $qs_update = "$qs_update or PROJECT_ID = $project_id";
   
     sqsh("retire.sql $project_id");
     sqsh("dy_appendday.sql $project_id");
@@ -53,13 +50,8 @@ if(!$statsconf::prids{$project}) {
     system "sudo pcpages_$project $project_id";
     sqsh("backup.sql $project_id");
   }
-  open TMP, ">/tmp/sqsh.tmp.$project";
-  print TMP "$qs_update\ngo";
-  close TMP;
-  my $lastdaynewval = `sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -w 999 -h -i /tmp/sqsh.tmp.$project`;
-  $lastdaynewval =~ s/[^0123456789]//g;
-  unlink "/tmp/sqsh.tmp.$project";
-  stats::lastday($project,$lastdaynewval);
+  my $newlastday = stats::lastday($project);
+  stats::log($project,1,"New last day value for project class $project is $newlastday");
 }
 
 sub sqsh {
