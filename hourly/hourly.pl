@@ -36,7 +36,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
  
-  open LS, "tcsh -c 'ssh $server[0] \"ls $server[1]$project*\"'|";
+  open LS, "tcsh -c 'ssh $server[0] \"ls $server[1]$project*.log.gz\"'|";
   my $linecount = 0;
   my $qualcount = 0;
 
