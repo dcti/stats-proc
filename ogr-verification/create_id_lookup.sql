@@ -1,8 +1,6 @@
--- $Id: create_id_lookup.sql,v 1.8 2002/12/24 22:00:49 nerf Exp $ --
+-- $Id: create_id_lookup.sql,v 1.9 2002/12/29 22:33:50 nerf Exp $ --
 
-DROP TABLE import_id;
-
-CREATE TABLE import_id (
+CREATE TABLE temp import_id (
 email VARCHAR (64),
 id INTEGER,
 retire_to INTEGER
@@ -23,3 +21,6 @@ INSERT INTO id_lookup
 		(retire_to*(sign(retire_to))+id*(1-sign(retire_to)))
 			AS stats_id
 	FROM import_id;
+
+CREATE INDEX idlookup_id ON id_lookup (id);
+CREATE INDEX idlookup_email_idx ON id_lookup (email);
