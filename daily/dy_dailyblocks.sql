@@ -1,5 +1,5 @@
 /*
-# $Id: dy_dailyblocks.sql,v 1.12.2.3 2003/04/29 20:36:14 decibel Exp $
+# $Id: dy_dailyblocks.sql,v 1.12.2.4 2003/04/29 20:53:36 decibel Exp $
 #
 # Inserts the daily totals
 #
@@ -31,16 +31,16 @@ UPDATE Tsummary
 UPDATE Tsummary
     SET participants = count(distinct credit_id)
             , teams = count(distinct team_id)
-    FROM email_contrib_today
-    WHERE project_id = :ProjectID
+    FROM email_contrib_today ect
+    WHERE ect.project_id = :ProjectID
 ;
 
 \echo email_rank, overall_rank = 1
 UPDATE Tsummary
     SET top_oparticipant = min(id)
         , top_opwork = min(work_total)
-    FROM email_rank
-    WHERE project_id = :ProjectID
+    FROM email_rank er
+    WHERE er.project_id = :ProjectID
         AND overall_rank = 1
 ;
 
@@ -48,8 +48,8 @@ UPDATE Tsummary
 UPDATE Tsummary
     SET top_yparticipant = min(id)
         , top_ypwork = min(work_total)
-    FROM email_rank
-    WHERE project_id = :ProjectID
+    FROM email_rank er
+    WHERE er.project_id = :ProjectID
         AND day_rank = 1
 ;
 
@@ -57,8 +57,8 @@ UPDATE Tsummary
 UPDATE Tsummary
     SET top_oteam = min(team_id)
         , top_otwork = min(work_total)
-    FROM team_rank
-    WHERE project_id = :ProjectID
+    FROM team_rank tr
+    WHERE tr.project_id = :ProjectID
         AND overall_rank = 1
 ;
 
@@ -66,8 +66,8 @@ UPDATE Tsummary
 UPDATE Tsummary
     SET top_yteam = min(team_id)
         , top_ytwork) = min(work_total)
-    FROM team_rank
-    WHERE project_id = :ProjectID
+    FROM team_rank tr
+    WHERE tr.project_id = :ProjectID
         AND day_rank = 1
 ;
 
