@@ -1,8 +1,8 @@
--- $Id: query3.sql,v 1.8 2002/12/23 16:57:28 bwilson Exp $ --
+-- $Id: query3.sql,v 1.9 2002/12/23 18:44:06 nerf Exp $ --
 
 create table donestubs
 (
-	stub_id varchar(22),
+	stub_id int,
 	nodecount bigint,
 	participants int
 )

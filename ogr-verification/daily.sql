@@ -1,6 +1,8 @@
--- $Id: daily.sql,v 1.4 2002/12/23 16:42:08 bwilson Exp $ --
+-- $Id: daily.sql,v 1.5 2002/12/23 18:44:06 nerf Exp $ --
 
 --Create the logdata table and fill it with filtered(filter.pl) data. (addlog.sql)
+-- This file needs to be recreated from scratch
+
 DROP TABLE logdata;
 
 CREATE TABLE logdata (
