@@ -1,9 +1,8 @@
-$Id: TODO,v 1.8 2002/12/30 13:57:24 nerf Exp $
+$Id: TODO,v 1.9 2003/01/01 17:47:19 joel Exp $
 
 rename query3.sql
 make sure indexes are correct (especially on nodes)
 modify scripts that create tables to delete them if they already exist
 clean up temp tables when done with them
 error checking
-make separate tables for ogr24, ogr25 (etc)
 write script to download logs hourly
