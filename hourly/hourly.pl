@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.40 2000/08/14 22:06:08 nugget Exp $
+# $Id: hourly.pl,v 1.41 2000/08/15 22:28:41 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -130,6 +130,11 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       open BCP, "bcp import_bcp in $finalfn -e$workdir\\bcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, 2> /dev/stderr |";
 
+      if(!<BCP>) {
+        stats::log($project,131,"Error launching BCP, aborting hourly run.");
+        die;
+      }
+
       my $rows = 0;
       my $rate = 0;
 
@@ -150,6 +155,11 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 	}
       }
       close BCP;
+
+      if($rows == 0) {
+        stats::log($project,131,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+        die;
+      }
 
       opendir WD, "$workdir" or die;
       my @wdcontents = grep /bcp_errors/, readdir WD;
