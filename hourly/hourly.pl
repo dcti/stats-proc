@@ -1,11 +1,21 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.35 2000/07/20 00:32:47 decibel Exp $
+# $Id: hourly.pl,v 1.36 2000/08/14 20:47:20 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
+
+#$0 =~ /(.*\/)([^\/]+)/;
+#my $cwd = $1;
+#my $me = $2;
+#chdir $cwd;
+
 use statsconf;
 use stats;
+
+exec "ls";
+
+die;
 
 my $yyyy = (gmtime(time-3600))[5]+1900;
 my $mm = (gmtime(time-3600))[4]+1;
@@ -13,10 +23,18 @@ my $dd = (gmtime(time-3600))[3];
 my $hh = (gmtime(time-3600))[2];
 my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
+my $respawn = 0;
+
 my $workdir = "./workdir/";
 
 for (my $i = 0; $i < @statsconf::projects; $i++) {
   my $project = $statsconf::projects[$i];
+  if(stats::semflag($project,"hourly.pl") ne "OK") {
+    my $ret = stats::semcheck($project);
+    chomp $ret;
+    stats::log($project,131,"Cannot obtain lock for hourly.pl!  [$ret] still running!");
+    die;
+  }
   my $sourcelist = $statsconf::logsource{$project};
   my $prefilter = $statsconf::prefilter{$project};
   my $lastlog = lastlog($project,"get");
@@ -63,6 +81,12 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
   if( $logtoload le $datestr ) {
     stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
+
+    if($qualcount > 1) {
+       # We should respawn at the end to catch up...
+       $respawn = 1;
+    }
+
     my $fullfn = "$server[1]$project$logtoload.log.gz";
     my $basefn = "$project$logtoload.log.gz";
 
@@ -161,9 +185,21 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       unlink $finalfn, $rawfn;
 
       lastlog($project,$logtoload);
+
+      # if($qualcount > 1) {
+      #  
+      # }
     }
     close GZIP;
   }
+  if(stats::semflag($project) ne "OK") {
+    stats::log($project,131,"Error clearing hourly.pl lock");
+    die;
+  }
+}
+
+if ($respawn > 0) {
+  exec "./hourly.pl";
 }
 
 sub lastlog {

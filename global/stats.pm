@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.6 2000/07/19 04:09:30 decibel Exp $
+# $Id: stats.pm,v 1.7 2000/08/14 20:47:20 nugget Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -92,5 +92,44 @@ sub DCTIeventsay {
 		close S;	
 	} else {
 		print "Could not reach $paddr";
+	}
+}
+
+sub semflag {
+	# project id
+	# task at hand or NULL to signal clear
+
+        my ($project, $task) = @_;
+
+	my $lockfile = "$statsconf::logdir{$project}$project.lck";
+
+	if($task) {
+		if(semcheck($project) eq NULL) {
+			# Apply lock
+			`echo "$task" > $lockfile`;
+			return "OK";
+
+		} else {
+			# Can't set the lock if it already exists.
+			return semcheck($project);
+		}
+	} else {
+		# Clear lock
+		unlink $lockfile;
+		return "OK";
+	}
+}
+
+sub semcheck {
+	# project id
+
+	my ($project) = @_;
+
+	my $lockfile = "$statsconf::logdir{$project}$project.lck";
+
+	if(-e $lockfile) {
+		return `cat $lockfile`;
+	} else {
+		return NULL;
 	}
 }
