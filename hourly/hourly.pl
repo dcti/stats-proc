@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.93 2002/02/24 06:18:33 decibel Exp $
+# $Id: hourly.pl,v 1.94 2002/02/24 06:20:26 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -346,7 +346,7 @@ sub findlog {
 
   if($qualcount == 1) {
     stats::log($project,1,"There are $linecount logs on the master, $qualcount is new to me.  Might as well load it while I'm thinking about it.");
-  } elseif($qualcount > 1) {
+  } elsif($qualcount > 1) {
     stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
   }
 
