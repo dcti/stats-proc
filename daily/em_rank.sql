@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_rank.sql,v 1.18 2002/03/30 21:25:45 decibel Exp $
+# $Id: em_rank.sql,v 1.19 2002/03/30 22:35:18 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -14,98 +14,95 @@ set rowcount 0
 set flushmessage on
 go
 print '!! Begin e-mail ranking'
---print ' Drop indexes on Email_Rank'
---go
+print ' Drop indexes on Email_Rank'
+go
 --drop index Email_Rank.iDAY_RANK
 --drop index Email_Rank.iOVERALL_RANK
-go
-
-print ' Create rank table for today'
-go
-create table #rank_today
-(
-	IDENT numeric(10, 0) identity,
-	ID int,
-	WORK_UNITS numeric(20, 0),
-	RANK int
-)
-go
-insert #rank_today (ID, WORK_UNITS, RANK)
-	select ID, WORK_TODAY, -1
-	from Email_Rank
-	where PROJECT_ID = ${1}
-	order by WORK_TODAY desc, ID desc
-go
-
-print '   Create index on workunits'
-create index work_units on #rank_today(WORK_UNITS)
-go
-
-print '   Determine ties'
-update #rank_today
-	set RANK = (select min(IDENT) from #rank_today rt2 where rt2.WORK_UNITS = #rank_today.WORK_UNITS)
-	where 1 = 1
-
-print '   Create index on ID'
-create clustered index iID on #rank_today(ID)
-go
+--go
 
 print ' Create rank table for overall'
-create table #rank_overall
+create table #rnk_asgn_overall
 (
 	IDENT numeric(10, 0) identity,
 	ID int,
-	WORK_UNITS numeric(20, 0),
-	RANK int
+	WORK_UNITS numeric(20, 0)
 )
 go
-insert #rank_overall (ID, WORK_UNITS, RANK)
-	select ID, WORK_TOTAL, -1
+insert #rnk_asgn_overall (ID, WORK_UNITS)
+	select ID, WORK_TOTAL
 	from Email_Rank
 	where PROJECT_ID = ${1}
 	order by WORK_TOTAL desc, ID desc
 go
-print '   Create index on workunits'
-create index work_units on #rank_overall(WORK_UNITS)
+
+create table #rank_tie_overall
+(
+	WORK_UNITS numeric(20, 0),
+	rank int
+)
+go
+insert #rank_tie_overall
+	select WORK_UNITS, min(IDENT)
+	from #rnk_asgn_overall
+	group by WORK_UNITS
 go
 
-print '   Determine ties'
-update #rank_overall
-	set RANK = (select min(IDENT) from #rank_overall ro2 where ro2.WORK_UNITS = #rank_overall.WORK_UNITS)
-	where 1 = 1
-	
-print '   Create index on ID'
-create clustered index iID on #rank_overall(ID)
+print "   Index on ID"
+create clustered index iID on #rnk_asgn_overall(ID)
+print "   Index on WORKUNITS"
+create clustered index iWORK_UNITS on #rank_tie_overall(WORK_UNITS)
+go
+
+print ' Create rank table for today'
+create table #rnk_asgn_today
+(
+	IDENT numeric(10, 0) identity,
+	ID int,
+	WORK_UNITS numeric(20, 0)
+)
+go
+insert #rnk_asgn_today (ID, WORK_UNITS)
+	select ID, WORK_today
+	from Email_Rank
+	where PROJECT_ID = ${1}
+	order by WORK_today desc, ID desc
+go
+
+create table #rank_tie_today
+(
+	WORK_UNITS numeric(20, 0),
+	rank int
+)
+go
+insert #rank_tie_today
+	select WORK_UNITS, min(IDENT)
+	from #rnk_asgn_today
+	group by WORK_UNITS
+go
+
+print "   Index on ID"
+create clustered index iID on #rnk_asgn_today(ID)
+print "   Index on WORKUNITS"
+create clustered index iWORK_UNITS on #rank_tie_today(WORK_UNITS)
 go
 
 print ' Update Email_Rank with new rankings'
 update Email_Rank
-	set OVERALL_RANK = o.rank, 
-/* TODO These two new fields need to be added to Email_Rank so we can fix the bug
-	preventing access to any but the top 100 with a given rank.
-		OVERALL_POS = o.IDENT,
-		DAY_POS = isnull(d.IDENT, Email_Rank.DAY_POS),
-*/
-		DAY_RANK = isnull(d.rank, Email_Rank.DAY_RANK)
-	from #rank_overall o, #rank_today d
-	where Email_Rank.ID *= d.ID
-		and Email_Rank.ID = o.ID
+	set OVERALL_RANK = o.rank, DAY_RANK = isnull(d.rank, Email_Rank.DAY_RANK)
+	from #rank_tie_overall o, #rank_tie_today d
+	where Email_Rank.WORK_TODAY *= d.WORK_UNITS
+		and Email_Rank.WORK_TOTAL = o.WORK_UNITS
 		and Email_Rank.PROJECT_ID = ${1}
-go
-drop table #rank_today
-drop table #rank_overall
 go
 
 print ' set previous rank = current rank for new participants'
 go
-/* TODO This field should be in Project table, eliminate Project_statsrun */
-/* TODO Error: this will only assign prev=curr for those who submitted their first block during the 00:00 hour */
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun
 	where PROJECT_ID = ${1}
 
-update Email_Rank
+update	Email_Rank
 	set DAY_RANK_PREVIOUS = DAY_RANK,
 		OVERALL_RANK_PREVIOUS = OVERALL_RANK
 	where PROJECT_ID = ${1}
