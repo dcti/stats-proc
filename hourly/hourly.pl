@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.44 2000/08/15 22:43:24 nugget Exp $
+# $Id: hourly.pl,v 1.45 2000/08/16 17:47:19 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -192,7 +192,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         die;
       }
       while (<SQL>) {
-	my $ts = sprintf("[%02s:%02s:%02s]",(localtime)[2],(localtime)[1],(localtime)[0]);
+	my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
         print "$ts $_";
         $bufstorage = "$bufstorage$ts $_";
         if( $_ =~ /^Msg/ ) {
