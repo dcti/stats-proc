@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # 11/28/2002 - Joel Von Holdt for distributed.net
-# $Id: filter.pl,v 1.7 2003/01/10 01:28:29 nerf Exp $
+# $Id: filter.pl,v 1.8 2003/01/14 03:09:49 joel Exp $
 
 use strict;
 my ( $var, $fn, $fn24, $fn25, $reject, $numargs, $i );
@@ -25,7 +25,7 @@ $var = @ARGV[$i];
 	if (substr($var, -1, 1) == "2") {
         	system "bunzip2 $var";
         	$fn = substr($var, 0, -4);
-	} elsif(substr($var, -1, 1) == "z") {
+	} elsif (substr($var, -1, 1) == "z") {
         	system "gzip -d $var";
         	$fn = substr($var, 0, -3);
 	} else {
@@ -53,9 +53,13 @@ $var = @ARGV[$i];
                 if ( $stub_id =~ /^24/ )
                         {
                         print LOG24 "$email,$stub_id,$nodecount,$os_type,$cpu_type,$version\n";
-                } else {
+                } elsif ( $stub_id =~ /^25/ ) {
                         print LOG25 "$email,$stub_id,$nodecount,$os_type,$cpu_type,$version\n";
-                        }
+		} else {
+			# throw this block out too.
+                       	print REJ "$email,$stub_id,$nodecount,$os_type,$cpu_type,$version\n";
+                       	next;
+			}
                 }
         }
 system "bzip2 $fn";
