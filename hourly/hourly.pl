@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.61 2000/09/11 17:54:36 nugget Exp $
+# $Id: hourly.pl,v 1.62 2000/09/11 18:08:53 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -277,9 +277,9 @@ sub spawn_daily {
 
   my ($f_project) = @_;
   chdir "../daily/";
-  stats::log($project,1,"Spawning daily.pl for $f_project");
+  stats::log($f_project,1,"Spawning daily.pl for $f_project");
   system "./daily.pl $f_project";
-  stats::log($project,1,"daily.pl complete for $f_project");
+  stats::log($f_project,1,"daily.pl complete for $f_project");
 
 }
 
