@@ -1,5 +1,5 @@
 /*
- $Id: tm_update.sql,v 1.34 2004/08/24 05:25:31 decibel Exp $
+ $Id: tm_update.sql,v 1.35 2004/11/04 16:26:13 decibel Exp $
 
 TM_RANK
 
@@ -24,10 +24,18 @@ SELECT ect.credit_id, ect.team_id, sum(ect.work_units) AS work_units, 'F'::boole
         AND NOT EXISTS (SELECT *
                             FROM stats_participant_blocked spb
                             WHERE spb.id = ect.credit_id
+                                AND blocked_date <= (SELECT last_date
+                                                            FROM project_statsrun
+                                                            WHERE project_id = :ProjectID
+                                                    )
                 )
         AND NOT EXISTS (SELECT *
                             FROM stats_team_blocked stb
                             WHERE stb.team_id = ect.team_id
+                                AND blocked_date <= (SELECT last_date
+                                                            FROM project_statsrun
+                                                            WHERE project_id = :ProjectID
+                                                    )
                 )
         AND ect.project_id = :ProjectID
     GROUP BY credit_id, team_id
@@ -103,6 +111,10 @@ BEGIN;
         WHERE EXISTS (SELECT 1
                             FROM stats_team_blocked stb
                             WHERE stb.team_id = team_members.team_id
+                                AND blocked_date <= (SELECT last_date
+                                                            FROM project_statsrun
+                                                            WHERE project_id = :ProjectID
+                                                    )
                         )
             AND project_id = :ProjectID
     ;
@@ -161,6 +173,10 @@ BEGIN;
         WHERE EXISTS (SELECT 1
                             FROM stats_team_blocked stb
                             WHERE stb.team_id = team_rank.team_id
+                                AND blocked_date <= (SELECT last_date
+                                                            FROM project_statsrun
+                                                            WHERE project_id = :ProjectID
+                                                    )
                         )
             AND project_id = :ProjectID
     ;

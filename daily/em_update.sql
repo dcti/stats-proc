@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_update.sql,v 1.10 2004/04/14 23:07:42 decibel Exp $
+# $Id: em_update.sql,v 1.11 2004/11/04 16:26:13 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -26,8 +26,10 @@ SELECT credit_id, sum(ect.work_units) AS work_today INTO TEMP retired_work
     FROM email_contrib_today ect
     WHERE ect.project_id = :ProjectID
         AND NOT EXISTS (SELECT *
-                    FROM stats_participant_blocked spb
+                    FROM stats_participant_blocked spb, project_statsrun ps
                     WHERE spb.id = ect.credit_id
+                        AND ps.project_id = ect.project_id
+                        AND spb.block_date <= ps.last_date
                 )
     GROUP by ect.CREDIT_ID
 ;

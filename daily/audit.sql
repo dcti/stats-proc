@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.35 2004/04/14 23:07:41 decibel Exp $
+-- $Id: audit.sql,v 1.36 2004/11/04 16:26:13 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -57,6 +57,7 @@ UPDATE audit
                 FROM email_contrib_today d, stats_participant_blocked spb
                 WHERE project_id = :ProjectID
                     AND d.credit_id = spb.ID
+                    AND spb.block_date <= audit.date
             )
 ;
 SELECT ECTblcksum FROM audit
@@ -76,11 +77,13 @@ UPDATE audit
             AND d.credit_id NOT IN (SELECT ID
                         FROM stats_participant_blocked spb
                         WHERE spb.ID = d.credit_id
+                            AND spb.block_date <= audit.date
                     )
             AND d.TEAM_ID > 0
             AND d.TEAM_ID NOT IN (SELECT TEAM_ID
                         FROM STATS_Team_Blocked stb
                         WHERE stb.TEAM_ID = d.TEAM_ID
+                            AND stb.block_date <= audit.date
                     )
         )
 ;
@@ -112,7 +115,7 @@ UPDATE audit
     SET PCsumtoday = (select coalesce(sum(work_units), 0)
         FROM platform_contrib
         WHERE project_id = :ProjectID
-            AND date = audit.date)
+            AND date <= audit.date)
 ;
 SELECT PCsumtoday FROM audit
 ;
@@ -205,6 +208,8 @@ UPDATE audit
     FROM email_contrib_summary ws
         LEFT JOIN stats_participant_blocked spb ON ws.id = spb.id
         LEFT JOIN stats_team_blocked stb ON ws.team_id = stb.team_id
+    WHERE spb.block_date <= audit.date
+        AND stb.block_date <= audit.date
 ;
 SELECT ECsum, ECblcksum, ECteamsum FROM audit
 ;
@@ -250,6 +255,7 @@ UPDATE audit
             AND e.id = spb.id
             AND p.id = spb.id
             AND (p.retire_to = 0 or p.retire_date > audit.date)
+            AND spb.block_date <= audit.date
         )
 ;
 
@@ -258,11 +264,12 @@ UPDATE audit
     SET ECblcksumtdy = ECblcksumtdy + (select coalesce(sum(e.work_units), 0)
         FROM Email_Contrib e, STATS_Participant p, stats_participant_blocked spb
         WHERE project_id = :ProjectID
-            AND e.date = audit.date
+            AND e.date <= audit.date
             AND e.id = p.id
             AND p.retire_to > 0
-            AND (p.retire_date <= audit.date or p.retire_date IS NULL)
+            AND (p.retire_date <<= audit.date or p.retire_date IS NULL)
             AND spb.id = p.retire_to
+            AND spb.block_date <= audit.date
         )
 ;
 

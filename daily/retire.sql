@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.28 2004/08/24 05:22:47 decibel Exp $
+# $Id: retire.sql,v 1.29 2004/11/04 16:26:13 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -25,8 +25,9 @@ INSERT INTO blocked(id)
 
 \echo Update stats_participant_blocked
 
-INSERT INTO stats_participant_blocked(id)
+INSERT INTO stats_participant_blocked(id, block_date)
     SELECT distinct id
+            , (SELECT last_date FROM project_statsrun WHERE project_id = :ProjectID)
         FROM blocked b
         WHERE NOT EXISTS (SELECT *
                     FROM stats_participant_blocked spb
@@ -38,8 +39,9 @@ DELETE FROM stats_participant_blocked
 
 
 \echo Update STATS_Team_Blocked
-insert into STATS_Team_Blocked(TEAM_ID)
+insert into STATS_Team_Blocked(TEAM_ID, block_date)
     select TEAM
+            , (SELECT last_date FROM project_statsrun WHERE project_id = :ProjectID)
     from STATS_Team st
     where st.LISTMODE >= 10
         and TEAM not in (select TEAM_ID
@@ -75,6 +77,7 @@ SELECT RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, 
                     FROM stats_participant_blocked spb
                     WHERE spb.id = nr.id
                         AND spb.id = er.id
+                        AND blocked_date <= (SELECT last_date FROM project_statsrun WHERE project_id = :ProjectID)
                 )
         AND er.project_id = :ProjectID
     GROUP BY retire_to
@@ -119,7 +122,14 @@ BEGIN;
 
     DELETE FROM email_rank
         WHERE project_id = :ProjectID
-            AND EXISTS (SELECT 1 FROM stats_participant_blocked spb WHERE spb.id = email_rank.id)
+            AND EXISTS (SELECT *
+                            FROM stats_participant_blocked spb
+                            WHERE spb.id = email_rank.id
+                                AND blocked_date <= (SELECT last_date
+                                                            FROM project_statsrun
+                                                            WHERE project_id = :ProjectID
+                                                    )
+                        )
     ;
 
     -- The following code should ensure that any "retire_to chains" eventually get eliminated
@@ -162,6 +172,10 @@ SELECT retire_to, team_id, sum(work_total) as work_total, min(first_date) as fir
                             FROM stats_participant_blocked spb
                             WHERE spb.id = nr.id
                                 AND spb.id = tm.id
+                                AND blocked_date <= (SELECT last_date
+                                                            FROM project_statsrun
+                                                            WHERE project_id = :ProjectID
+                                                    )
                         )
         AND tm.project_id = :ProjectID
     GROUP BY retire_to, team_id

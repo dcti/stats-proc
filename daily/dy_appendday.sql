@@ -1,5 +1,5 @@
 /*
-# $Id: dy_appendday.sql,v 1.24 2003/09/11 01:41:02 decibel Exp $
+# $Id: dy_appendday.sql,v 1.25 2004/11/04 16:26:13 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -32,6 +32,7 @@ UPDATE email_contrib_today
                     FROM stats_participant_blocked spb
                     WHERE spb.id = email_contrib_today.id
                         AND spb.id = sp.id
+                        AND spb.block_date <= ps.last_date
                 )
         AND email_contrib_today.project_id = :ProjectID
 ;
