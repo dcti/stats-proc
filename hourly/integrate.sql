@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_integrate.sql,v 1.9 2000/05/29 22:01:36 bwilson Exp $
+# $Id: integrate.sql,v 1.1 2000/06/15 00:47:59 decibel Exp $
 #
 # Move data from the ${1}_import table to the daytables
 #
@@ -65,16 +65,21 @@ create table #Email_Contrib_Today
 )
 go
 /* Put EMAIL data into temp table */
+/* First, put the latest set of logs in */
 insert #Email_Contrib_Today (EMAIL, WORK_UNITS)
 	select EMAIL, sum(WORK_UNITS)
 	from ${1}_import
 	group by EMAIL
 
+/* Now, add the stuff from the previous hourly runs */
 insert #Email_Contrib_Today (EMAIL, WORK_UNITS)
 	select EMAIL, sum(WORK_UNITS)
 	from Email_Contrib_Today
 	where PROJECT_ID = ${1}
 
+/* Finally, remove the previous records from Email_Contrib_Today and insert the new
+** data from the temp table. (It seems there should be a better way to do this...)
+*/
 begin transaction
 delete Email_Contrib_Today
 	where PROJECT_ID = ${1}
@@ -88,6 +93,7 @@ commit transaction
 drop table #Email_Contrib_Today
 go
 
+/* Do the exact same stuff for Platform_Contrib_Today */
 create table #Platform_Contrib_Today
 (
 	CPU smallint not NULL,
