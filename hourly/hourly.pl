@@ -3,10 +3,10 @@ use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
 use stats;
 
-my $yyyy = (localtime(time-3600))[5]+1900;
-my $mm = (localtime(time-3600))[4]+1;
-my $dd = (localtime(time-3600))[3];
-my $hh = (localtime(time-3600))[2];
+my $yyyy = (gmtime(time-3600))[5]+1900;
+my $mm = (gmtime(time-3600))[4]+1;
+my $dd = (gmtime(time-3600))[3];
+my $hh = (gmtime(time-3600))[2];
 my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my @projectlist = ("ogr",
@@ -39,6 +39,8 @@ for (my $i = 0; $i < @projectlist; $i++) {
     }
     $linecount++;
   }
-  print "  Of $linecount logs available, $qualcount need to be loaded.  Next up is $logtoload.\n";
+  if( $logtoload lt $datestr ) {
+    print "  Of $linecount logs available, $qualcount need to be loaded.  Next up is $logtoload.\n";
+  }
 }
 
