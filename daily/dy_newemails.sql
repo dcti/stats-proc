@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_newemails.sql,v 1.7 2000/04/20 13:11:37 bwilson Exp $
+# $Id: dy_newemails.sql,v 1.8 2000/06/25 21:36:05 decibel Exp $
 #
 # Adds new participants to stats_participant
 #
@@ -34,8 +34,8 @@ update Email_Contrib_Today
 	where sp.EMAIL = Email_Contrib_Today.EMAIL
 		and PROJECT_ID = ${1}
 
-create unique clustered index iID on Email_Contrib_Today(ID)
-create index iTEAM_ID on Email_Contrib_Today(TEAM_ID)
+create unique clustered index iID on Email_Contrib_Today(PROJECT_ID,ID)
+create index iTEAM_ID on Email_Contrib_Today(PROJECT_ID,TEAM_ID)
 go
 
 print "::  Inserting all new EMAILs from daytable"
