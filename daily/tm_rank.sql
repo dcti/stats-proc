@@ -1,4 +1,3 @@
-
 /*
 TM_RANK
 
@@ -8,40 +7,36 @@ Parameters
 Flow: (M=members, T=teams)
 
 M Build temp table of all contrib of all members of all teams (for this project)
-T Build temp table of all contrib of each team (from member temp table)
-T Clear yesterday team info
-T Populate today info for existing teams
-T Flag existing teams (in temp table)
-T Insert nonflagged teams
-T Populate team summary info (lifetime members, active members, listed members)
-T Remove (hide) teams with listmode >= 10
-T Rank all teams
-
+M Remove members with listmode >= 10
 M Clear yesterday member info
 M Populate today contrib for existing members
 M Flag existing members (in temp table)
-M Insert nonflagged members
-M Remove members with listmode >= 10
+M Insert nonflagged members and their contrib for today
+
+T Build temp table of all contrib of each team (from member temp table)
+T Remove (hide) teams with listmode >= 10
+T Flag existing teams (in temp table)
+T Insert nonflagged teams
+T Clear yesterday team info
+T Populate today info for existing teams
+
 M TODO: Rank members within each team (cursor required)
 
+T Populate team summary info (lifetime members, active members, listed members)
+T Rank all teams
 
-Populate day's work, bump last_date for members (not em_rank table, multiple entries per ID)
-	Day's work = copy of _Email_Rank, per project
-	Last date = today if work submitted
-	Must use CREDIT_ID for this step
-Populate day's work for team
-	total = total + sum(work from members submitting today)
-	Must populate member work before this step
+Notes:
+	Do teams get credit for members with listmode >= 10?  Hopefully not.
+	All members use retire_to if present
+	Is Email_Contrib_Today.TEAM_ID useful in any other context?  It is superfluous here.
+		Every reference to Email_Contrib_Today.TEAM_ID also requires a join
+		to STATS_Participant, which is where Email_Contrib_Today got it from.
+		OTOH, this may be necessary if/when team join is logged and date-driven
+	It may be more efficient to rank members in all teams, even if the team didn't
+		contribute today, because the work to detect non-contributing teams and
+		avoid clearing the participant info may exceed the work to re-rank the team
 
-Rank teams
-	Same as EMAIL ranking script
-Rank people within teams (cursor?)
-Recalculate active members
-	Work submitted today
-Recalculate total members
-	Old total + new members today
-Recalculate listed members
-	Old total + new members today - members who left
+
 */
 
 print '!! Prepare for team ranking'
@@ -55,24 +50,42 @@ create table #TeamMemberWork
 	IS_NEW			bit		not NULL
 )
 go
-create table #TeamWork
-(
-	TEAM_ID			int		not NULL,
-	WORK_TODAY		numeric(20, 0)	not NULL,
-	IS_NEW			bit		not NULL
-)
-go
 insert #TeamMemberWork (ID, TEAM_ID, WORK_TODAY, IS_NEW)
 	select ect.CREDIT_ID, sp.TEAM, sum(ect.WORK_UNITS), 1
 	from Email_Contrib_Today ect, STATS_Participant sp, STATS_Team st
 	where ect.ID = sp.ID
-		and ect.TEAM_ID = tm.TEAM_ID
+		and ect.TEAM_ID = st.TEAM_ID
+		and sp.TEAM = st.TEAM_ID
 		and ect.TEAM_ID > 0
 		and sp.LISTMODE <= 9	/* Don't insert hidden people */
 		and st.LISTMODE <= 9	/* Don't insert hidden teams */
 		and ect.PROJECT_ID = ${1}
 	group by ect.CREDIT_ID, ect.TEAM_ID
 
+print " Remove hidden, retired members from work table and rank table"
+delete #TeamMemberWork
+	from STATS_Participant sp
+	where sp.ID = #TeamMemberWork.ID
+		and sp.LISTMODE >= 10
+
+delete Team_Members
+	from STATS_Participant sp
+	where sp.ID = Team_Members.ID
+		and sp.LISTMODE >= 10
+		and Team_Members.PROJECT_ID = ${1}
+
+delete Team_Members
+	from STATS_Participant sp
+	where sp.ID = Team_Members.ID
+		and sp.RETIRE_TO >= 1
+		and Team_Members.PROJECT_ID = ${1}
+go
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
+print " Flag existing members as not-new"
 update #TeamMemberWork
 	set IS_NEW = 0
 	from Team_Members tm
@@ -80,30 +93,83 @@ update #TeamMemberWork
 		and tm.TEAM_ID = #TeamMemberWork.TEAM_ID
 		and tm.ID = #TeamMemberWork.ID
 
+print " Clear today info"
+update Team_Members
+	set WORK_TODAY = 0,
+		DAY_RANK = 1000000,
+		DAY_RANK_PREVIOUS = DAY_RANK,
+		OVERALL_RANK = 1000000,
+		OVERALL_RANK_PREVIOUS = OVERALL_RANK
+	where PROJECT_ID = ${1}		/* all records */
+
+print " Populate today's work"
+update Team_Members
+	set WORK_TODAY = tmw.WORK_UNITS,
+		WORK_TOTAL = WORK_TOTAL + tmw.WORK_UNITS,
+		LAST_DATE = @stats_date
+	from #TeamMemberWork tmw
+	where Team_Members.PROJECT_ID = ${1}
+		and tmw.TEAM_ID = Team_Members.TEAM_ID
+		and tmw.ID = Team_Members.ID
+		and tmw.IS_NEW = 0
+
+print " Insert records for members who have just joined a team"
+/* Remember, Team_Members contains one record per ID for every team that ID has been on */
+insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
+		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
+	select ${1}, ID, TEAM_ID, @stats_date, @stats_date, tmw.WORK_UNITS, tmw.WORK_UNITS,
+		1000000, 1000000, 1000000, 1000000
+	from #TeamMemberWork tmw
+	where IS_NEW = 1
+
+
+/*
+** TODO: Perform team member ranking within each team
+** but only after we eliminate hidden teams
+*/
+
+
+
+
+
+
+
+
+
+print '!! Process new teams, hidden teams'
+go
+create table #TeamWork
+(
+	TEAM_ID			int		not NULL,
+	WORK_TODAY		numeric(20, 0)	not NULL,
+	IS_NEW			bit		not NULL
+)
+go
+print " Insert all teams with work today, assume new"
 insert #TeamWork (TEAM_ID, WORK_TODAY, IS_NEW)
 	select TEAM_ID, sum(WORK_TODAY), 1
 	from #TeamMemberWork
 	group by TEAM_ID
 
-update #TeamWork
-	set IS_NEW = 0
-	from Team_Rank tr
-	where tr.PROJECT_ID = ${1}
-		and tr.TEAM_ID = #TeamWork.TEAM_ID
-go
-
-print '!! Process new teams, hidden teams'
-go
-
-print ' Remove hidden teams'
+print " Remove hidden teams from work table and rank table"
+delete #Team_Work
+	from STATS_Team
+	where STATS_Team.TEAM = #TeamWork.TEAM_ID
+		and STATS_Team.listmode >= 10
 delete Team_Rank
 	from STATS_Team
 	where STATS_Team.TEAM = Team_Rank.TEAM_ID
 		and STATS_Team.listmode >= 10
 		and PROJECT_ID = ${1}
-go
 
-print ' Remove or move "today" info'
+print " Flag existing teams as not-new"
+update #TeamWork
+	set IS_NEW = 0
+	from Team_Rank tr
+	where tr.PROJECT_ID = ${1}
+		and tr.TEAM_ID = #TeamWork.TEAM_ID
+
+print " Remove or move ""today"" info"
 update Team_Rank
 	set DAY_RANK_PREVIOUS = DAY_RANK,
 		DAY_RANK = 1000000,
@@ -112,23 +178,13 @@ update Team_Rank
 		WORK_TODAY = 0,
 		MEMBERS_TODAY = 0
 	where PROJECT_ID = ${1}
-go
 
-
-print ' Insert new teams and update work for existing teams'
+print " Insert new teams and update work for existing teams"
 go
 declare @stats_date smalldatetime
 select @stats_date = LAST_STATS_DATE
 	from Projects
 	where PROJECT_ID = ${1}
-
-insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
-		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
-		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_LISTED)
-	select ${1}, dm.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY,
-			1000000, 1000000, 1000000, 1000000, 0, 0, 0
-	from #TeamWork tw
-	where tw.IS_NEW = 1
 
 update Team_Rank
 	set WORK_TODAY = tw.WORK_UNITS,
@@ -138,6 +194,14 @@ update Team_Rank
 	where Team_Rank.TEAM_ID = tw.TEAM_ID
 		and Team_Rank.PROJECT_ID = ${1}
 		and tw.IS_NEW = 0
+
+insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
+		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
+		MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_LISTED)
+	select ${1}, dm.TEAM_ID, @stats_date, @stats_date, tw.WORK_TODAY, tw.WORK_TODAY,
+			1000000, 1000000, 1000000, 1000000, 0, 0, 0
+	from #TeamWork tw
+	where tw.IS_NEW = 1
 
 /*
 ** TODO: team join should log, so this script can refer to team membership
@@ -239,8 +303,24 @@ go
 */
 print "::  Setting # of Overall and Active members"
 go
-select tm.TEAM_ID, count(*) 'OVERALL', sum(sign(WORK_TODAY)) 'ACTIVE', sum(abs(sign(sp.TEAM_ID - tm.TEAM_ID))) 'CURR'
-	into #CurrentMembers
+create table #CurrentMembers
+(
+	TEAM_ID		int,
+	OVERALL		int,
+	ACTIVE		int,
+	CURR		int
+)
+go
+/*
+** TODO: Take a good hard look at whether any of these can be handled as
+**	incremental changes.  If so, create temp table early and populate
+**	as these facts become available.
+**	"Count the needles before throwing them on the haystack"
+**	ex: OVERALL = OVERALL + [inserted today]
+**	ex: CURR calculated while summing the WORK_TODAY by team
+*/
+insert #CurrentMembers (TEAM_ID, OVERALL, ACTIVE, CURR)
+	select tm.TEAM_ID, count(*), sum(sign(WORK_TODAY)), sum(abs(sign(sp.TEAM_ID - tm.TEAM_ID)))
 	from Team_Members tm, STATS_Participant sp
 	where tm.PROJECT_ID = ${1}
 		and tm.WORK_TODAY > 0
@@ -258,97 +338,5 @@ update Team_Rank
 		and Team_Rank.PROJECT_ID = ${1}
 
 drop table #CurrentMembers
-
 go
 
-
-
-print "::  Creating team indexes"
-go
-create index iTEAM_ID on Team_Rank(TEAM_ID)
-go
-
-
-
-
-
-
-
-/*
-** Team member clear, insert, ranking
-*/
-print "!! Begin Team_Members Build"
-go
-
-
-update Team_Members
-	set WORK_TODAY = 0,
-		DAY_RANK = 1000000,
-		DAY_RANK_PREVIOUS = DAY_RANK,
-		OVERALL_RANK = 1000000,
-		OVERALL_RANK_PREVIOUS = OVERALL_RANK
-	where PROJECT_ID = ${1}		/* all records */
-
-select PROJECT_ID, TEAM_ID
-
-update Team_Members
-	set WORK_TODAY = ect.WORK_UNITS,
-		WORK_TOTAL = WORK_TOTAL + ect.WORK_UNITS
-	from Email_Contrib_Today ect
-	where Team_Members.PROJECT_ID = ${1}
-		and ect.PROJECT_ID = ${1}
-		and ect.TEAM_ID = Team_Members.TEAM_ID
-		and ect.CREDIT_ID = Team_Members.ID
-
-insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
-  	OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-select PROJECT_ID, ID, TEAM_ID, min(FIRST_DATE), max(LAST_DATE), 0, sum(WORK_UNITS), 1000000, 1000000,
-	1000000, 1000000
-
-/*
-** TODO Perform team member ranking within each team
-*/
-
-
-
-/*
-** From dy_members.sql
-*/
-
-
-print "::  Removing members who have been retired or hidden"
-go
-delete Team_Members
-	from STATS_Participant sp
-	where sp.ID = Team_Members.ID
-		and (sp.RETIRE_TO >= 1 or sp.listmode >= 10)
-		and Team_Members.PROJECT_ID = ${1}
-go
-
-print "::  Inserting new members, and adding work for existing members"
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
-	where PROJECT_ID = ${1}
-
-update Team_Members
-	set LAST_DATE = @stats_date,
-		WORK_UNITS = Team_Members.WORK_UNITS + tmw.WORK_UNITS
-	from #team_member_work tmw
-	where tmw.ID = Team_Members.ID
-		and tmw.TEAM_ID = Team_Members.TEAM_ID
-		and Team_Members.PROJECT_ID = ${1}
-
-delete #team_member_work
-	from Team_Members otm
-	where otm.ID = #team_member_work.ID
-		and otm.TEAM_ID = #team_member_work.TEAM_ID
-		and otm.PROJECT_ID = ${1}
-
-insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_UNITS)
-	select ${1}, ID, TEAM_ID, getdate(), getdate(), WORK_UNITS
-	from #team_member_work
-
-drop table #team_member_work
-go
