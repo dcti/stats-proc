@@ -1,11 +1,11 @@
 #!/usr/bin/sqsh -i
-#
-# $Id: integrate.sql,v 1.20 2002/01/13 19:34:52 decibel Exp $
+# vi: tw=100
+# $Id: integrate.sql,v 1.21 2002/05/10 13:47:43 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
 # Arguments:
-#       PROJECT_ID
+#       Project Type (OGR, RC5, etc.)
 
 set flushmessage on
 go
@@ -16,14 +16,23 @@ go
 **	Email_Contrib_Today format but not import_bcp format.
 */
 print "Updating LAST_STATS_DATE for all projects"
-select PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, sum(WORK_UNITS) as TOTAL_WORK
+select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK
 	into #Projects
-	from import_bcp
-	group by PROJECT_ID
+	from import_bcp i, Projects p
+	where p.PROJECT_ID *= i.PROJECT_ID
+		and p.PROJECT_TYPE = ${1}
+		and p.PROJECT_STATUS = 'O'
+	group by p.PROJECT_ID
+go
+
+update #Projects
+	set STATS_DATE = (select min(STATS_DATE) from #Projects)
+	where STATS_DATE is null
 go
 
 /*
-** Make sure we have rows in Project_statsrun for each project_id
+ Make sure we have rows in Project_statsrun for each project_id
+ JCN: I'm not sure why we're doing this as a cursor... I'm guessing it's because of locking concerns
 */
 
 declare CSRprojects cursor for 
@@ -267,6 +276,10 @@ go
 
 print "Clearing import table"
 
+/*
+ By doing the delete this way, we ensure that we'll throw an error if there are any rows in
+ import_bcp from projects we didn't know about
+*/
 print "Total rows in import table:"
 delete import_bcp
 	from Project_statsrun p
