@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.19 2002/04/11 08:08:59 decibel Exp $
+# $Id: dy_appendday.sql,v 1.20 2002/10/06 23:00:34 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -62,6 +62,10 @@ insert into Email_Contrib (DATE, PROJECT_ID, ID, TEAM_ID, WORK_UNITS)
 	from Email_Contrib_Today d
 	where d.PROJECT_ID = ${1}
 	/* Group by is unnecessary, data is already summarized */
+
+update Email_Contrib_Last_Update
+	set LAST_DATE = @proj_date
+	where PROJECT_ID = ${1}
 go
 
 print ":: Appending into Platform_Contrib"
