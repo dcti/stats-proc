@@ -1,5 +1,5 @@
 /*
-# $Id: tm_rank.sql,v 1.14 2000/07/15 00:01:12 decibel Exp $
+# $Id: tm_rank.sql,v 1.15 2000/07/15 08:18:18 decibel Exp $
 
 TM_RANK
 
@@ -67,7 +67,7 @@ create table #TeamMemberWork
 go
 
 insert #TeamMemberWork (ID, TEAM_ID, WORK_TODAY, IS_NEW)
-	select CREDIT_ID, TEAM, WORK_UNITS, 1
+	select CREDIT_ID, TEAM, sum(WORK_UNITS) as WORK_UNITS, 1
 	from #TeamMembers
 	group by CREDIT_ID, TEAM
 go
