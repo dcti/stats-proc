@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.15 2000/11/09 06:18:25 decibel Exp $
+# $Id: tm_update.sql,v 1.16 2000/11/09 06:33:21 decibel Exp $
 
 TM_RANK
 
@@ -130,14 +130,14 @@ insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
 	group by ec.ID, ec.TEAM_ID
 
 insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
-	select ec.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
+	select twm.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
 	from #TeamMemberWork tmw, Email_Contrib ec, STATS_Participant sp
 	where IS_NEW = 1
 		and sp.RETIRE_TO = tmw.ID
 		and ec.ID = sp.ID
 		and ec.TEAM_ID = tmw.TEAM_ID
 		and ec.PROJECT_ID = ${1}
-	group by ec.ID, ec.TEAM_ID
+	group by twm.ID, ec.TEAM_ID
 
 declare @stats_date smalldatetime
 select @stats_date = LAST_STATS_DATE
