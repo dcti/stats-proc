@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.7 2000/04/20 13:11:37 bwilson Exp $
+# $Id: dy_appendday.sql,v 1.8 2000/06/27 06:24:26 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -18,7 +18,7 @@ select @proj_date = LAST_STATS_DATE
 	where PROJECT_ID = ${1}
 
 insert into Email_Contrib (DATE, PROJECT_ID, ID, TEAM_ID, WORK_UNITS)
-	select @proj_date, ${1}, ID, TEAM_ID, sum(d.WORK_UNITS)
+	select @proj_date, ${1}, ID, TEAM_ID, d.WORK_UNITS
 	from Email_Contrib_Today d
 	where d.PROJECT_ID = ${1}
 	/* Group by is unnecessary, data is already summarized */
@@ -32,7 +32,7 @@ select @proj_date = LAST_STATS_DATE
 	where PROJECT_ID = ${1}
 
 insert into Platform_Contrib (DATE, PROJECT_ID, CPU, OS, VER, WORK_UNITS)
-	select @proj_date, ${1}, CPU, OS, VER, sum(WORK_UNITS)
+	select @proj_date, ${1}, CPU, OS, VER, WORK_UNITS
 	from Platform_Contrib_Today
 	where PROJECT_ID = ${1}
 	/* Group by is unnecessary, data is already summarized */
