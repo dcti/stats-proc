@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.20 2004/01/31 19:15:43 nerf Exp $
+-- $Id: daily_update.sql,v 1.21 2004/02/27 15:45:47 nerf Exp $
 
 select now();
 
@@ -52,7 +52,7 @@ INSERT INTO OGR_idlookup
   SELECT email, id, stats_id,
     retire_date,created
   FROM import_id
-  WHERE created IS NOT NULL;
+  WHERE created ::DATE = :RUNDATE ::DATE;
 
 UPDATE OGR_idlookup
   SET stats_id = import_id.stats_id
