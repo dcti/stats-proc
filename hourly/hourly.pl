@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.86 2001/12/29 08:14:36 decibel Exp $
+# $Id: hourly.pl,v 1.87 2002/01/04 02:35:27 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -165,7 +165,11 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       }
     }
     close SCP;
-    stats::log($project,1,$outbuf);
+    if ($outbuf eq "") {
+      stats::log($project,1,"$basefn received");
+    } else {
+      stats::log($project,1,$outbuf);
+    }
 
     open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
     my $rawfn = "";
