@@ -1,4 +1,4 @@
--- $Id: stats_functions.sql,v 1.2 2003/09/27 21:18:00 nerf Exp $
+-- $Id: stats_functions.sql,v 1.3 2004/04/14 15:25:31 nerf Exp $
 -- Functions/procedures used for OGR stats processing
 
 CREATE OR REPLACE FUNCTION doOGRstatsrun(date) returns int as '
@@ -49,16 +49,14 @@ BEGIN
 
 select into f_count getCount(f_project_id);
 
-select into f_pass1 count(distinct su.stub_id)
-from ogr_stubs s, ogr_summary su
-where s.stub_id = su.stub_id
-AND project_id = f_project_id;
+select into f_pass1 count(distinct stub_id)
+from ogr_summary
+where project_id = f_project_id;
 
-select into f_pass2 count(distinct su.stub_id)
-from ogr_stubs s, ogr_summary su
-where s.stub_id = su.stub_id
-  and su.max_client >= 8014
-  and su.participants >=2
+select into f_pass2 count(distinct stub_id)
+from ogr_summary
+where max_client >= 8014
+  and participants >=2
 AND project_id = f_project_id;
 
 select into f_stubs_returned count(*)
