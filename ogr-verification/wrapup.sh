@@ -1,9 +1,11 @@
 #! /bin/sh
-# $Id: wrapup.sh,v 1.3 2004/05/04 20:20:23 nerf Exp $
+# $Id: wrapup.sh,v 1.4 2004/05/06 19:48:08 nerf Exp $
 
 # Generate a stublist for each project.  These will be sent off to be
 # processed on another machine, eventually creating a new list for
 # master.
+
+PATH=/bin:/usr/bin:/usr/local/bin
 
 WORKDIR=$1
 
@@ -13,7 +15,7 @@ do
 OUTFILE=$WORKDIR/ogr_stublist${PROJECTID}
 rm -f $OUTFILE
 
-psql ogr <<EOF
+/usr/local/bin/psql ogr <<EOF
 	CREATE TEMP TABLE done_stubs (stub_marks varchar(22)) WITHOUT OIDS;
 	INSERT INTO done_stubs
 	SELECT st.stub_marks
