@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.5 2000/10/31 04:09:12 decibel Exp $
+# $Id: tm_update.sql,v 1.6 2000/11/01 01:47:12 decibel Exp $
 
 TM_RANK
 
@@ -222,11 +222,13 @@ update Team_Rank
 	set WORK_TOTAL = Team_Rank.WORK_TOTAL + twu.WORK_TOTAL
 	from #TeamWorkUpdate twu
 	where Team_Rank.TEAM_ID = twu.TEAM_ID
+		and Team_Rank.PROJECT_ID = ${1}
 update Team_Rank
 	set FIRST_DATE = twu.FIRST_DATE
 	from #TeamWorkUpdate twu
 	where Team_Rank.TEAM_ID = twu.TEAM_ID
 		and twu.FIRST_DATE < Team_Rank.FIRST_DATE
+		and Team_Rank.PROJECT_ID = ${1}
 
 /*
 ** TODO: team join should log, so this script can refer to team membership
