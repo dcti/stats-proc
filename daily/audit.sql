@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.21 2002/03/28 02:57:53 decibel Exp $
+# $Id: audit.sql,v 1.22 2002/03/28 03:01:48 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -178,7 +178,7 @@ go -f -h
 print "Total work units, ignored work, team work in Email_Contrib"
 go -f -h
 
-select id, team_id, sum(work_units) as work_units into #WorkSummary
+select id, team_id, sum(work_units) as work_units into #EmailContribSummary
 	from email_contrib
 	where project_id=${1}
 	group by id, team_id
@@ -191,7 +191,7 @@ select @ECsum = sum(work_units), @ECblcksum = isnull(sum( convert(int, p.LISTMOD
 		@ECteamsum = isnull(sum( abs(1-convert(int, p.LISTMODE/10))
 			* sign(ws.TEAM_ID) * abs(1-convert(int, t.LISTMODE/10))
 			* ws.WORK_UNITS ), 0)
-	from #WorkSummary ws , STATS_Participant p, STATS_Team t
+	from #EmailContribSummary ws , STATS_Participant p, STATS_Team t
 	where ws.ID = p.ID
 		and ws.TEAM_ID *= t.TEAM
 
