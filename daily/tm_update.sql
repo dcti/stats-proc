@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.23 2002/04/10 16:49:05 decibel Exp $
+# $Id: tm_update.sql,v 1.24 2002/04/11 06:25:25 decibel Exp $
 
 TM_RANK
 
@@ -57,7 +57,7 @@ select ect.CREDIT_ID, ect.TEAM_ID, ect.WORK_UNITS
 				)
 		and not exists (select *
 					from STATS_Team_Blocked stb
-					where stb.ID = ect.TEAM_ID
+					where stb.TEAM_ID = ect.TEAM_ID
 				)
 		and ect.PROJECT_ID = ${1}
 go
