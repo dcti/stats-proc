@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.15 2000/10/30 14:20:33 decibel Exp $
+# $Id: audit.sql,v 1.16 2000/11/01 04:59:12 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -382,11 +382,6 @@ if ( (@ECblcksum + @ERsum) <> @ECsum)
 	print "ERROR! Email_Contrib blocked sum (ECblcksum=%1!) + Email_Rank sum (ERsum=%2!) != Email_Contrib sum (ECsum=%3!)", @ECblcksum, @ERsum, @ECsum
 go -f -h
 
-#
-# Temporarily disable for all but RC5
-#
-if (${1} = 5)
-begin
 /* ECteamsum, TMsum, and TRsum should all match */
 print "checking team information..."
 declare @ECteamsum numeric(20)
@@ -410,5 +405,4 @@ if (@ECTteamsum <> @TMsumtoday)
 	print "ERROR! Email_Contrib_Today team sum (ECTteamsum=%1!) != Team_Members sum today (TMsumtoday=%2!)", @ECTteamsum, @TMsumtoday
 if (@ECTteamsum <> @TRsumtoday)
 	print "ERROR! Email_Contrib_Today team sum (ECTteamsum=%1!) != Team_Rank sum today (TRsumtoday=%2!)", @ECTteamsum, @TRsumtoday
-end
 go -f -h

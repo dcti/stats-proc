@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.6 2000/11/01 01:47:12 decibel Exp $
+# $Id: tm_update.sql,v 1.7 2000/11/01 04:59:12 decibel Exp $
 
 TM_RANK
 
@@ -123,6 +123,7 @@ insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY,
 	where IS_NEW = 1
 		and ec.ID = tmw.ID
 		and ec.TEAM_ID = tmw.TEAM_ID
+		and ec.PROJECT_ID = ${1}
 	group by ec.ID, ec.TEAM_ID
 go
 
