@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.16 2000/09/13 18:48:38 decibel Exp $
+# $Id: daily.pl,v 1.17 2000/09/19 21:54:31 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -92,7 +92,7 @@ sub sqsh {
     open SQERR, ">$workdir\sqsh_errors";
     print SQERR "$bufstorage";
     close SQERR;
-    die;
+    die $sqshsuccess;
   }
   my $secs_finish = int `date "+%s"`;
   my $secs_run = $secs_finish - $secs_start;
