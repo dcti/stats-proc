@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# $Id: pcpages_ogr_verify,v 1.1 2003/07/10 19:21:40 decibel Exp $
+#
+# Update pages that use ogr-verify data
+
+export PATH=$PATH:/usr/sbin
+
+cd /htdocs
+
+do_wget ( ) {
+    if wget -O${2}.new "http://localhost/${1}"; then
+        chmod 644 ${2}.new
+        chown nugget:www ${2}.new
+        mv ${2} ${2}.old
+        mv ${2}.new ${2}
+        return
+    else
+        echo "Error fetching ${1}"
+        return 1
+    fi
+}
+
+get_project ( ) {
+    do_wget pc_index.php?project_id=$1 cache/index_$1.inc
+    do_wget project/ogr_graph.php?project_id=$1 cache/ogr_graph_$1.png
+}
+
+if [ x$1 = x ]; then
+    echo "Error! No projects specified"
+    exit 1
+else
+    args=$@
+fi
+
+echo "Updating static pages for projects $args"
+echo
+
+for project in $args; do
+    get_project $project
+done
