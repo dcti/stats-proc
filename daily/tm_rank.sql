@@ -1,5 +1,5 @@
 /*
-# $Id: tm_rank.sql,v 1.15 2000/07/15 08:18:18 decibel Exp $
+# $Id: tm_rank.sql,v 1.16 2000/07/17 11:37:30 decibel Exp $
 
 TM_RANK
 
@@ -70,26 +70,6 @@ insert #TeamMemberWork (ID, TEAM_ID, WORK_TODAY, IS_NEW)
 	select CREDIT_ID, TEAM, sum(WORK_UNITS) as WORK_UNITS, 1
 	from #TeamMembers
 	group by CREDIT_ID, TEAM
-go
-
-print " Remove hidden, retired members from work table and rank table"
-go
-delete #TeamMemberWork
-	from STATS_Participant sp
-	where sp.ID = #TeamMemberWork.ID
-		and sp.LISTMODE >= 10
-
-delete Team_Members
-	from STATS_Participant sp
-	where sp.ID = Team_Members.ID
-		and sp.LISTMODE >= 10
-		and Team_Members.PROJECT_ID = ${1}
-
-delete Team_Members
-	from STATS_Participant sp
-	where sp.ID = Team_Members.ID
-		and sp.RETIRE_TO >= 1
-		and Team_Members.PROJECT_ID = ${1}
 go
 
 print " Flag existing members as not-new"
@@ -346,12 +326,15 @@ create table #CurrentMembers
 )
 go
 /*
-** TODO: Take a good hard look at whether any of these can be handled as
-**	incremental changes.  If so, create temp table early and populate
-**	as these facts become available.
-**	"Count the needles before throwing them on the haystack"
-**	ex: OVERALL = OVERALL + [inserted today]
-**	ex: CURR calculated while summing the WORK_TODAY by team
+# TODO: Take a good hard look at whether any of these can be handled as
+#	incremental changes.  If so, create temp table early and populate
+#	as these facts become available.
+#	"Count the needles before throwing them on the haystack"
+#	ex: OVERALL = OVERALL + [inserted today]
+#	ex: CURR calculated while summing the WORK_TODAY by team
+#
+# JCN
+#	That will probably not be worth it, thanks to retire_to's.
 */
 
 /* JCN

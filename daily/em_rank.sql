@@ -1,7 +1,7 @@
 /*
 #!/usr/bin/sqsh -i
 #
-# $Id: em_rank.sql,v 1.5 2000/06/27 02:04:33 decibel Exp $
+# $Id: em_rank.sql,v 1.6 2000/07/17 11:37:30 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -18,15 +18,7 @@ go
 drop index Email_Rank.iDAY_RANK
 drop index Email_Rank.iOVERALL_RANK
 go
-print 'Remove retired or hidden participants'
-go
-delete Email_Rank
-	from STATS_Participant
-	where STATS_Participant.ID = Email_Rank.ID
-		and (STATS_Participant.RETIRE_TO >= 1
-			or STATS_Participant.listmode >= 10)
-		and PROJECT_ID = ${1}
-go
+
 print ' Remove or move "today" info '
 declare @max_rank int
 select @max_rank = count(*)+1 from STATS_Participant
