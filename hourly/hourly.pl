@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.88 2002/02/15 14:27:09 decibel Exp $
+# $Id: hourly.pl,v 1.89 2002/02/23 18:03:05 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -67,6 +67,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
   my @server = split /:/, $sourcelist;
   chomp($lastlog);
 
+  # Check to see if workdir is empty
   opendir WD, "$workdir" or die;
   my @wdcontents = grep !/^(CVS|\.\.?)$/, readdir WD;
   closedir WD;
@@ -78,9 +79,10 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 
   stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
 
+  # Get list of logs that are on the master
+
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
- 
   open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1]$project*.log*\"'|";
   my $linecount = 0;
   my $qualcount = 0;
@@ -89,12 +91,19 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     if( $_ =~ /-(...)(...)(...).*$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
       my $lastdate = $4;
 
+      # Found a log. Is it newer than the last log we processed?
       if($lastdate gt $lastlog) {
         $qualcount++;
         if($lastdate gt $datestr) {
           # This log is the "active" log, we don't want to count it in our summary.
           $qualcount--;
         }
+	
+	# We start with $logtoload set impossibly high (new). If we find a log that's older than $logtoload,
+	# and it's older than our current time - 1 hour ($datestr), mark it as the log to load. Once we've
+	# processed all the available logs, $logtoload will have the lowest possible log we can load. Note
+	# that some unexpected things will happen if we don't get the log list sorted in date order according
+	# to the log filename
         if(($lastdate lt $logtoload) and ($lastdate le $datestr)) {
           if(! ($2 =~ /r/) ) {
             stats::log($project,131,"I need to load log $lastdate, but I cannot because the master created it with the wrong permissions!");
