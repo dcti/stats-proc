@@ -72,35 +72,20 @@ select @stats_date = LAST_STATS_DATE
 
 insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
 		OVERALL_RANK, OVERALL_RANK_PREVIOUS, MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_LISTED)
-	select ${1}, dm.TEAM_ID, @stats_date, @stats_date, 0, 0, 1000000, 1000000, 1000000, 1000000, 0, 0, 0
-	from Email_Contrib_Today dm, Stats_Team st
-	where dm.TEAM_ID = st.TEAM
-		and dm.TEAM_ID not in (select TEAM_ID from Team_Rank where PROJECT_ID = ${1})
-		and dm.LISTMODE < 10
-		and dm.PROJECT_ID = ${1}
+	select distinct ${1}, dm.TEAM_ID, @stats_date, @stats_date, 0, 0, 1000000, 1000000, 1000000, 1000000, 0, 0, 0
+	from Email_Contrib_Today ect, Stats_Team st
+	where ect.TEAM_ID = st.TEAM
+		and ect.TEAM_ID not in (select TEAM_ID from Team_Rank where PROJECT_ID = ${1})
+		and st.LISTMODE < 10
+		and ect.PROJECT_ID = ${1}
 go
 
-print ' Update member tables'
+print " Update member tables"
 go
 /*
-** TODO What was this doing in the original script?
-** May need to refer to Email_Contrib_Today instead
+** TODO Update contents of Team_Members table with work done today, insert new team members
 */
 
-update Team_Rank
-	set WORK_UNITS = tws.WORK_UNITS
-	from Email_Rank er, STATS_Participant s
-	where tws.ID = Team_Rank.ID
-		and s.TEAM = Team_Rank.TEAM_ID
-		and er.PROJECT_ID = ${1}
-		and Team_Rank.PROJECT_ID = ${1}
-
-insert Team_Rank
-/*
-** TODO Finish this - insert new teams?
-*/
-
-go
 print " Populate work"
 go
 print "::  Filling temp table"
@@ -190,10 +175,10 @@ create table #rank_assign
 )
 go
 insert #rank_assign (TEAM_ID, WORK_UNITS)
-	select TEAM_ID, WORK_OVERALL
+	select TEAM_ID, WORK_TOTAL
 	from Team_Rank
 	where PROJECT_ID = ${1}
-	order by WORK_OVERALL desc, TEAM_ID desc
+	order by WORK_TOTAL desc, TEAM_ID desc
 
 create clustered index iWORK_UNITS on #rank_assign(WORK_UNITS)
 
@@ -229,7 +214,7 @@ go
 */
 print "::  Setting # of Overall and Active members"
 go
-select tm.TEAM_ID, count(*) 'OVERALL', sum(sign(WORK_TODAY)) 'ACTIVE', sum(abs(sign(sp.TEAM_ID - tm.TEAM_ID))) 'CURRENT'
+select tm.TEAM_ID, count(*) 'OVERALL', sum(sign(WORK_TODAY)) 'ACTIVE', sum(abs(sign(sp.TEAM_ID - tm.TEAM_ID))) 'CURR'
 	into #CurrentMembers
 	from Team_Members tm, STATS_Participant sp
 	where tm.PROJECT_ID = ${1}
@@ -242,7 +227,7 @@ go
 update Team_Rank
 	set MEMBERS_TODAY = ACTIVE,
 		MEMBERS_OVERALL = OVERALL,
-		MEMBERS_CURRENT = CURRENT
+		MEMBERS_CURRENT = CURR
 	from #CurrentMembers cm
 	where Team_Rank.TEAM_ID = cm.TEAM_ID
 		and Team_Rank.PROJECT_ID = ${1}

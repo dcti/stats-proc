@@ -1,7 +1,7 @@
 /*
 #!/usr/bin/sqsh -i
 #
-# $Id: em_rank.sql,v 1.3 2000/04/14 21:32:55 bwilson Exp $
+# $Id: em_rank.sql,v 1.4 2000/04/20 13:11:37 bwilson Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -76,7 +76,7 @@ select @stats_date = LAST_STATS_DATE
 	where PROJECT_ID = ${1}
 
 insert #retired_work
-	select CREDIT_ID, sum(dm.SIZE)
+	select CREDIT_ID, sum(ect.WORK_UNITS)
 	from Email_Contrib_Today ect
 	where ect.PROJECT_ID = ${1}
 	group by ect.CREDIT_ID
@@ -88,7 +88,7 @@ update Email_Rank
 	from #retired_work rw
 	where rw.ID = Email_Rank.ID
 		and Email_Rank.PROJECT_ID = ${1}
-
+go
 drop table #retired_work
 go
 print ' Rank all, today'
@@ -128,7 +128,7 @@ update Email_Rank
 
 drop table #rank_assign
 drop table #rank_tie
-
+go
 print ' Rank all, overall'
 
 create table #rank_assign
@@ -163,7 +163,7 @@ update Email_Rank
 	where #rank_tie.WORK_UNITS = #rank_assign.WORK_UNITS
 		and Email_Rank.ID = #rank_assign.ID
 		and Email_Rank.PROJECT_ID = ${1}
-
+go
 drop table #rank_assign
 drop table #rank_tie
 
@@ -172,9 +172,6 @@ go
 update statistics Email_Rank
 go
 print ' Rebuild indexes on _Email_Rank'
-drop index Email_Rank.iDAY_RANK
-drop index Email_Rank.iOVERALL_RANK
-go
 create index iDAY_RANK on Email_Rank(PROJECT_ID, DAY_RANK)
 create index iOVERALL_RANK on Email_Rank(PROJECT_ID, OVERALL_RANK)
 go

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_newemails.sql,v 1.6 2000/04/14 21:32:55 bwilson Exp $
+# $Id: dy_newemails.sql,v 1.7 2000/04/20 13:11:37 bwilson Exp $
 #
 # Adds new participants to stats_participant
 #
@@ -70,5 +70,4 @@ insert into STATS_participant (ID, EMAIL)
 	from #dayemails
 go
 drop table #dayemails
-drop table #allemails
 go
