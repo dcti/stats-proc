@@ -123,4 +123,23 @@ foreach $mark (@marks) {
 };
 
 return $stub_sum;
- ' LANGUAGE 'plperl';
+ ' LANGUAGE 'plperl' IMMUTABLE STRICT;
+
+CREATE or replace FUNCTION stublen (varchar(22),integer) RETURNS integer AS '
+my ($stub_marks,$num_marks) = @_;
+
+#just strip off the number of marks and get the marks into an array
+my (@marks) = split (/-/ ,substr($stub_marks,3)) ;
+
+if ($num_marks < @marks ) {
+   $real_marks = $num_marks }
+else {
+   $real_marks = @marks }
+
+my $stub_sum = 0;
+foreach $index (0..($real_marks-1)) {
+   $stub_sum += $marks[$index]
+};
+
+return $stub_sum;
+ ' LANGUAGE 'plperl' IMMUTABLE STRICT;
