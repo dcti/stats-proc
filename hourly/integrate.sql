@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.2 2003/03/27 21:22:27 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.3 2003/04/04 20:47:01 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -80,14 +80,14 @@ update Project_statsrun
 \echo Rolling up data from import_bcp
 create TEMP table TEMP_import
 (
-	PROJECT_ID	tinyint		not NULL,
+	PROJECT_ID	smallint		not NULL,
 	EMAIL		varchar (64)	not NULL,
 	WORK_UNITS	numeric(20, 0)	not NULL
 );
 --go
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
    want to try and multiply outside the sum, it won't do what we want at all. */
-insert TEMP_import (PROJECT_ID, EMAIL, WORK_UNITS)
+insert into TEMP_import (PROJECT_ID, EMAIL, WORK_UNITS)
 	select i.PROJECT_ID, i.EMAIL, sum(i.WORK_UNITS) * (select WORK_UNIT_IMPORT_MULTIPLIER
 								from Projects p
 								where p.PROJECT_ID = i.PROJECT_ID
@@ -154,7 +154,7 @@ password assign automatic
 */
 create TEMP table TEMP_Email_Contrib_Today
 (
-	PROJECT_ID	tinyint		not NULL,
+	PROJECT_ID	smallint		not NULL,
 	EMAIL		varchar (64)	not NULL,
 	ID		int		not NULL,
 	WORK_UNITS	numeric(20, 0)	not NULL
@@ -162,7 +162,7 @@ create TEMP table TEMP_Email_Contrib_Today
 ;
 create TEMP table TEMP_dayemails
 (
-	ID		numeric(10, 0)	identity,
+	ID		numeric(10, 0)	not NULL,
 	EMAIL		varchar(64)	not NULL
 )
 ;
@@ -170,7 +170,7 @@ create TEMP table TEMP_dayemails
 /* Put EMAIL data into temp table */
 \echo Final roll-up by email
 /* First, put the latest set of logs in */
-insert TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
+insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 	select PROJECT_ID, EMAIL, 0, sum(WORK_UNITS)
 	from TEMP_import
 	group by PROJECT_ID, EMAIL
@@ -194,8 +194,9 @@ update TEMP_Email_Contrib_Today
 \echo Adding new participants
 
 /* First, copy all new participants to TEMP_dayemails to do the identity assignment */
-insert TEMP_dayemails (EMAIL)
-	select distinct EMAIL
+create temporary sequence Email;
+insert into TEMP_dayemails
+	select distinct EMAIL, nextval('Email')
 	from TEMP_Email_Contrib_Today
 	where ID = 0
 	order by EMAIL
@@ -203,16 +204,12 @@ insert TEMP_dayemails (EMAIL)
 --go
 
 /* Figure out where to start assigning at */
-declare @idoffset int
-select @idoffset = max(id)
-	from STATS_Participant
--- select @idoffset as current_max_ID
 
 -- [BW] If we switch to retire_to = id as the normal condition,
 --	this insert should insert (id, EMAIL, retire_to)
 --	from ID + @idoffset, EMAIL, ID + @idoffset
 insert into STATS_participant (ID, EMAIL)
-	select ID + @idoffset, EMAIL
+	select ID + (select max(id) from STATS_Participant), EMAIL
 	from TEMP_dayemails
 ;
 
@@ -230,7 +227,7 @@ update TEMP_Email_Contrib_Today
 \echo Copying Email_Contrib_Today into temptable
 
 -- JCN: Removed sum() and group by.. data in Email_Contrib_Today should be summed already
-insert TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
+insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 	select ect.PROJECT_ID, "", ect.ID, ect.WORK_UNITS
 	from Email_Contrib_Today ect, TEMP_Projects p
 	where ect.PROJECT_ID = p.PROJECT_ID
@@ -276,7 +273,7 @@ update import_bcp set OS = 0
 
 create TEMP table TEMP_Platform_Contrib_Today
 (
-	PROJECT_ID	tinyint		not NULL,
+	PROJECT_ID	smallint		not NULL,
 	CPU		smallint	not NULL,
 	OS		smallint	not NULL,
 	VER		smallint	not NULL,
@@ -286,7 +283,7 @@ create TEMP table TEMP_Platform_Contrib_Today
 --go
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
    want to try and multiply outside the sum, it won't do what we want at all. */
-insert TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
+insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	select i.PROJECT_ID, i.CPU, i.OS, i.VER, sum(i.WORK_UNITS) * (select WORK_UNIT_IMPORT_MULTIPLIER
 										from Projects p
 										where p.PROJECT_ID = i.PROJECT_ID
@@ -298,7 +295,7 @@ insert TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	group by i.PROJECT_ID, i.CPU, i.OS, i.VER
 ;
 
-insert TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
+insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	select pct.PROJECT_ID, pct.CPU, pct.OS, pct.VER, pct.WORK_UNITS
 	from Platform_Contrib_Today pct, TEMP_Projects p
 	where pct.PROJECT_ID = p.PROJECT_ID 
@@ -314,7 +311,7 @@ delete Platform_Contrib_Today
 	where Platform_Contrib_Today.PROJECT_ID = p.PROJECT_ID
 ;
 
-insert Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
+insert into Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
 	from TEMP_Platform_Contrib_Today
 	group by PROJECT_ID, CPU, OS, VER
@@ -332,7 +329,7 @@ drop table TEMP_Platform_Contrib_Today
 \echo Adding data to Log_Info
 insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
     select PROJECT_ID, STATS_DATE + (text(:HourNumber) || " hours")::interval, TOTAL_WORK, TOTAL_LINES ,0
-    from #Projects
+    from TEMP_Projects
     group by PROJECT_ID
 ;
 
