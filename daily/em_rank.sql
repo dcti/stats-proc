@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_rank.sql,v 1.15 2002/03/28 18:28:48 bwilson Exp $
+# $Id: em_rank.sql,v 1.16 2002/03/30 21:15:09 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -35,6 +35,9 @@ insert #rank_today (ID, WORK_UNITS, RANK)
 	from Email_Rank
 	where PROJECT_ID = ${1}
 	order by WORK_TODAY desc, ID desc
+go
+create index work_units on #rank_today(WORK_UNITS)
+go
 
 update #rank_today
 	set RANK = (select min(IDENT) from #rank_today rt2 where rt2.WORK_UNITS = #rank_today.WORK_UNITS)
@@ -57,6 +60,9 @@ insert #rank_overall (ID, WORK_UNITS, RANK)
 	from Email_Rank
 	where PROJECT_ID = ${1}
 	order by WORK_TOTAL desc, ID desc
+go
+create index work_units on #rank_overall(WORK_UNITS)
+go
 
 update #rank_overall
 	set RANK = (select min(IDENT) from #rank_overall ro2 where ro2.WORK_UNITS = #rank_overall.WORK_UNITS)
