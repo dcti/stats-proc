@@ -125,10 +125,11 @@ for (my $i = 0; $i < @projectlist; $i++) {
       close BCP;
 
       # call bruce's code here
-      #open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
-      #  while (<SQL>) {
-      #  print $_;
-      #}
+      open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
+      while (<SQL>) {
+        print $_;
+      }
+      close SQL;
 
       # perform sanity checking here
 
