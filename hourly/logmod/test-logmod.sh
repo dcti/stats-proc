@@ -10,6 +10,7 @@ run_test () {
         exit 1
     fi
     echo "$1 PASSED"
+    rm -f test-test
 }
 
 run_test rc572
