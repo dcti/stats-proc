@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.8 2003/09/29 01:48:16 nerf Exp $
+-- $Id: daily_update.sql,v 1.9 2003/09/29 02:30:33 nerf Exp $
 
 select now();
 
@@ -280,13 +280,13 @@ INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
   WHERE NOT ds.in_OGR_summary
 ;
 
-TRUNCATE logdata;
-
 COMMIT;
 select now();
 
 BEGIN;
   select doOGRstatsrun( :RUNDATE ::DATE);
 COMMIT;
+
+TRUNCATE logdata;
 
 select now();
