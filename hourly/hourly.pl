@@ -117,12 +117,13 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       # call bruce's code here
       open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
       while (<SQL>) {
+	printf("[%02s:%02s:%02s] ",(localtime)[2],(localtime)[1],(localtime)[0]);
         print $_;
       }
       close SQL;
 
       # perform sanity checking here
-      stats::log($project,1,"$logtoload successfully processed.");
+      stats::log($project,1,"$basefn successfully processed.");
 
       # If hour = 23 or day > lastlog(day)
       # queue daily processing for this project
