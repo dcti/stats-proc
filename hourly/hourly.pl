@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.62 2000/09/11 18:08:53 nugget Exp $
+# $Id: hourly.pl,v 1.63 2000/09/13 07:36:07 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -46,10 +46,13 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
     die;
   }
   
-  if(stats::semflag($project,"hourly.pl") ne "OK") {
-    my $ret = stats::semcheck($project);
-    chomp $ret;
-    stats::log($project,131,"Cannot obtain lock for hourly.pl!  [$ret] still running!");
+  # Check to see if we're locked, but don't set it until it's time to actually do some work
+  #
+  # NOTE:
+  # This means that anything that actually modifies data should not happen until after we set
+  # the lock.
+  if ($_ = stats::semcheck($project)) {
+    stats::log($project,131,"Cannot obtain lock for hourly.pl!  [$_] still running!");
     die;
   }
   my $sourcelist = $statsconf::logsource{$project};
@@ -91,17 +94,11 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         if(($lastdate lt $logtoload) and ($lastdate le $datestr)) {
           if(! ($2 =~ /r/) ) {
             stats::log($project,131,"I need to load log $4, but I cannot because the master created it with the wrong permissions!");
-            if(stats::semflag($project) ne "OK") {
-              stats::log($project,131,"Error clearing hourly.pl lock");
-            }
             die;
           }
           print $_;
           if(! ($_ =~ /gz$/) ) {
             stats::log($project,131,"The master failed to compress the $4 logfile.  Aborting.");
-            if(stats::semflag($project) ne "OK") {
-              stats::log($project,131,"Error clearing hourly.pl lock");
-            }
             die;
           }
           $logtoload = $lastdate;
@@ -142,6 +139,12 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
     my $fullfn = "$server[1]$project$logtoload.log.gz";
     my $basefn = "$project$logtoload.log.gz";
+
+    # Go ahead and set the lock now
+    if($_ = stats::semflag($project,"hourly.pl") ne "OK") {
+      stats::log($project,131,"Cannot obtain lock for hourly.pl!  [$_] still running!");
+      die;
+    }
 
     $outbuf = "";
     open SCP, "scp -Bv $server[0]:$fullfn $workdir 2> /dev/stdout |";
