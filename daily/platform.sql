@@ -1,4 +1,4 @@
--- $Id: platform.sql,v 1.1 2002/06/06 03:19:20 decibel Exp $
+-- $Id: platform.sql,v 1.2 2002/06/08 04:30:14 decibel Exp $
 
 delete from Platform_Summary where PROJECT_ID = ${1}
 go
@@ -12,11 +12,11 @@ go
 
 update Platform_Summary set WORK_TODAY = WORK_UNITS
 	from Platform_Contrib pc
-	where PS.PROJECT_ID = pc.PROJECT_ID
-		and PS.CPU = pc.CPU
-		and PS.OS = pc.OS
-		and PS.VER = pc.VER
-		and PS.PROJECT_ID = ${1}
+	where Platform_Summary.PROJECT_ID = pc.PROJECT_ID
+		and Platform_Summary.CPU = pc.CPU
+		and Platform_Summary.OS = pc.OS
+		and Platform_Summary.VER = pc.VER
+		and Platform_Summary.PROJECT_ID = ${1}
 		and pc.PROJECT_ID = ${1}
 		and pc.DATE = (select max(DATE) from Platform_Contrib where PROJECT_ID = ${1})
 go
