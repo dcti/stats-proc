@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.18 2001/03/02 23:40:58 statproc Exp $
+# $Id: tm_update.sql,v 1.19 2002/01/07 23:29:30 decibel Exp $
 
 TM_RANK
 
@@ -96,8 +96,8 @@ print " Populate today's work"
 go
 
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 update Team_Members
 	set WORK_TODAY = tmw.WORK_TODAY,
@@ -141,8 +141,8 @@ insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
 	group by tmw.ID, ec.TEAM_ID
 
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 /*
 # We're doing min(tmw.WORK_TODAY) because there can be more than one record in #Work_Summary. Any time
@@ -216,8 +216,8 @@ update Team_Rank
 print " Insert new teams and update work for existing teams"
 go
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 update Team_Rank
@@ -282,8 +282,8 @@ go
 */
 
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 insert #CurrentMembers (TEAM_ID, OVERALL, ACTIVE, CURR)

@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.17 2001/12/29 08:50:50 decibel Exp $
+# $Id: audit.sql,v 1.18 2002/01/07 23:29:30 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -97,14 +97,14 @@ go -f -h
 --   PCsumtoday
 -- **************************
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 print "Sum of work in Platform_Contrib for today (%1!)", @proj_date
 go -f -h
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 update	#audit
@@ -149,16 +149,16 @@ go -f -h
 --   DSunits, DSusers
 -- **************************
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 print "Work Units, Participants in Daily_Summary for today (%1!)", @proj_date
 go -f -h
 declare @proj_date smalldatetime
 declare @units numeric(20)
 declare @participants int
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 select	@units = WORK_UNITS, @participants = PARTICIPANTS
@@ -190,14 +190,14 @@ go -f -h
 --   ECsumtoday
 -- **************************
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 print "Sum of work in Email_Contrib for today (%1!)", @proj_date
 go -f -h
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 update	#audit
@@ -216,8 +216,8 @@ go -f -h
 print "Total work units ignored in Email_Contrib for today (listmode >= 10)"
 go -f -h
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 update	#audit

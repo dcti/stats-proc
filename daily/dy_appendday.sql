@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.16 2000/11/08 13:10:10 decibel Exp $
+# $Id: dy_appendday.sql,v 1.17 2002/01/07 23:29:30 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -21,8 +21,8 @@ go
 */
 
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 update Email_Contrib_Today
@@ -45,8 +45,8 @@ update Email_Contrib_Today
 print "::  Appending into Email_Contrib"
 go
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 insert into Email_Contrib (DATE, PROJECT_ID, ID, TEAM_ID, WORK_UNITS)
@@ -59,8 +59,8 @@ go
 print ":: Appending into Platform_Contrib"
 go
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 insert into Platform_Contrib (DATE, PROJECT_ID, CPU, OS, VER, WORK_UNITS)

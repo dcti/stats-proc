@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: tm_rank.sql,v 1.19 2000/10/30 14:08:08 decibel Exp $
+# $Id: tm_rank.sql,v 1.20 2002/01/07 23:29:30 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -94,8 +94,8 @@ go
 print ' set previous rank = current rank for new participants'
 go
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 update	Team_Rank

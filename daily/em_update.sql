@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_update.sql,v 1.1 2000/09/22 02:41:37 decibel Exp $
+# $Id: em_update.sql,v 1.2 2002/01/07 23:29:30 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -36,8 +36,8 @@ print ' Now insert new participants'
 go
 
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 -- select @stats_date = isnull(@stats_date, getdate())
 
@@ -68,8 +68,8 @@ create table #retired_work
 )
 go
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 insert #retired_work

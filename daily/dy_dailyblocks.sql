@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_dailyblocks.sql,v 1.9 2000/07/14 23:24:23 decibel Exp $
+# $Id: dy_dailyblocks.sql,v 1.10 2002/01/07 23:29:30 decibel Exp $
 #
 # Inserts the daily totals
 #
@@ -11,8 +11,8 @@ declare @stats_date smalldatetime,
 	@count int,
 	@work numeric(20, 0)
 
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 insert Daily_Summary (DATE, PROJECT_ID, WORK_UNITS,

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.18 2000/11/25 02:34:19 decibel Exp $
+# $Id: integrate.sql,v 1.19 2002/01/07 23:29:30 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -16,16 +16,45 @@ go
 **	Email_Contrib_Today format but not import_bcp format.
 */
 print "Updating LAST_STATS_DATE for all projects"
-select PROJECT_ID,  min(TIME_STAMP) as STATS_DATE
+select PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, sum(WORK_UNITS) as TOTAL_WORK
 	into #Projects
 	from import_bcp
 	group by PROJECT_ID
 go
 
+/*
+** Make sure we have rows in Project_statsrun for each project_id
+*/
+
+declare CSRprojects cursor for 
+	select PROJECT_ID
+	from #Projects
+go
+
+declare @project_id tinyint
+open CSRprojects
+
+fetch CSRprojects into @project_id
+while (@@sqlstatus = 0)
+begin
+	if not exists (select * from Projects_statsrun where PROJECT_ID = @project_id)
+	begin
+		insert into Projects_statsrun (PROJECT_ID) select @project_id
+	end
+
+	fetch CSRprojects into @project_id
+end
+go
+
+deallocate cursor CSRprojects
+go
+
 /* Store the stats date here, instead of in every row of Email_Contrib_Today and Platform_Contrib_Today */
 declare @stats_date smalldatetime
-update Projects
-	set LAST_STATS_DATE = p.STATS_DATE
+update Project_statsrun
+	set LAST_HOURLY_DATE = p.STATS_DATE,
+		LOGS_FOR_DAY = LOGS_FOR_DAY + 1,
+		WORK_FOR_DAY = WORK_FOR_DAY + p.TOTAL_WORK
 	from #Projects p
 	where Projects.PROJECT_ID = p.PROJECT_ID
 go
@@ -40,9 +69,9 @@ create table #import
 go
 insert #import (PROJECT_ID, EMAIL, WORK_UNITS)
 	select i.PROJECT_ID, i.EMAIL, sum(i.WORK_UNITS)
-	from import_bcp i, Projects p
+	from import_bcp i, Project_statsrun p
 	where i.PROJECT_ID = p.PROJECT_ID
-		and i.TIME_STAMP = p.LAST_STATS_DATE
+		and i.TIME_STAMP = p.LAST_HOURLY_DATE
 	group by i.PROJECT_ID, i.EMAIL
 go
 
@@ -205,9 +234,9 @@ create table #Platform_Contrib_Today
 go
 insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	select i.PROJECT_ID, i.CPU, i.OS, i.VER, sum(i.WORK_UNITS)
-	from import_bcp i, Projects p
+	from import_bcp i, Project_statsrun p
 	where i.PROJECT_ID = p.PROJECT_ID
-		and i.TIME_STAMP = p.LAST_STATS_DATE
+		and i.TIME_STAMP = p.LAST_HOURLY_DATE
 	group by i.PROJECT_ID, i.CPU, i.OS, i.VER
 
 insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
@@ -237,9 +266,9 @@ print "Clearing import table"
 
 print "Total rows in import table:"
 delete import_bcp
-	from Projects p
+	from Project_statsrun p
 	where import_bcp.PROJECT_ID = p.PROJECT_ID
-		and import_bcp.TIME_STAMP = p.LAST_STATS_DATE
+		and import_bcp.TIME_STAMP = p.LAST_HOURLY_DATE
 
 /* This line produces the number of rows imported for logging. The print is for the benefit of hourly.pl */
 select @@rowcount

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.12 2000/11/09 07:35:39 decibel Exp $
+# $Id: newjoin.sql,v 1.13 2002/01/07 23:29:30 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -14,8 +14,8 @@ go
 #-- This query will only get joins to teams (not to team 0) that have
 #-- taken place on the day that we're running stats for.
 declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
+select @proj_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 select id, team_id

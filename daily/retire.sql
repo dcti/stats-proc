@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.16 2001/01/13 06:28:18 decibel Exp $
+# $Id: retire.sql,v 1.17 2002/01/07 23:29:30 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -14,8 +14,8 @@ go
 print 'Remove retired or hidden participants from Email_Rank'
 go
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 select RETIRE_TO, WORK_TOTAL, FIRST_DATE, LAST_DATE
@@ -63,8 +63,8 @@ print ""
 print ""
 print "Delete retires from Email_Rank"
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 delete Email_Rank
@@ -97,8 +97,8 @@ print 'Remove retired participants from Team_Members'
 go
 print 'Select new retires'
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 select RETIRE_TO, TEAM_ID, WORK_TOTAL, FIRST_DATE, LAST_DATE
@@ -147,8 +147,8 @@ update Team_Members
 
 print "Delete retires from Team_Members"
 declare @stats_date smalldatetime
-select @stats_date = LAST_STATS_DATE
-	from Projects
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
 	where PROJECT_ID = ${1}
 
 delete Team_Members
