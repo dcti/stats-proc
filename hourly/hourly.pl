@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.74 2000/10/07 19:11:07 decibel Exp $
+# $Id: hourly.pl,v 1.75 2000/10/24 04:19:41 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -190,7 +190,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         die;
       }
 
-      my $rows = 0;
+      my $bcprows = 0;
       my $rate = 0;
 
       while (<BCP>) {
@@ -198,11 +198,11 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         chomp $buf;
 
         if ($buf =~ /(\d+) rows copied/) {
-          $rows = num_format($1);
+          $bcprows = num_format($1);
         } elsif ($buf =~ /(\d+\.\d+) rows per sec/) {
 	  $rate = num_format($1);
 	  print "\n";
-	  stats::log($project,1,"$finalfn successfully BCP'd; $rows rows at $rate rows/second.");
+	  stats::log($project,1,"$finalfn successfully BCP'd; $bcprows rows at $rate rows/second.");
 	} elsif ($buf =~ /\d+ rows sent to SQL Server./) {
 	  print ".";
 	} else {
@@ -211,9 +211,9 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       }
       close BCP;
 
-      $rows =~ s/,//g;
+      $bcprows =~ s/,//g;
 
-      if($rows == 0) {
+      if($bcprows == 0) {
         stats::log($project,131,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
         die;
       }
@@ -229,6 +229,8 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       my $bufstorage = "";
       my $sqshsuccess = 0;
+      my $rowsnext = 0;
+      my $sqlrows = 0;
       if(!open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 2> /dev/stdout |") {
         stats::log($project,131,"Error launching sqsh, aborting hourly run.");
         die;
@@ -237,9 +239,25 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 	my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
         print "$ts $_";
         $bufstorage = "$bufstorage$ts $_";
+	if ( $rowsnext == 1 ) {
+	  if ( $_ =~ /(\d+)/ ) {
+	    $sqlrows = $1;
+	    $rowsnext = 2;
+	  } else {
+	    stats::log($project,131,"SQL format error, rowcount isn't where it should be.");
+	    $sqshsuccess = 1;
+	  }
+	}
         if( $_ =~ /^Msg/ ) {
           $sqshsuccess = 1;
-        }
+        } elsif ( $_ =~ /^Total rows in import table:/ ) {
+	  if ( $rowsnext == 0 ) {
+	    $rowsnext = 1;
+	  } else {
+	    stats::log($project,131,"SQL format error, rowcount appearing twice.");
+	    $sqshsuccess = 1;
+	  }
+	}
       }
       close SQL;
       if( $sqshsuccess > 0) {
@@ -251,6 +269,10 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       }
 
       # perform sanity checking here
+      if ( $sqlrows != $bcprows ) {
+	stats::log($project,131,"Row counts for BCP($bcprows) and SQL($sqlrows) do not match, aborting.");
+	die;
+      }
       stats::log($project,1,"$basefn successfully processed.");
 
       # It's always good to clean up after ourselves for the next run.
