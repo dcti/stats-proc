@@ -24,7 +24,7 @@ my $workdir = "./workdir/";
 #my @sourcelist  = ("LOGS-SOURCE.FQDN:/home/master/logs/",
 #                   "LOGS-SOURCE.FQDN:/home/master/logs/");
 #my @prefilter   = ("./logmod_ogr.pl",
-#                   "");
+#                   "./logmod_rc5.pl");
 
 my @projectlist = ("ogr");
 my @sourcelist  = ("n0:/home/decibel/logs/");
@@ -101,15 +101,9 @@ for (my $i = 0; $i < @projectlist; $i++) {
         `cat $rawfn | $prefilter[$i] > $finalfn`;
         stats::log($project,1,"$basefn successfully filtered through $prefilter[$i].");
       }
-      # bcp goes here
       #$retcode = system "bcp", "$project" . "_import", "in", $finalfn, "-ebcp_errors", $sqlserver, $sqllogin, $sqlpasswd, "-c", "-t,";
-      open BCP, "bcp import_24 in $finalfn -ebcp_errors $sqlserver $sqllogin $sqlpasswd -c -t, 2> /dev/stderr |";
+      open BCP, "bcp import_bcp in $finalfn -ebcp_errors $sqlserver $sqllogin $sqlpasswd -c -t, 2> /dev/stderr |";
       while (<BCP>) {
-#	if ($_ =~ /(\d+) rows copied.\nClock Time (ms.): total = (\d+) Avg = (\d+.\d) ((\d+.\d) rows per sec.)/) {
-#	  my $rows = num_format($1);
-#	  my $rate = num_format($4);
-#	  stats::log($project,1,"$finalfn successfully BCP in; $rows rows at $rate rows/second.");
-#	}
 	print $_;
 	my $rows = 0;
 	my $rate = 0;
