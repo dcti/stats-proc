@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.5 2002/12/03 16:02:34 jlawson Exp $
+ * $Id: logmod.cpp,v 1.6 2002/12/03 16:05:50 jlawson Exp $
  */
 
 #include <stdio.h>
@@ -144,8 +144,8 @@ int main(int argc, char *argv[])
             }
         }
         char *size, *os, *cpu, *version, *status;
-        if (endfields < wantedfields) {
-            error(line, "less than 4 numeric fields at end", buf, len);
+        if (endfields != wantedfields) {
+            error(line, "wrong number of required numeric fields at end", buf, len);
             goto next;
         }
         switch (project) {
