@@ -1,6 +1,7 @@
 #!/usr/bin/perl -Tw -I../global
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
+use statsconf;
 use stats;
 
 my $yyyy = (gmtime(time-3600))[5]+1900;
@@ -102,7 +103,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
         stats::log($project,1,"$basefn successfully filtered through $prefilter[$i].");
       }
 
-      open BCP, "bcp import_bcp in $finalfn -ebcp_errors -S$stats::sqlserver -U$stats::sqllogin -P$stats::sqlpasswd -c -t, 2> /dev/stderr |";
+      open BCP, "bcp import_bcp in $finalfn -ebcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, 2> /dev/stderr |";
 
       my $rows = 0;
       my $rate = 0;
@@ -124,7 +125,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
       close BCP;
 
       # call bruce's code here
-      #open SQL, "sqsh -S$stats::sqlserver -U$stats::sqllogin -P$stats::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
+      #open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
       #  while (<SQL>) {
       #  print $_;
       #}
