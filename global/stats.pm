@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.32 2004/02/19 21:27:53 decibel Exp $
+# $Id: stats.pm,v 1.33 2004/11/03 20:42:58 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -103,16 +103,13 @@ sub log {
 }
 
 sub DCTIeventsay {
-	# 0 project
-	# 1 port
-	# 2 password
-	# 3 message
-
 	my $port = shift;
 	my $password = shift;
 	my $project = shift;
 	my $message = shift;
 
+        debug (6,"DCTIeventsay: port=$port, password=$password, project=$project, message=$message\n");
+	
 	local $SIG{ALRM} = sub { die "timeout" };
 
 	eval {
