@@ -1,5 +1,5 @@
 /*
-# $Id: backup.sql,v 1.14.2.3 2003/07/13 20:40:20 decibel Exp $
+# $Id: backup.sql,v 1.14.2.4 2003/07/14 00:51:01 decibel Exp $
 #
 # Makes backup copies of Email_Rank, Team_Rank, and Team_Members
 # Arguments:
@@ -19,19 +19,16 @@ DELETE FROM email_rank_backup
         AND (backup_date = (SELECT last_date FROM Tdates)
             OR backup_date < (SELECT keep_date FROM Tdates) )
 ;
-VACUUM email_rank_backup;
 DELETE FROM team_rank_backup
     WHERE project_id = :ProjectID
         AND (backup_date = (SELECT last_date FROM Tdates)
             OR backup_date < (SELECT keep_date FROM Tdates) )
 ;
-VACUUM team_rank_backup;
 DELETE FROM team_members_backup
     WHERE project_id = :ProjectID
         AND (backup_date = (SELECT last_date FROM Tdates)
             OR backup_date < (SELECT keep_date FROM Tdates) )
 ;
-VACUUM team_members_backup
 
 \echo Backing up Email_Rank
 INSERT INTO email_rank_backup (backup_date, project_id, id, first_date, last_date,

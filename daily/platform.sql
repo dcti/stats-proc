@@ -1,4 +1,4 @@
--- $Id: platform.sql,v 1.2.2.3 2003/07/13 20:40:20 decibel Exp $
+-- $Id: platform.sql,v 1.2.2.4 2003/07/14 00:51:01 decibel Exp $
 \set ON_ERROR_STOP 1
 
 BEGIN;
@@ -23,4 +23,4 @@ BEGIN;
             AND pc.date = (SELECT max(date) FROM platform_contrib WHERE project_id = :ProjectID)
     ;
 COMMIT;
-VACUUM platform_summary;
+--VACUUM platform_summary;
