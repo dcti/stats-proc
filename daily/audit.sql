@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.12 2000/10/27 19:11:48 decibel Exp $
+# $Id: audit.sql,v 1.13 2000/10/29 06:29:03 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -238,7 +238,7 @@ go -f -h
 print "Total work units ignored overall (listmode >= 10)"
 go -f -h
 update	#audit
-	set ECblcksum = (select sum(e.WORK_UNITS)
+	set ECblcksum = (select isnull(sum(e.WORK_UNITS), 0)
 		from Email_Contrib e, STATS_Participant p
 		where PROJECT_ID = ${1}
 			and e.ID = p.ID
@@ -258,10 +258,10 @@ update #audit
 		from Email_Contrib e, STATS_Participant p, STATS_Team t
 		where PROJECT_ID = ${1}
 			and e.ID = p.ID
-			and p.LISTMODE >= 10
-			and p.TEAM>0
-			and t.TEAM=p.TEAM
-			and t.LISTMODE >= 10)
+			and p.LISTMODE < 10
+			and e.TEAM_ID>0
+			and t.TEAM=e.TEAM_ID
+			and t.LISTMODE < 10)
 select ECteamsum from #audit
 go -f -h
 
@@ -291,7 +291,7 @@ print "Total work reported in Team_Members for Today, Overall"
 go -f -h
 declare @TMsumtoday numeric(20)
 declare @TMsum numeric(20)
-select	@TMsumtoday = sum(WORK_TODAY), @TMsum = sum(WORK_TOTAL)
+select	@TMsumtoday = isnull(sum(WORK_TODAY), 0), @TMsum = isnull(sum(WORK_TOTAL), 0)
 	from Team_Members
 	where PROJECT_ID = ${1}
 update	#audit
@@ -307,7 +307,7 @@ print "Total work reported in Team_Rank for Today, Overall"
 go -f -h
 declare @TRsumtoday numeric(20)
 declare @TRsum numeric(20)
-select	@TRsumtoday = sum(WORK_TODAY), @TRsum = sum(WORK_TOTAL)
+select	@TRsumtoday = isnull(sum(WORK_TODAY), 0), @TRsum = isnull(sum(WORK_TOTAL), 0)
 	from Team_Rank
 	where PROJECT_ID = ${1}
 update	#audit
@@ -396,7 +396,7 @@ select @ECteamsum = ECteamsum, @TMsum = TMsum, @TRsum = TRsum
 if (@ECteamsum <> @TMsum)
 	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Members sum (TMsum=%2!)", @ECteamsum, @TMsum
 if (@ECteamsum <> @TRsum)
-	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Members sum (TRsum=%2!)", @ECteamsum, @TRsum
+	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Rank sum (TRsum=%2!)", @ECteamsum, @TRsum
 --go -f -h
 
 /* ECTteamsum, TMsumtoday, and TRsumtoday should all match */
@@ -406,8 +406,8 @@ declare @TRsumtoday numeric(20)
 select @ECTteamsum = ECTteamsum, @TMsumtoday = TMsumtoday, @TRsumtoday = TRsumtoday
 	from #audit
 if (@ECTteamsum <> @TMsumtoday)
-	print "ERROR! Email_Contrib team sum (ECTteamsum=%1!) != Team_Members sum (TMsumtoday=%2!)", @ECTteamsum, @TMsumtoday
+	print "ERROR! Email_Contrib_Today team sum (ECTteamsum=%1!) != Team_Members sum today (TMsumtoday=%2!)", @ECTteamsum, @TMsumtoday
 if (@ECTteamsum <> @TRsumtoday)
-	print "ERROR! Email_Contrib team sum (ECTteamsum=%1!) != Team_Members sum (TRsumtoday=%2!)", @ECTteamsum, @TRsumtoday
+	print "ERROR! Email_Contrib_Today team sum (ECTteamsum=%1!) != Team_Rank sum today (TRsumtoday=%2!)", @ECTteamsum, @TRsumtoday
 end
 go -f -h
