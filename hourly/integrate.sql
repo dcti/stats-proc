@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.43 2004/11/02 20:30:16 decibel Exp $
+# $Id: integrate.sql,v 1.44 2004/11/02 21:37:21 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -82,7 +82,7 @@ create TEMP table TEMP_import
     PROJECT_ID    smallint        not NULL,
     EMAIL        varchar (64)    not NULL,
     WORK_UNITS    numeric(20, 0)    not NULL
-);
+) WITHOUT OIDS;
 
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
    want to try and multiply outside the sum, it won't do what we want at all. */
@@ -154,14 +154,14 @@ create TEMP table TEMP_Email_Contrib_Today
     EMAIL        varchar (64)    not NULL,
     ID        int        not NULL,
     WORK_UNITS    numeric(20, 0)    not NULL
-)
+) WITHOUT OIDS
 ;
 create temporary sequence Email;
 create TEMP table TEMP_dayemails
 (
     ID            int            not NULL DEFAULT nextval('Email'),
     EMAIL        varchar(64)    not NULL
-)
+) WITHOUT OIDS
 ;
 /* Put EMAIL data into temp table */
 \echo Final roll-up by email
@@ -244,7 +244,7 @@ create TEMP table TEMP_Platform_Contrib_Today
     OS        smallint    not NULL,
     VER        smallint    not NULL,
     WORK_UNITS    numeric(20, 0)    not NULL
-)
+) WITHOUT OIDS
 ;
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
    want to try and multiply outside the sum, it won't do what we want at all. */
