@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.57 2000/09/11 15:44:15 nugget Exp $
+# $Id: hourly.pl,v 1.58 2000/09/11 17:34:11 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -74,7 +74,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
  
-  open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1]$project*.log.gz\"'|";
+  open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1]$project*.log*\"'|";
   my $linecount = 0;
   my $qualcount = 0;
 
@@ -85,15 +85,22 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       if($lastdate gt $lastlog) {
         $qualcount++;
         if($lastdate lt $logtoload) {
-          if($2 =~ /r/) {
-            $logtoload = $lastdate;
-          } else {
+          if(! ($2 =~ /r/) ) {
             stats::log($project,131,"I need to load log $4, but I cannot because the master created it with the wrong permissions!");
             if(stats::semflag($project) ne "OK") {
               stats::log($project,131,"Error clearing hourly.pl lock");
             }
             die;
           }
+          print $_;
+          if(! ($_ =~ /gz$/) ) {
+            stats::log($project,131,"The master failed to compress the $4 logfile.  Aborting.");
+            if(stats::semflag($project) ne "OK") {
+              stats::log($project,131,"Error clearing hourly.pl lock");
+            }
+            die;
+          }
+          $logtoload = $lastdate;
         }
       }
     }
