@@ -1,12 +1,13 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.17 2002/01/07 23:29:30 decibel Exp $
+# $Id: dy_appendday.sql,v 1.18 2002/01/13 19:34:52 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
 # Arguments:
 #       PROJECT_ID
 
+set flushmessage on
 print "!! Appending day's activity to master tables"
 go
 
@@ -26,9 +27,11 @@ select @stats_date = LAST_HOURLY_DATE
 	where PROJECT_ID = ${1}
 
 update Email_Contrib_Today
-	set CREDIT_ID = (abs(sign(sp.RETIRE_TO)) * sp.RETIRE_TO) + ((1 - abs(sign(sp.RETIRE_TO))) * sp.ID)
+	set CREDIT_ID = sp.RETIRE_TO
 	from STATS_Participant sp
 	where sp.ID = Email_Contrib_Today.ID
+		and sp.RETIRE_TO >= 1
+		and (sp.RETIRE_DATE <= @stats_date or sp.RETIRE_DATE is NULL)
 		and PROJECT_ID = ${1}
 
 update Email_Contrib_Today

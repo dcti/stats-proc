@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.19 2002/01/07 23:29:30 decibel Exp $
+# $Id: integrate.sql,v 1.20 2002/01/13 19:34:52 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -37,9 +37,9 @@ open CSRprojects
 fetch CSRprojects into @project_id
 while (@@sqlstatus = 0)
 begin
-	if not exists (select * from Projects_statsrun where PROJECT_ID = @project_id)
+	if not exists (select * from Project_statsrun where PROJECT_ID = @project_id)
 	begin
-		insert into Projects_statsrun (PROJECT_ID) select @project_id
+		insert into Project_statsrun (PROJECT_ID) select @project_id
 	end
 
 	fetch CSRprojects into @project_id
@@ -56,7 +56,7 @@ update Project_statsrun
 		LOGS_FOR_DAY = LOGS_FOR_DAY + 1,
 		WORK_FOR_DAY = WORK_FOR_DAY + p.TOTAL_WORK
 	from #Projects p
-	where Projects.PROJECT_ID = p.PROJECT_ID
+	where Project_statsrun.PROJECT_ID = p.PROJECT_ID
 go
 
 print "Rolling up data from import_bcp"
@@ -211,8 +211,11 @@ delete Email_Contrib_Today
 	from #Projects p
 	where Email_Contrib_Today.PROJECT_ID = p.PROJECT_ID
 
+/*
+** dy_appendday.sql depends on setting CREDIT_ID = ID
+*/
 insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
-	select PROJECT_ID, sum(WORK_UNITS), ID, 0, 0
+	select PROJECT_ID, sum(WORK_UNITS), ID, 0, ID
 	from #Email_Contrib_Today
 	group by PROJECT_ID, ID
 commit transaction

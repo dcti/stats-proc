@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.19 2002/01/07 23:29:30 decibel Exp $
+# $Id: tm_update.sql,v 1.20 2002/01/13 19:34:03 decibel Exp $
 
 TM_RANK
 
@@ -43,6 +43,7 @@ Notes:
 
 */
 
+set flushmessage on
 print '!! Prepare for team member generation'
 go
 
@@ -51,9 +52,9 @@ select ect.CREDIT_ID, ect.TEAM_ID, ect.WORK_UNITS
 	from Email_Contrib_Today ect, STATS_Participant sp, STATS_Team st
 	where sp.ID = ect.CREDIT_ID
 		and st.team = ect.TEAM_ID
-		and ect.TEAM_ID > 0
-		and sp.LISTMODE < 10	/* Don't insert hidden people */
-		and st.LISTMODE < 10	/* Don't insert hidden teams */
+		and ect.TEAM_ID >= 1
+		and sp.LISTMODE <= 9	/* Don't insert hidden people */
+		and st.LISTMODE <= 9	/* Don't insert hidden teams */
 		and ect.PROJECT_ID = ${1}
 go
 
@@ -82,8 +83,8 @@ update #TeamMemberWork
 		and tm.TEAM_ID = #TeamMemberWork.TEAM_ID
 		and tm.ID = #TeamMemberWork.ID
 
-print " Clear today info"
 go
+print " Clear today info"
 update Team_Members
 	set WORK_TODAY = 0,
 		DAY_RANK = 1000000,
@@ -91,10 +92,9 @@ update Team_Members
 		OVERALL_RANK = 1000000,
 		OVERALL_RANK_PREVIOUS = OVERALL_RANK
 	where PROJECT_ID = ${1}		/* all records */
-
-print " Populate today's work"
 go
 
+print " Populate today's work"
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun
@@ -108,9 +108,9 @@ update Team_Members
 		and tmw.TEAM_ID = Team_Members.TEAM_ID
 		and tmw.ID = Team_Members.ID
 		and tmw.IS_NEW = 0
+go
 
 print " Insert records for members who have just joined a team"
-go
 /* Remember, Team_Members contains one record per ID for every team that ID has been on */
 # Summarize work
 create table #Work_Summary (
@@ -121,6 +121,10 @@ create table #Work_Summary (
 )
 go
 
+declare @stats_date smalldatetime
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
+	where PROJECT_ID = ${1}
 insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
 	select ec.ID, ec.TEAM_ID, min(ec.DATE), sum(ec.WORK_UNITS)
 	from #TeamMemberWork tmw, Email_Contrib ec
@@ -135,15 +139,12 @@ insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
 	from #TeamMemberWork tmw, Email_Contrib ec, STATS_Participant sp
 	where IS_NEW = 1
 		and sp.RETIRE_TO = tmw.ID
+		and (sp.RETIRE_DATE <= @stats_date or sp.RETIRE_DATE is NULL)
 		and ec.ID = sp.ID
 		and ec.TEAM_ID = tmw.TEAM_ID
 		and ec.PROJECT_ID = ${1}
 	group by tmw.ID, ec.TEAM_ID
 
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
 /*
 # We're doing min(tmw.WORK_TODAY) because there can be more than one record in #Work_Summary. Any time
 # there is, the row from tmw will be included multiple times. (tmw is already summarized)
@@ -166,7 +167,7 @@ go
 
 
 
-
+set flushmessage off
 print '!! Process new teams, hidden teams'
 go
 create table #TeamWork
@@ -212,6 +213,7 @@ update Team_Rank
 		WORK_TODAY = 0,
 		MEMBERS_TODAY = 0
 	where PROJECT_ID = ${1}
+go
 
 print " Insert new teams and update work for existing teams"
 go

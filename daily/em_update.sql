@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_update.sql,v 1.2 2002/01/07 23:29:30 decibel Exp $
+# $Id: em_update.sql,v 1.3 2002/01/13 19:34:03 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -11,6 +11,7 @@
 
 use stats
 set rowcount 0
+set flushmessage on
 go
 print '!! Begin e-mail ranking'
 print ' Drop indexes on Email_Rank'
@@ -48,8 +49,8 @@ insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL
 	select distinct ${1}, ect.CREDIT_ID, @stats_date, @stats_date, 0, 0, @max_rank, @max_rank, @max_rank, @max_rank
 	from Email_Contrib_Today ect, STATS_Participant sp
 	where ect.CREDIT_ID = sp.ID
-		and sp.RETIRE_TO = 0
-		and sp.LISTMODE < 10
+		and (sp.RETIRE_TO = 0 or sp.RETIRE_DATE > @stats_date)
+		and sp.LISTMODE <= 9
 		and ect.CREDIT_ID not in (select ID from Email_Rank where PROJECT_ID=${1})
 		and ect.PROJECT_ID = ${1}
 
