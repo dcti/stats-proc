@@ -1,4 +1,4 @@
--- $Id: create_id_lookup.sql,v 1.3 2002/12/21 21:13:22 joel Exp $ --
+-- $Id: create_id_lookup.sql,v 1.4 2002/12/22 21:10:06 nerf Exp $ --
 
 DROP TABLE id_lookup;
 
@@ -8,5 +8,6 @@ stats_id INT);
 
 INSERT INTO id_lookup
 SELECT email,
+	id,
 	(retire_to * (sign(retire_to)) + id * (1-sign(retire_to))) AS stats_id
 FROM import_id ;
