@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.18 2000/10/18 23:08:10 decibel Exp $
+# $Id: stats.pm,v 1.19 2000/11/24 19:02:21 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -88,15 +88,28 @@ sub DCTIeventsay {
 	my $project = shift;
 	my $message = shift;
 
-	my $iaddr = gethostbyname( $statsconf::dctievent ); 
-	my $proto = getprotobyname('tcp') || die "getproto: $!\n";
-	my $paddr = Socket::sockaddr_in($port, $iaddr);
-	socket(S, &Socket::PF_INET, &Socket::SOCK_STREAM, $proto) || die "socket: $!";
-	if(connect(S, $paddr)) {
-		print S "$password: ($statsconf::logtag/$project) $message\n";
-		close S;	
+	$SIG(ALRM) = sub { die "timeout" };
+
+	eval {
+		alarm(15);
+		my $iaddr = gethostbyname( $statsconf::dctievent ); 
+		my $proto = getprotobyname('tcp') || die "getproto: $!\n";
+		my $paddr = Socket::sockaddr_in($port, $iaddr);
+		socket(S, &Socket::PF_INET, &Socket::SOCK_STREAM, $proto) || die "socket: $!";
+		if(connect(S, $paddr)) {
+			print S "$password: ($statsconf::logtag/$project) $message\n";
+			close S;	
+		} else {
+			print "Could not reach $paddr";
+		}
+		alarm(0);
+	};
+
+	if ($@) {
+		print "Connect to $statsconf::dctievent timed out\n";
 	} else {
-		print "Could not reach $paddr";
+		alarm(0);
+		die;
 	}
 }
 
