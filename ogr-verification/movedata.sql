@@ -1,4 +1,4 @@
--- $Id: movedata.sql,v 1.18 2003/01/22 08:45:36 nerf Exp $ --
+-- $Id: movedata.sql,v 1.19 2003/01/22 17:01:50 nerf Exp $ --
 
 CREATE TEMP TABLE normal_stubs (
 	id INT,
@@ -50,4 +50,14 @@ BEGIN;
 	GROUP BY n.id, n.stub_id, n.nodecount, n.os_type, n.cpu_type, n.version;
 
 	DROP TABLE logdata;
+
+	CREATE TABLE logdata (
+	email VARCHAR(64),
+	stub_marks VARCHAR(22),
+	nodecount BIGINT,
+	os_type SMALLINT,
+	cpu_type SMALLINT,
+	version INT)
+	WITHOUT OIDS;
+
 COMMIT;
