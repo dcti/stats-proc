@@ -98,16 +98,18 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       while (<BCP>) {
 	my $buf = $_;
-        print $buf;
         chomp $buf;
 
         if ($buf =~ /(\d+) rows copied/) {
           $rows = num_format($1);
-        }
-
-	if ($buf =~ /(\d+\.\d+) rows per sec/) {
+        } elsif ($buf =~ /(\d+\.\d+) rows per sec/) {
 	  $rate = num_format($1);
+	  print "\n";
 	  stats::log($project,1,"$finalfn successfully BCP'd; $rows rows at $rate rows/second.");
+	} elsif ($buf =~ /\d+ rows sent to SQL Server./) {
+	  print ".";
+	} else {
+	  print $buf;
 	}
       }
       close BCP;
