@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.47 2000/08/16 19:44:40 nugget Exp $
+# $Id: hourly.pl,v 1.48 2000/08/16 19:54:27 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -89,7 +89,11 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
   }
 
   if( $logtoload le $datestr ) {
-    stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
+    if($qualcount == 1) {
+      stats::log($project,1,"There are $linecount logs on the master, $qualcount is new to me.  Might as well load it while I'm thinking about it.");
+    } else {
+      stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
+    }
 
     my ($yyyymmdd, $hh) = split /-/, $logtoload;
 
