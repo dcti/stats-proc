@@ -1,5 +1,5 @@
 /*
-# $Id: newjoin.sql,v 1.13.2.2 2003/04/18 22:08:14 decibel Exp $
+# $Id: newjoin.sql,v 1.13.2.3 2003/04/18 22:26:13 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -12,6 +12,7 @@
 
 -- This query will only get joins to teams (not to team 0) that have
 -- taken place on the day that we're running stats for.
+\echo Building temporary tables
 SELECT id, team_id
 	INTO TEMP newjoins
 	FROM Team_Joins tj, Project_statsrun ps
@@ -48,6 +49,7 @@ SELECT ni.effective_id, min(ni.team_id) AS team_id, sum(work_units) AS work, min
 -- Update any team0 records
 BEGIN;
 -- First, update email contrib
+    \echo Updating email_contrib
     UPDATE email_contrib
         SET team_id = ni.team_id
         FROM nj_ids ni
@@ -63,6 +65,7 @@ BEGIN;
 -- Because we decide which we're doing based on existance of a record in team_members, we have to do #2 before #1
 
 
+    \echo Updating team_members
     UPDATE team_members
         SET work_total = work_total + nw.work,
             first_date = min(first_date, nw.first),
@@ -88,6 +91,7 @@ BEGIN;
 -- Update team_rank
 -- For teams that alread have a record, we need to update first and last date, and increment the member counts
 
+    \echo Updating team_rank
     UPDATE team_rank
         SET work_total = work_total + nw.work
             , first_date = min(first_date, nw.first)
