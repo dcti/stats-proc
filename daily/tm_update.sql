@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.9 2000/11/08 17:04:03 decibel Exp $
+# $Id: tm_update.sql,v 1.10 2000/11/08 17:07:06 decibel Exp $
 
 TM_RANK
 
@@ -220,6 +220,8 @@ select tm.TEAM_ID, min(tm.FIRST_DATE) as FIRST_DATE, sum(tm.WORK_TOTAL-tm.WORK_T
 		and tmw.IS_NEW = 1
 	group by tm.TEAM_ID
 go
+
+select sum(WORK_TOTAL) from #TeamWorkUpdate
 
 update Team_Rank
 	set WORK_TOTAL = Team_Rank.WORK_TOTAL + twu.WORK_TOTAL
