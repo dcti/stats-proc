@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.19 2002/03/28 00:22:17 decibel Exp $
+# $Id: audit.sql,v 1.20 2002/03/28 02:53:01 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -187,10 +187,10 @@ go
 declare @ECsum numeric (20)
 declare @ECblcksum numeric (20)
 declare @ECteamsum numeric (20)
-select @ECsum = sum(work_units), @ECblcksum = sum( convert(int, p.LISTMODE/10) * work_units ), 
-		@ECteamsum = sum( abs(1-convert(int, p.LISTMODE/10))
-			* sign(e.TEAM_ID) * abs(1-convert(int, t.LISTMODE/10))
-			* e.WORK_UNITS ) 
+select @ECsum = sum(work_units), @ECblcksum = isnull(sum( convert(int, p.LISTMODE/10) * work_units ), 0),
+		@ECteamsum = isnull(sum( abs(1-convert(int, p.LISTMODE/10))
+			* sign(ws.TEAM_ID) * abs(1-convert(int, t.LISTMODE/10))
+			* ws.WORK_UNITS ), 0)
 	from #WorkSummary ws , STATS_Participant p, STATS_Team t
 	where ws.ID = p.ID
 		and ws.TEAM_ID *= t.TEAM
