@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.1 2000/11/08 13:10:10 decibel Exp $
+# $Id: newjoin.sql,v 1.2 2000/11/08 14:44:46 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -26,20 +26,20 @@ go
 
 -- Dont forget to check for any retired emails that have blocks on team 0
 declare ids cursor for
-	select distinct sp.id, nj.team_id
+	select distinct sp.id, sp.retire_to, nj.team_id
 	from STATS_Participant sp, #newjoins nj
 	where sp.id = nj.id
 		or (sp.retire_to = nj.id and sp.retire_to > 0)
 go
 
 begin transaction
-declare @id int, @team_id int
+declare @id int, @retire_to int, @team_id int
 declare @work numeric(20,0), @first smalldatetime, @last smalldatetime
-declare @curfirst smalldatetime, @curlast smalldatetime
+declare @eff_id, @curfirst smalldatetime, @curlast smalldatetime
 declare @update_ids int, @total_ids int, @idrows int, @total_rows int
 select @update_ids = 0, @total_ids = 0, @total_rows = 0
 open ids
-fetch ids into @id, @team_id
+fetch ids into @id, @retire_to, @team_id
 
 while (@@sqlstatus = 0)
 begin
@@ -63,9 +63,14 @@ begin
 		select @update_ids = @update_ids + 1, @idrows = @@rowcount, @total_rows = @total_rows + @@rowcount
 
 # Update Team_Members
+		if @retire_to = 0
+			select @eff_id = @id
+		else
+			select @eff_id = @retire_to
+
 		select @curfirst = FIRST_DATE, @curlast = LAST_DATE
 			from Team_Members
-			where ID = @id
+			where ID = @eff_id
 				and PROJECT_ID = ${1}
 				and TEAM_ID = @team_id
 
@@ -79,7 +84,7 @@ begin
 			set WORK_TOTAL = WORK_TOTAL + @work,
 				FIRST_DATE = @curfirst,
 				LAST_DATE = @curlast
-			where ID = @id
+			where ID = @eff_id
 				and PROJECT_ID = ${1}
 				and TEAM_ID = @team_id
 
