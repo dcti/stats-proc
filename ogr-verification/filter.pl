@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # 11/28/2002 - Joel Von Holdt for distributed.net
-# $Id: filter.pl,v 1.8 2003/01/14 03:09:49 joel Exp $
+# $Id: filter.pl,v 1.9 2003/01/22 19:31:23 nerf Exp $
 
 use strict;
 my ( $var, $fn, $fn24, $fn25, $reject, $numargs, $i );
@@ -57,7 +57,7 @@ $var = @ARGV[$i];
                         print LOG25 "$email,$stub_id,$nodecount,$os_type,$cpu_type,$version\n";
 		} else {
 			# throw this block out too.
-                       	print REJ "$email,$stub_id,$nodecount,$os_type,$cpu_type,$version\n";
+			#cmh                       	print REJ "$email,$stub_id,$nodecount,$os_type,$cpu_type,$version\n";
                        	next;
 			}
                 }
