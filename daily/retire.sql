@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.25.2.4 2003/04/27 20:53:07 decibel Exp $
+# $Id: retire.sql,v 1.25.2.5 2003/04/27 20:54:50 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -206,7 +206,7 @@ COMMIT;
 
 \echo Select IDs to remove
 SELECT DISTINCT spb.ID
-	INTO BadIDs
+	INTO TEMP BadIDs
 	FROM Team_Members tm, STATS_Participant_Blocked spb
 	WHERE tm.ID = spb.ID
 		and PROJECT_ID = :ProjectID
@@ -214,7 +214,7 @@ SELECT DISTINCT spb.ID
 
 \echo Summarize team work to be removed
 SELECT TEAM_ID, sum(WORK_TOTAL) as BAD_WORK_TOTAL
-	INTO BadWork
+	INTO TEMP BadWork
 	FROM Team_Members tm, BadIDs b
 	WHERE tm.ID = b.ID
 		and PROJECT_ID = :ProjectID
