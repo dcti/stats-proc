@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.27 2003/04/29 20:01:43 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.28 2003/04/29 21:51:20 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -251,18 +251,20 @@ insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 ;
 
 \echo Moving data from temptable to Platform_Contrib_Today
+BEGIN;
 delete from Platform_Contrib_Today
     where PROJECT_ID IN (SELECT project_id
                                                 FROM TEMP_Projects p
                                             )
 ;
+VACUUM VERBOSE ANALYZE platform_contrib_today;
 
 insert into Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
     select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
     from TEMP_Platform_Contrib_Today
     group by PROJECT_ID, CPU, OS, VER
 ;
-
+COMMIT;
 drop table TEMP_Platform_Contrib_Today
 ;
 
@@ -276,6 +278,7 @@ delete from Email_Contrib_Today
                                                 FROM TEMP_Projects p
                                             )
 ;
+VACUUM VERBOSE ANALYZE email_contrib_today;
 
 /*
 ** dy_appendday.sql depends on setting CREDIT_ID = ID
