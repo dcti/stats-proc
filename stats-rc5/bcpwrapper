@@ -1,2 +1,0 @@
-#!/bin/sh
-bcp import in $1 -ebcp_errors -SBLOWER -Ustatproc -PTR2cod# -c -t, 
