@@ -1,117 +1,77 @@
-#!/usr/bin/sqsh -i
 /*
 #
-# $Id: tm_rank.sql,v 1.23 2002/12/17 00:49:35 decibel Exp $
+# $Id: tm_rank.sql,v 1.23.2.1 2003/04/23 07:05:49 decibel Exp $
 #
-# Does the participant ranking (overall)
+# Does the team ranking
 #
 # Arguments:
 #       Project_id
 */
 
-use stats
-set rowcount 0
-set flushmessage on
-go
-print '!! Begin team ranking'
-print ' Drop indexes on Team_Rank'
-go
---drop index Team_Rank.iDAY_RANK
---drop index Team_Rank.iOVERALL_RANK
---go
+\echo !! Begin team ranking
+--\echo  Drop indexes on team_rank
+--drop index team_rank.iDAY_RANK
+--drop index team_rank.iOVERALL_RANK
+--;
 
-print ' Create rank table for today'
-go
-create table #rank_assign
-(
-	IDENT numeric(10, 0) identity,
-	TEAM_ID int,
-	WORK_UNITS numeric(20, 0)
-)
-go
-insert #rank_assign (TEAM_ID, WORK_UNITS)
-	select TEAM_ID, WORK_TODAY
-	from Team_Rank
-	where PROJECT_ID = ${1}
-	order by WORK_TODAY desc, TEAM_ID desc
-go
+\echo  Create rank table for overall
+CREATE TEMP SEQUENCE rnk_assign_overall CACHE 2000;
+SELECT work_units, min(raw_rank) AS rank INTO TEMP rank_tie_overall
+    FROM (SELECT nextval('rnk_assign_overall') AS raw_rank, work_total AS work_units
+            FROM team_rank
+            WHERE project_id = :ProjectID
+            ORDER BY work_total DESC, team_id DESC) AS raw_rank
+    GROUP BY work_units
+;
 
-create table #rank_tie_today
-(
-	WORK_UNITS numeric(20, 0),
-	rank int
-)
-go
-insert #rank_tie_today
-	select WORK_UNITS, min(IDENT)
-	from #rank_assign
-	group by WORK_UNITS
-go
+\echo    Index on work_units
+CREATE UNIQUE INDEX work_units_overall ON rank_tie_overall(work_units)
+;
 
-drop table #rank_assign
-create clustered index iWORK_UNITS on #rank_tie_today(WORK_UNITS)
-go
+\echo  Create rank table for today
+CREATE TEMP SEQUENCE rnk_assign_today CACHE 2000;
+SELECT work_units, min(raw_rank) AS rank INTO TEMP rank_tie_today
+    FROM (SELECT nextval('rnk_assign_today') AS raw_rank, work_today AS work_units
+            FROM team_rank
+            WHERE project_id = :ProjectID
+            ORDER BY work_today DESC, team_id DESC) AS raw_rank
+    GROUP BY work_units
+;
 
-print ' Create rank table for overall'
-create table #rank_assign
-(
-	IDENT numeric(10, 0) identity,
-	TEAM_ID int,
-	WORK_UNITS numeric(20, 0)
-)
-go
-insert #rank_assign (TEAM_ID, WORK_UNITS)
-	select TEAM_ID, WORK_TOTAL
-	from Team_Rank
-	where PROJECT_ID = ${1}
-	order by WORK_TOTAL desc, TEAM_ID desc
+\echo    Index on work_units
+CREATE UNIQUE INDEX work_units_today ON rank_tie_today(work_units)
+;
 
-create table #rank_tie_overall
-(
-	WORK_UNITS numeric(20, 0),
-	rank int
-)
-go
-insert #rank_tie_overall
-	select WORK_UNITS, min(IDENT)
-	from #rank_assign
-	group by WORK_UNITS
-go
+\echo  Update team_rank with new rankings
+BEGIN;
+    UPDATE team_rank
+        SET overall_rank = o.rank, day_rank = d.rank
+        FROM rank_tie_overall o, rank_tie_today d
+        WHERE team_rank.work_today = d.work_units
+            AND team_rank.work_total = o.work_units
+            AND team_rank.project_id = :ProjectID
+    ;
 
-drop table #rank_assign
-create clustered index iWORK_UNITS on #rank_tie_overall(WORK_UNITS)
-go
+    \echo  set previous rank = current rank for new participants
+    
+    UPDATE team_rank
+        SET day_rank_previous = day_rank,
+            overall_rank_previous = overall_rank
+        FROM project_statsrun ps
+        WHERE team_rank.project_id = :ProjectID
+            AND team_rank.project_id = ps.project_id
+            AND ps.project_id = :ProjectID
+            AND first_date = ps.last_date
+    ;
 
-print ' Update Team_Rank with new rankings'
-update Team_Rank
-	set OVERALL_RANK = o.rank, DAY_RANK = isnull(d.rank, Team_Rank.DAY_RANK)
-	from #rank_tie_overall o, #rank_tie_today d
-	where Team_Rank.WORK_TODAY *= d.WORK_UNITS
-		and Team_Rank.WORK_TOTAL = o.WORK_UNITS
-		and Team_Rank.PROJECT_ID = ${1}
-go
+    SELECT stats_set_last_update(:ProjectID, 't', stats_get_last_update(:ProjectID, 's'));
+COMMIT;
 
-print ' set previous rank = current rank for new participants'
-go
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
-update	Team_Rank
-	set DAY_RANK_PREVIOUS = DAY_RANK,
-		OVERALL_RANK_PREVIOUS = OVERALL_RANK
-	where PROJECT_ID = ${1}
-		and FIRST_DATE = @stats_date
-
-exec p_set_lastupdate_t ${1}, @stats_date
-go
-
---print ' update statistics'
---go
---update statistics Team_Rank
---go
---print ' Rebuild indexes on Team_Rank'
---create index iDAY_RANK on Team_Rank(PROJECT_ID, DAY_RANK)
---create index iOVERALL_RANK on Team_Rank(PROJECT_ID, OVERALL_RANK)
---go
+--\echo  update statistics
+--;
+--update statistics team_rank
+--;
+--\echo  Rebuild indexes on team_rank
+--create index iDAY_RANK on team_rank(PROJECT_ID, DAY_RANK)
+--create index iOVERALL_RANK on team_rank(PROJECT_ID, OVERALL_RANK)
+--;
