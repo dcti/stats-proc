@@ -1,4 +1,4 @@
--- $Id: create_id_import.sql,v 1.4 2002/12/22 22:48:35 nerf Exp $ --
+-- $Id: create_id_import.sql,v 1.5 2002/12/23 01:35:30 joel Exp $ --
 
 DROP TABLE import_id;
 
