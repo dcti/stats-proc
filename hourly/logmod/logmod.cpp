@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.9 2003/08/25 19:25:39 decibel Exp $
+ * $Id: logmod.cpp,v 1.10 2003/08/25 19:27:54 decibel Exp $
  */
 
 #include <assert.h>
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
         // this is the start of the email address
         char *email = p;
 
-        // 08/23/03 12:35:26,195.243.80.240,moo@web.de,CA:601D239C:00000000,1,27,2,90050484,7,CA:601D239C:039A1A18,1,1
+        // 08/23/03 12:35:26,127.0.0.1,moo@web.de,CA:601D239C:00000000,1,27,2,90050484,7,CA:601D239C:039A1A18,1,1
 
         // count the number of trailing fields
         // if it is sensible, use sane logic otherwise fall back to backscanning
