@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.29 2002/04/12 22:33:59 decibel Exp $
+# $Id: audit.sql,v 1.30 2002/04/12 22:39:38 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -274,10 +274,10 @@ update	#audit
 		from Email_Contrib e, STATS_Participant p, STATS_Participant_Blocked spb
 		where PROJECT_ID = ${1}
 			and e.DATE = @proj_date
-			and e.ID = p.RETIRE_TO
+			and e.ID = p.ID
 			and p.RETIRE_TO > 0
 			and (p.RETIRE_DATE <= @proj_date or p.RETIRE_DATE is null)
-			and spb.ID = p.ID
+			and spb.ID = p.RETIRE_TO
 		)
 
 select ECblcksumtdy from #audit
