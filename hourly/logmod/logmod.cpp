@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.2 2002/03/28 06:00:01 gregh Exp $
+ * $Id: logmod.cpp,v 1.3 2002/03/28 06:38:15 gregh Exp $
  */
 
 #include <stdio.h>
@@ -19,7 +19,7 @@ void usage()
     exit(1);
 }
 
-void error(int line, char *buf, int len)
+void error(int line, const char *msg, char *buf, int len)
 {
     for (int i = 0; i < len; i++) {
         if (buf[i] == 0) {
@@ -27,7 +27,7 @@ void error(int line, char *buf, int len)
         }
     }
     buf[len] = 0;
-    fprintf(stderr, "BADLOG: line %d: %s\n", line, buf);
+    fprintf(stderr, "BADLOG: line %d: (%s) %s\n", line, msg, buf);
 }
 
 inline char *charfwd(char *p, char c)
@@ -85,14 +85,14 @@ int main(int argc, char *argv[])
         }
         p = charfwd(p, ',');
         if (p == NULL) {
-            error(line, buf, len);
+            error(line, "no comma after date", buf, len);
             goto next;
         }
         p++;
         // next field is ip address which we don't care about
         p = charfwd(p, ',');
         if (p == NULL) {
-            error(line, buf, len);
+            error(line, "no comma after ip", buf, len);
             goto next;
         }
         *p = 0;
@@ -105,9 +105,10 @@ int main(int argc, char *argv[])
             q--;
         }
         *q = 0;
+        len--;
         char *endfieldptrs[5]; // up to 5 numeric fields at the end
         int endfields = 0;
-        while (endfields < 5) {
+        while (endfields < (project == OGR ? 5 : 4)) {
             q--;
             if (!isdigit(*q)) {
                 if (*q == ',') {
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
         }
         char *size, *os, *cpu, *version, *status;
         if (endfields < 4) {
-            error(line, buf, len);
+            error(line, "less than 4 numeric fields at end", buf, len);
             goto next;
         } else if (endfields == 4) {
             size    = endfieldptrs[3];
@@ -137,13 +138,13 @@ int main(int argc, char *argv[])
         }
         int nstatus = atoi(status);
         if (nstatus != 0 && nstatus != 2) {
-            error(line, buf, len);
+            error(line, "status not in {0,2}", buf, len);
             goto next;
         }
         q--;
         q = charrev(q, ',');
         if (q == NULL) {
-            error(line, buf, len);
+            error(line, "could not back up to workunit id", buf, len);
             goto next;
         }
         char *projectid;
