@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.21 2000/10/04 15:46:08 decibel Exp $
+# $Id: daily.pl,v 1.22 2000/10/04 15:55:04 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -23,7 +23,7 @@ my $respawn = 0;
 
 my $workdir = "./workdir/";
 if(! -d $workdir) {
-  stats::log("stats",131,"Hey! Someone needs to mkdir $workdir!")
+  stats::log("stats",131,"Hey! Someone needs to mkdir $workdir!");
   die;
 }
 if(!$ARGV[0]) {
