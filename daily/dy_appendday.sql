@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.15 2000/11/08 11:51:17 decibel Exp $
+# $Id: dy_appendday.sql,v 1.16 2000/11/08 13:10:10 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -69,55 +69,3 @@ insert into Platform_Contrib (DATE, PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	where PROJECT_ID = ${1}
 	/* Group by is unnecessary, data is already summarized */
 go
-
-print ":: Assigning old work to current team"
-go
-
-#-- This query will only get joins to teams (not to team 0) that have
-#-- taken place on the day that we're running stats for.
-declare @proj_date smalldatetime
-select @proj_date = LAST_STATS_DATE
-	from Projects
-	where PROJECT_ID = ${1}
-
-select id, team_id
-	into #newjoins
-	from Team_Joins
-	where JOIN_DATE = @proj_date
-		and (LAST_DATE = NULL or LAST_DATE >= @proj_date)
-go
-
--- Dont forget to check for any retired emails that have blocks on team 0
-declare ids cursor for
-	select distinct sp.id, nj.team_id
-	from STATS_Participant sp, #newjoins nj
-	where sp.id = nj.id
-		or (sp.retire_to = nj.id and sp.retire_to > 0)
-go
-
-declare @id int, @team_id int
-declare @totalids int, @idrows int, @totalrows int
-select @totalids = 0, @totalrows = 0
-open ids
-fetch ids into @id, @team_id
-
-while (@@sqlstatus = 0)
-begin
-	update Email_Contrib set Email_Contrib.TEAM_ID = @team_id
-		where Email_Contrib.ID = @id
-			and Email_Contrib.PROJECT_ID = ${1}
-			and Email_Contrib.TEAM_ID = 0
-
-	select @totalids = @totalids + 1, @idrows = @@rowcount, @totalrows = @totalrows + @@rowcount
-	print "  %1! rows processed for ID %2!, TEAM_ID %3!", @idrows, @id, @team_id
-
-	fetch ids into @id, @team_id
-end
-
-if (@@sqlstatus = 1)
-	print "ERROR! Cursor returned an error"
-
-close ids
-deallocate cursor ids
-print "%1! IDs processed; %2! rows total", @totalids, @totalrows
-go -f
