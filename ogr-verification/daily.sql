@@ -1,4 +1,4 @@
--- $Id: daily.sql,v 1.3 2002/12/21 21:13:22 joel Exp $ --
+-- $Id: daily.sql,v 1.4 2002/12/23 16:42:08 bwilson Exp $ --
 
 --Create the logdata table and fill it with filtered(filter.pl) data. (addlog.sql)
 DROP TABLE logdata;
@@ -58,5 +58,5 @@ participants INTEGER);
 INSERT INTO donestubs
 SELECT DISTINCT stub_id, nodecount, (select count(distinct p.stats_id)
 FROM stubs B, id_lookup p
-WHERE p.email = B.email AND B.nodecount = A.nodecount) AS participants
+WHERE p.email = B.email AND B.nodecount = A.nodecount and B.stub_id = A.stub_id) AS participants
 from stubs A;
