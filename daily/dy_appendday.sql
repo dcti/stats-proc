@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.14 2000/11/08 11:40:33 decibel Exp $
+# $Id: dy_appendday.sql,v 1.15 2000/11/08 11:51:17 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -103,7 +103,7 @@ fetch ids into @id, @team_id
 
 while (@@sqlstatus = 0)
 begin
-	update Email_Contrib set Email_Contrib.team = @team_id
+	update Email_Contrib set Email_Contrib.TEAM_ID = @team_id
 		where Email_Contrib.ID = @id
 			and Email_Contrib.PROJECT_ID = ${1}
 			and Email_Contrib.TEAM_ID = 0
