@@ -1,11 +1,11 @@
 #!/bin/sh
-# $Id: daily.sh,v 1.11 2003/02/16 19:22:14 nerf Exp $
+# $Id: daily.sh,v 1.12 2003/02/23 00:44:55 nerf Exp $
 
-USER = $1
-PASSWD = $2
+SQLUSER=$1
+SQLPASSWD=$2
 
-sh get_idlookup.sh $USER $PASSWD &&
-psql ogr -a -U $USER -f create_id_lookup.sql &&
-rm -f /tmp/id_lookup.out &&
-psql ogr -a -U $USER -f movedata.sql &&
-psql ogr -a -U $USER -f summarize.sql &&
+sh get_idlookup.sh $SQLUSER $SQLPASSWD &&
+psql ogr -a -U $SQLUSER -f create_id_lookup.sql &&
+rm -f /tmp/id_import.out
+psql ogr -a -U $SQLUSER -f movedata.sql &&
+psql ogr -a -U $SQLUSER -f summarize.sql &&

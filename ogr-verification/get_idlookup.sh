@@ -1,18 +1,18 @@
 #! /bin/sh
-# $Id: get_idlookup.sh,v 1.1 2003/02/16 22:56:04 nerf Exp $
+# $Id: get_idlookup.sh,v 1.2 2003/02/23 00:44:55 nerf Exp $
 
 TABLE=Nerf_id_lookup
 FILENAME=/tmp/id_import.out
 BCP=/usr/local/sybase/bin/bcp
-USER=$1
-PASSWORD=$2
+SQLUSER=$1
+SQLPASSWD=$2
 
-if [ ${PASSWORD}foo = foo ]; then
-  echo "Not enough paramaters"
+if [ ${SQLPASSWD}foo = foo ]; then
+  echo "$0: Not enough paramaters"
   exit 2
 fi
 
-sqsh -SBLOWER -U ${USER} -P ${PASSWORD} -D stats << EOF
+sqsh -SBLOWER -U ${SQLUSER} -P ${SQLPASSWD} -D stats << EOF
 	DELETE FROM ${TABLE};
 	INSERT INTO ${TABLE}
 	SELECT email, id,
@@ -22,7 +22,7 @@ sqsh -SBLOWER -U ${USER} -P ${PASSWORD} -D stats << EOF
 EOF
 
 rm -f ${FILENAME}
-${BCP} stats.dbo.${TABLE} out ${FILENAME} -c -S BLOWER -U ${USER} -P ${PASSWORD}
+${BCP} stats.dbo.${TABLE} out ${FILENAME} -c -S BLOWER -U ${SQLUSER} -P ${SQLPASSWD}
 sed -e 's/\\/\\\\/g' < ${FILENAME} > ${FILENAME}.new &&
    mv ${FILENAME}.new ${FILENAME}
 chmod 644 ${FILENAME}
