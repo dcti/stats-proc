@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.9 2000/07/25 00:30:42 decibel Exp $
+# $Id: retire.sql,v 1.10 2000/08/04 14:55:31 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -61,6 +61,7 @@ delete Email_Rank
 delete #NewRetiresER
 	from Email_Rank er
 	where #NewRetiresER.RETIRE_TO = er.ID
+		and er.PROJECT_ID = ${1}
 
 insert into Email_Rank(PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
 	select ${1}, RETIRE_TO, FIRST_DATE, LAST_DATE, WORK_TOTAL
@@ -121,6 +122,7 @@ delete #NewRetiresTM
 	from Team_Members tm
 	where #NewRetiresTM.RETIRE_TO = tm.ID
 		and #NewRetiresTM.TEAM_ID = tm.TEAM_ID
+		and tm.PROJECT_ID = ${1}
 
 insert into Team_Members(PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
 	select ${1}, RETIRE_TO, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TOTAL

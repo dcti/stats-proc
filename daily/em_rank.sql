@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_rank.sql,v 1.7 2000/08/04 04:32:41 decibel Exp $
+# $Id: em_rank.sql,v 1.8 2000/08/04 14:55:31 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -102,8 +102,10 @@ insert #rank_assign (ID, WORK_UNITS)
 	from Email_Rank
 	where PROJECT_ID = ${1}
 	order by WORK_TODAY desc, ID desc
+go
 
 create clustered index iWORK_UNITS on #rank_assign(WORK_UNITS)
+go
 
 create table #rank_tie
 (
@@ -115,6 +117,10 @@ insert #rank_tie
 	select WORK_UNITS, min(IDENT)
 	from #rank_assign
 	group by WORK_UNITS
+go
+
+create clustered index iWORK_UNITS on #rank_tie(WORK_UNITS)
+go
 
 update Email_Rank
 	set DAY_RANK = #rank_tie.rank
