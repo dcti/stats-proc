@@ -1,11 +1,13 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: backup.sql,v 1.10 2000/10/26 20:53:31 decibel Exp $
+# $Id: backup.sql,v 1.11 2000/10/28 00:14:31 decibel Exp $
 #
 # Makes backup copies of Email_Rank, Team_Rank, and Team_Members
 # Arguments:
 #	Project
 
+set statistics io on
+set statistics time on
 print "Deleting old data and any previous data for today."
 go
 declare @stats_date smalldatetime
