@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_dailyblocks.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: dy_dailyblocks.sql,v 1.2 2000/02/29 16:22:27 bwilson Exp $
 #
 # Inserts the daily totals
 #
@@ -8,19 +8,19 @@
 #       Project
 
 insert into ${1}_dailies (date, blocks,
-                           participants, top_oparticipant, top_opblocks, top_yparticipant, top_ypblocks,
-                           teams, top_oteam, top_otblocks, top_yteam, top_ytblocks)
-select 
+                           participants, TOP_oparticipant, TOP_OPWORK, TOP_YPARTICIPANT, TOP_YPWORK,
+                           teams, TOP_OTEAM, TOP_OTWORK, TOP_yteam, TOP_YTWORK)
+select
   (select max(date) from ${1}_master) as date,
   (select sum(blocks) from ${1}_master where date = (select max(date) from ${1}_master)) as blocks,
   (select count(*) from ${1}_master where date = (select max(date) from ${1}_master)) as participants,
-  (select id from stats.statproc.${1}_CACHE_em_RANK where Rank = 1) as top_oparticpant,
-  (select blocks from stats.statproc.${1}_CACHE_em_RANK where Rank = 1) as top_opblocks,
-  (select id from stats.statproc.${1}_CACHE_em_YRANK where Rank = 1) as top_yparticpant,
-  (select blocks from stats.statproc.${1}_CACHE_em_YRANK where Rank = 1) as top_ypblocks,
+  (select id from stats.statproc.${1}_CACHE_em_RANK where Rank = 1) as TOP_oparticpant,
+  (select blocks from stats.statproc.${1}_CACHE_em_RANK where Rank = 1) as TOP_OPWORK,
+  (select id from stats.statproc.${1}_CACHE_em_YRANK where Rank = 1) as TOP_yparticpant,
+  (select blocks from stats.statproc.${1}_CACHE_em_YRANK where Rank = 1) as TOP_YPWORK,
   (select count(team) from stats.statproc.${1}_CACHE_tm_YRANK) as teams,
-  (select team from stats.statproc.${1}_CACHE_tm_RANK where Rank = 1) as top_oteam,
-  (select blocks from stats.statproc.${1}_CACHE_tm_RANK where Rank = 1) as top_otblocks,
-  (select team from stats.statproc.${1}_CACHE_tm_YRANK where Rank = 1) as top_yteam,
-  (select blocks from stats.statproc.${1}_CACHE_tm_YRANK where Rank = 1) as top_ytblocks
+  (select team from stats.statproc.${1}_CACHE_tm_RANK where Rank = 1) as TOP_OTEAM,
+  (select blocks from stats.statproc.${1}_CACHE_tm_RANK where Rank = 1) as TOP_OTWORK,
+  (select team from stats.statproc.${1}_CACHE_tm_YRANK where Rank = 1) as TOP_yteam,
+  (select blocks from stats.statproc.${1}_CACHE_tm_YRANK where Rank = 1) as TOP_YTWORK
 go

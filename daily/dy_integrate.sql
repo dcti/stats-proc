@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_integrate.sql,v 1.3 2000/02/21 03:47:06 bwilson Exp $
+# $Id: dy_integrate.sql,v 1.4 2000/02/29 16:22:27 bwilson Exp $
 #
 # Move data from the import table to the daytables
 #
@@ -43,6 +43,14 @@ update ${1}_import
 	where substring(email, charindex('@', email) + 1, 64) like '%@%'
 go
 
+/*
+Assign contest id
+	Insert in holding table, or set bit or date field in STATS_Participant
+	seqn, id, request_source, date_requested, date_sent
+daytable contains id instead of email
+password assign automatic
+*/
+
 declare @proj_id tinyint
 
 select @proj_id = PROJECT_ID
@@ -52,12 +60,12 @@ select @proj_id = PROJECT_ID
 insert into ${1}_daytable_master (timestamp, PROJECT_ID, email, size)
 select convert(varchar, timestamp, 112) as timestamp, @proj_id, email, sum(size) as size
 from ${1}_import
-group by convert(varchar, timestamp, 112), email
+group by convert(varchar, timestamp, 112), @proj_id, email
 
 insert into ${1}_daytable_platform (timestamp, PROJECT_ID, cpu, os, ver, size)
 select convert(varchar, timestamp, 112) as timestamp, @proj_id, cpu, os, ver, sum(size) as size
 from ${1}_import
-group by convert(varchar, timestamp, 112), cpu, os, ver
+group by convert(varchar, timestamp, 112), @proj_id, cpu, os, ver
 go
 
 delete ${1}_import where 1 = 1

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dp_newjoin.sql,v 1.2 2000/02/21 03:47:06 bwilson Exp $
+# $Id: dp_newjoin.sql,v 1.3 2000/02/29 16:22:27 bwilson Exp $
 #
 # Does team joins for past blocks
 #
@@ -12,5 +12,5 @@ update ${1}_master
 	from STATS_Participant
 	where STATS_Participant.id = ${1}_master.id
 		and ${1}_master.team = 0 and
-      		STATS_participant.team <> 0
+      		STATS_participant.team > 0
 go
