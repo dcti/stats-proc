@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.69 2000/09/22 02:32:10 decibel Exp $
+# $Id: hourly.pl,v 1.70 2000/10/04 07:06:10 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -124,12 +124,16 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
     my $lastday = stats::lastday($project);
     chomp $lastday;
 
-    my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
-    my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
-
-    if ( $lasttime != ($logtime - 86400)) {
-      stats::log($project,131,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
-      die;
+    if ($lastday = "") {
+      stats::log($project,131,"Warning: It appears that there has never been a daily run for this project.");
+    } else {
+      my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
+      my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
+  
+      if ( $lasttime != ($logtime - 86400)) {
+        stats::log($project,131,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
+        die;
+      }
     }
 
     if($qualcount > 1) {
