@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.15 2000/09/13 07:43:22 decibel Exp $
+# $Id: stats.pm,v 1.16 2000/09/13 07:45:17 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -43,8 +43,8 @@ sub log {
 		print LOGFILE $ts," ",@par,"\n";
 		close LOGFILE;
 	} else {
-		print "Unable to open $logdir$project.log !";
-		print STDERR "Unable to open $logdir$project.log !";
+		print "Unable to open [$logdir$project.log]!\n";
+		print STDERR "Unable to open [$logdir$project.log]!\n";
 	}
 
 	if ($dest & 64) {
