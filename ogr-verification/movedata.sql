@@ -1,4 +1,4 @@
--- $Id: movedata.sql,v 1.25 2003/04/07 01:11:37 nerf Exp $
+-- $Id: movedata.sql,v 1.26 2003/04/25 21:11:38 nerf Exp $
 
 select now();
 
@@ -44,6 +44,7 @@ select now();
 
 CREATE UNIQUE INDEX dayresults_all ON day_results
 	(id,stub_id,nodecount,platform_id);
+analyze day_results;
 
 UPDATE day_results
 SET in_results = true
@@ -56,6 +57,7 @@ select now();
 
 CREATE unique INDEX dayresults_all_count ON day_results
 	(id,stub_id,nodecount,platform_id,return_count) WHERE in_results = false;
+analyze day_results;
 
 BEGIN;
 
