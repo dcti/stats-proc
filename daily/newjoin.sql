@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.4 2000/11/08 15:00:26 decibel Exp $
+# $Id: newjoin.sql,v 1.5 2000/11/08 17:34:02 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -69,44 +69,71 @@ begin
 		else
 			select @eff_id = @retire_to
 
-		select @curfirst = FIRST_DATE, @curlast = LAST_DATE
-			from Team_Members
-			where ID = @eff_id
-				and PROJECT_ID = ${1}
-				and TEAM_ID = @team_id
+		if exists (select * from Team_Members where ID = @eff_id and PROJECT_ID = ${1} and TEAM_ID = @team_id)
+		begin
+			select @curfirst = FIRST_DATE, @curlast = LAST_DATE
+				from Team_Members
+				where ID = @eff_id
+					and PROJECT_ID = ${1}
+					and TEAM_ID = @team_id
+	
+			-- See if we need to update first and last dates
+			if @curfirst > @first
+				select @curfirst = @first
+			if @curlast < @last
+				select @curlast = @last
 
-		-- See if we need to update first and last dates
-		if @curfirst > @first
-			select @curfirst = @first
-		if @curlast < @last
-			select @curlast = @first
-
-		update Team_Members
-			set WORK_TOTAL = WORK_TOTAL + @work,
-				FIRST_DATE = @curfirst,
-				LAST_DATE = @curlast
-			where ID = @eff_id
-				and PROJECT_ID = ${1}
-				and TEAM_ID = @team_id
-
+			update Team_Members
+				set WORK_TOTAL = WORK_TOTAL + @work,
+					FIRST_DATE = @curfirst,
+					LAST_DATE = @curlast
+				where ID = @eff_id
+					and PROJECT_ID = ${1}
+					and TEAM_ID = @team_id
+		end
+		else
+		begin
+			insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
+					DAY_RANK, DAY_RANK_PREVIOUS,
+					OVERALL_RANK, OVERALL_RANK_PREVIOUS)
+				values ( ${1}, @eff_id, @team_id, @first, @last, 0, @work,
+					(select count(*) from Team_Members where PROJECT_ID = ${1} and TEAM_ID = @team_id), 0,
+					(select min(OVERALL_RANK) - 1 from Team_Members
+						where PROJECT_ID = ${1} and TEAM_ID = @team_id and WORK_TOTAL < @work), 0 )
+		end
 # Update Team_Rank
-		select @curfirst = FIRST_DATE, @curlast = LAST_DATE
-			from Team_Rank
-			where PROJECT_ID = ${1}
-				and TEAM_ID = @team_id
-
-		-- See if we need to update first and last dates
-		if @curfirst > @first
-			select @curfirst = @first
-		if @curlast < @last
-			select @curlast = @first
-
-		update Team_Rank
-			set WORK_TOTAL = WORK_TOTAL + @work,
-				FIRST_DATE = @curfirst,
-				LAST_DATE = @curlast
-			where PROJECT_ID = ${1}
-				and TEAM_ID = @team_id
+		if exists (select * from Team_Rank where PROJECT_ID = ${1} and TEAM_ID = @team_id)
+		begin
+			select @curfirst = FIRST_DATE, @curlast = LAST_DATE
+				from Team_Rank
+				where PROJECT_ID = ${1}
+					and TEAM_ID = @team_id
+	
+			-- See if we need to update first and last dates
+			if @curfirst > @first
+				select @curfirst = @first
+			if @curlast < @last
+				select @curlast = @first
+	
+			update Team_Rank
+				set WORK_TOTAL = WORK_TOTAL + @work,
+					FIRST_DATE = @curfirst,
+					LAST_DATE = @curlast,
+					MEMBERS_OVERALL = MEMBERS_OVERALL + 1,
+					MEMBERS_CURRENT = MEMBERS_CURRENT + 1
+				where PROJECT_ID = ${1}
+					and TEAM_ID = @team_id
+		end
+		else
+		begin
+			insert Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
+					DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS,
+					MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
+			values ( ${1}, @team_id, @first, @last, 0, @work,
+				(select count(*) + 1 from Team_Rank where PROJECT_ID = ${1}), 0,
+				(select min(OVERALL_RANK) - 1 from Team_Rank
+					where PROJECT_ID = ${1} and WORK_TOTAL < @work), 0, 0, 1, 1)
+		end
 
 		print "  %1! rows processed for ID %2!, TEAM_ID %3!", @idrows, @id, @team_id
 	end
