@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.28 2002/10/23 02:23:03 decibel Exp $
+# $Id: stats.pm,v 1.28.2.1 2003/03/23 23:16:00 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -166,11 +166,11 @@ sub lastlog {
   my ($f_project, $f_action) = @_;
 
   if( $f_action =~ /get/i) {
-    $_ = `cat ~/var/lastlog.$f_project`;
+    $_ = `cat ~/postgresql/var/lastlog.$f_project`;
     chomp;
     return $_;
   } else {
-    return `echo $f_action > ~/var/lastlog.$f_project`;
+    return `echo $f_action > ~/postgresql/var/lastlog.$f_project`;
   }
 }
 
