@@ -1,6 +1,23 @@
+/*
+ * Format log file entries
+ *
+ * $Id: logmod.cpp,v 1.2 2002/03/28 06:00:01 gregh Exp $
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+
+enum Project {
+    RC5,
+    OGR
+};
+
+void usage()
+{
+    fprintf(stderr, "Usage: logmod [-rc5 | -ogr]\n");
+    exit(1);
+}
 
 void error(int line, char *buf, int len)
 {
@@ -35,8 +52,20 @@ inline char *charrev(char *p, char c)
     return p;
 }
 
-int main(int, char *[])
+int main(int argc, char *argv[])
 {
+    if (argc < 2) {
+        usage();
+    }
+    Project project;
+    if (strcmp(argv[1], "-rc5") == 0) {
+        project = RC5;
+    } else if (strcmp(argv[1], "-ogr") == 0) {
+        project = OGR;
+    } else {
+        usage();
+    }
+
     char buf[256];
     int line = 1;
     while (fgets(buf, sizeof(buf), stdin) != NULL) {
@@ -117,10 +146,18 @@ int main(int, char *[])
             error(line, buf, len);
             goto next;
         }
-        char *projectid = q+1;
-        projectid[2] = 0;
-        if (atoi(projectid) == 26) {
-            projectid = "25";
+        char *projectid;
+        switch (project) {
+        case RC5:
+            projectid = "5";
+            break;
+        case OGR:
+            projectid = q+1;
+            projectid[2] = 0;
+            if (atoi(projectid) == 26) {
+                projectid = "25";
+            }
+            break;
         }
         *q = 0;
         p = email;
