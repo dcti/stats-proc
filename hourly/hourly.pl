@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.76 2000/10/25 23:42:05 decibel Exp $
+# $Id: hourly.pl,v 1.77 2000/10/25 23:52:51 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -192,7 +192,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       my $bcprows = 0;
       my $rate = 0;
-      $| = 1;	// Unbuffered output
+      $| = 1;	# Unbuffered output
 
       while (<BCP>) {
 	my $buf = $_;
