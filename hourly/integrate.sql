@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.16 2003/04/20 22:07:21 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.17 2003/04/23 20:04:13 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -71,7 +71,10 @@ insert into Project_statsrun (PROJECT_ID)
 update Project_statsrun
 	set LAST_DATE = coalesce(p.STATS_DATE, LAST_DATE),
 		LOGS_FOR_DAY = LOGS_FOR_DAY + 1,
-		WORK_FOR_DAY = WORK_FOR_DAY + p.TOTAL_WORK
+		WORK_FOR_DAY = WORK_FOR_DAY + p.TOTAL_WORK * (select WORK_UNIT_IMPORT_MULTIPLIER
+								from Projects p
+								where p.PROJECT_ID = i.PROJECT_ID
+								)
 	from TEMP_Projects p
 	where Project_statsrun.PROJECT_ID = p.PROJECT_ID
 ;
