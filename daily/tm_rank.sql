@@ -1,6 +1,6 @@
 /*
 #
-# $Id: tm_rank.sql,v 1.23.2.3 2003/05/10 13:56:12 decibel Exp $
+# $Id: tm_rank.sql,v 1.23.2.4 2003/05/16 03:57:46 decibel Exp $
 #
 # Does the team ranking
 #
@@ -19,10 +19,10 @@
 CREATE TEMP SEQUENCE rnk_assign_overall CACHE 2000;
 CREATE TEMP TABLE Trank_work_overall AS
     SELECT nextval('rnk_assign_overall') AS raw_rank, work_units
-                FROM (SELECT work_overall AS work_units
+                FROM (SELECT work_total AS work_units
                             FROM team_rank
                             WHERE project_id = :ProjectID
-                            ORDER BY work_overall DESC
+                            ORDER BY work_total DESC
                         ) AS raw_work
 ;
 SELECT work_units, min(raw_rank) AS rank INTO TEMP rank_tie_overall

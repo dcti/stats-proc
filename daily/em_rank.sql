@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_rank.sql,v 1.22.2.4 2003/05/10 13:56:12 decibel Exp $
+# $Id: em_rank.sql,v 1.22.2.5 2003/05/16 03:54:01 decibel Exp $
 #
 # Does the participant ranking
 #
@@ -19,10 +19,10 @@
 CREATE TEMP SEQUENCE rnk_assign_overall CACHE 2000;
 CREATE TEMP TABLE Trank_work_overall AS
     SELECT nextval('rnk_assign_overall') AS raw_rank, work_units
-                FROM (SELECT work_overall AS work_units
+                FROM (SELECT work_total AS work_units
                             FROM email_rank
                             WHERE project_id = :ProjectID
-                            ORDER BY work_overall DESC
+                            ORDER BY work_total DESC
                         ) AS raw_work
 ;
 SELECT work_units, min(raw_rank) AS rank INTO TEMP rank_tie_overall
