@@ -1,15 +1,11 @@
-#!/usr/bin/perl -Tw
+#!/usr/bin/perl -Tw -I../global
 #
-# $Id: daily.pl,v 1.3 2000/04/13 14:58:16 bwilson Exp $
+# $Id: daily.pl,v 1.4 2000/06/22 21:36:21 nugget Exp $
 #
 die;
 use strict
 $ENV{PATH} = '/usr/local/sybase/bin:/usr/local/bin:/usr/bin:/bin';
 use stats;
-
-my $sqllogin = "-Ustatproc";
-my $sqlpasswd = "-PPASSWORD";
-my $sqlserver = "-STALLY";
 
 my $project = "OGR";
 my $incoming = $stats::incoming{$project};
@@ -124,7 +120,7 @@ if ("$insort[0]" =~ m/^$project(\d\d\d\d\d\d\d\d)/ ) {
       }
       $retcode = system "sqsh -i clearimport.sql $project";
       # bcp cimport in $1 -ebcp_errors -STALLY -Ustatproc -PPASSWORD -c -t,
-      $retcode = system "bcp", "$project" . "_import", "in", $unzipfn, "-ebcp_errors", $sqlserver, $sqllogin, $sqlpasswd, "-c", "-t,";
+      $retcode = system "bcp", "$project" . "_import", "in", $unzipfn, "-ebcp_errors", "-S$stats::sqlserver", "-U$stats::sqllogin", "-P$stats::sqlpasswd", "-c", "-t,";
       if ( $retcode > 0 ) {
         stats::log($project,139,"BCP Failed!");
         die;
