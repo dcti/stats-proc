@@ -1,12 +1,7 @@
-#!/usr/bin/perl -w 
+#!/usr/bin/perl -Tw -I../global
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
 use stats;
-
-# Don't know if this is the best place for this stuff to live
-my $sqllogin = "-Ustatproc";
-my $sqlpasswd = "-PPASSWORD";
-my $sqlserver = "-STALLY";
 
 my $yyyy = (gmtime(time-3600))[5]+1900;
 my $mm = (gmtime(time-3600))[4]+1;
@@ -52,7 +47,6 @@ for (my $i = 0; $i < @projectlist; $i++) {
   my $qualcount = 0;
 
   while (<LS>) {
-    print $_;
     if( $_ =~ /.*\/$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
       my $lastdate = $1;
 
@@ -108,7 +102,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
         stats::log($project,1,"$basefn successfully filtered through $prefilter[$i].");
       }
 
-      open BCP, "bcp import_bcp in $finalfn -ebcp_errors $sqlserver $sqllogin $sqlpasswd -c -t, 2> /dev/stderr |";
+      open BCP, "bcp import_bcp in $finalfn -ebcp_errors -S$stats::sqlserver -U$stats::sqllogin -P$stats::sqlpasswd -c -t, 2> /dev/stderr |";
 
       my $rows = 0;
       my $rate = 0;
@@ -130,7 +124,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
       close BCP;
 
       # call bruce's code here
-      #open SQL, "sqsh $sqlserver $sqllogin $sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
+      #open SQL, "sqsh -S$stats::sqlserver -U$stats::sqllogin -P$stats::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
       #  while (<SQL>) {
       #  print $_;
       #}
