@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.14 2000/10/29 09:34:43 decibel Exp $
+# $Id: audit.sql,v 1.15 2000/10/30 14:20:33 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -388,6 +388,7 @@ go -f -h
 if (${1} = 5)
 begin
 /* ECteamsum, TMsum, and TRsum should all match */
+print "checking team information..."
 declare @ECteamsum numeric(20)
 declare @TMsum numeric(20)
 declare @TRsum numeric(20)
