@@ -1,5 +1,8 @@
--- $Id: process_donestubs.sql,v 1.4 2003/01/06 08:06:58 nerf Exp $
+-- $Id: process_donestubs.sql,v 1.5 2003/01/22 01:24:34 nerf Exp $
 
+DROP TABLE confirmed;
+
+CREATE TABLE confirmed AS
 SELECT DISTINCT A.stub_marks
 FROM donestubs D, all_stubs A, stubs S
 WHERE D.stub_id = A.stub_id AND
