@@ -1,12 +1,13 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.3 2000/11/08 14:58:09 decibel Exp $
+# $Id: newjoin.sql,v 1.4 2000/11/08 15:00:26 decibel Exp $
 #
 # Assigns old work to current team
 #
 # Arguments:
 #       PROJECT_ID
 
+set flushmessage on
 print ":: Assigning old work to current team"
 go
 
@@ -111,7 +112,7 @@ begin
 	end
 
 	select @total_ids = @total_ids + 1
-	fetch ids into @id, @team_id
+	fetch ids into @id, @retire_to, @team_id
 end
 
 if (@@sqlstatus = 1)
