@@ -1,4 +1,4 @@
--- $Id: clearday.sql,v 1.5.2.2 2003/04/27 20:53:07 decibel Exp $
+-- $Id: clearday.sql,v 1.5.2.3 2003/07/13 20:40:20 decibel Exp $
 \set ON_ERROR_STOP 1
 
 \echo Dropping indexes
@@ -8,7 +8,9 @@
 
 \echo Deleting data
 DELETE FROM email_contrib_today WHERE project_id=:ProjectID;
+VACUUM email_contrib_today;
 DELETE FROM platform_contrib_today WHERE project_id=:ProjectID;
+VACUUM platform_contrib_today;
 
 \echo Updating Project_statsrun
 UPDATE project_statsrun

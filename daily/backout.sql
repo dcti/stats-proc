@@ -1,5 +1,5 @@
 /*
- $Id: backout.sql,v 1.8.2.4 2003/04/30 07:44:13 decibel Exp $
+ $Id: backout.sql,v 1.8.2.5 2003/07/13 20:40:20 decibel Exp $
 
  This script will back out all stats data to a given date
 
@@ -14,30 +14,37 @@ set enable_seqscan = off;
 BEGIN;
     \echo Deleting from email_contrib where date > :KeepDate
     DELETE FROM email_contrib WHERE project_id = :ProjectID AND date > :KeepDate::date;
+    VACUUM email_contrib;
     \echo 
     
     \echo Deleting from platform_contrib where date > :KeepDate
     DELETE FROM platform_contrib WHERE project_id = :ProjectID AND date > :KeepDate::date;
+    VACUUM platform_contrib;
     \echo 
     
     \echo Deleting from daily_summary where date > :KeepDate
     DELETE FROM daily_summary WHERE project_id = :ProjectID AND date > :KeepDate::date;
+    VACUUM daily_summary;
     \echo 
     
     \echo Deleting from log_info where date > :KeepDate
     DELETE FROM log_info WHERE project_id = :ProjectID AND log_timestamp >= :KeepDate::date + '1 day'::interval;
+    VACUUM log_info;
     \echo 
     
     \echo Deleting from email_rank
     DELETE FROM email_rank WHERE project_id = :ProjectID;
+    VACUUM email_rank;
     \echo 
     
     \echo Deleting from team_rank
     DELETE FROM team_rank WHERE project_id = :ProjectID;
+    VACUUM team_rank;
     \echo 
     
     \echo Deleting from team_members
     DELETE FROM team_members WHERE project_id = :ProjectID;
+    VACUUM team_members;
     \echo 
     
     \echo Inserting into Email_Rank
