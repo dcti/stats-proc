@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.109 2003/09/11 01:41:02 decibel Exp $
+# $Id: hourly.pl,v 1.110 2003/12/15 22:21:42 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -16,7 +16,7 @@
 # to access /dev/stderr.  *shrug*
 
 use strict;
-$ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
+$ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
 
 #$0 =~ /(.*\/)([^\/]+)/;
 #my $cwd = $1;
