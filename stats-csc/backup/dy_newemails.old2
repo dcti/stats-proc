@@ -1,0 +1,38 @@
+#!/usr/bin/sqsh -i
+#
+# $Id: dy_newemails.old2,v 1.1 2003/09/11 02:05:45 decibel Exp $
+#
+# Adds new participants to stats_participant
+#
+# Arguments:
+#       Project
+
+print "!! Adding new emails to stats_participant"
+go
+
+print "::  Selecting all emails from daytable"
+go
+select distinct email, NULL as id
+into #newemails
+from ${1}_daytable_master
+group by email
+go
+
+print "::  Linking to stats_participant"
+go
+update #newemails
+set id = (select id from STATS_participant S where S.email = #newemails.email)
+go
+
+#print "::  Removing all existing participants"
+#go
+#delete from #newemails where id <> NULL
+#go
+
+print "::  Adding new participants to stats_participant"
+go
+insert into STATS_participant (email)
+select email from #newemails
+where id = NULL
+go
+
