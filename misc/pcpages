@@ -1,32 +1,45 @@
 #!/bin/sh
+#
+# $Id: pcpages,v 1.2 2003/07/10 19:21:08 decibel Exp $
+#
+# Update static pages. Accepts a list of projects to update
+
 export PATH=$PATH:/usr/sbin
 
-echo "Updating pages for project #$1"
+cd /htdocs
 
-cd /htdocs/cache
+do_wget ( ) {
+    if wget -O${2}.new "http://localhost/${1}"; then
+        chmod 644 ${2}.new
+        chown nugget:www ${2}.new
+        mv ${2} ${2}.old
+        mv ${2}.new ${2}
+        return
+    else
+        echo "Error fetching ${1}"
+        return 1
+    fi
+}
 
-wget -Oindex_$1.new "http://localhost/pc_index.php?project_id=$1"
-chmod 644 index_$1.new
-chown nugget:www index_$1.new
-mv index_$1.inc index_$1.bak
-mv index_$1.new index_$1.inc
+get_project ( ) {
+    do_wget pc_index.php?project_id=$1 cache/index_$1.inc
+    do_wget misc/pc_countries.php?project_id=$1\&source=o cache/countries_o_$1.inc
+    do_wget misc/pc_countries.php?project_id=$1\&source=y cache/countries_y_$1.inc
+    if [ $1 != 3 -a $1 != 5 -a $1 != 205 ]; then
+        do_wget misc/pc_money.php?project_id=$1\&source=y cache/money_$1.inc
+    fi
+}
 
-wget -Ocountries_o_$1.new "http://localhost/misc/pc_countries.php?project_id=$1\&source=o"
-chmod 644 countries_o_$1.new
-chown nugget:www countries_o_$1.new
-mv countries_o_$1.inc countries_o_$1.bak
-mv countries_o_$1.new countries_o_$1.inc
-
-wget -Ocountries_y_$1.new "http://localhost/misc/pc_countries.php?project_id=$1\&source=y"
-chmod 644 countries_y_$1.new
-chown nugget:www countries_y_$1.new
-mv countries_y_$1.inc countries_y_$1.bak
-mv countries_y_$1.new countries_y_$1.inc
-
-if [ $1 != 3 -a $1 != 5 ]; then
-    wget -Omoney_$1.new "http://localhost/misc/pc_money.php?project_id=$1"
-    chmod 644 money_$1.new
-    chown nugget:www money_$1.new
-    mv money_$1.inc money_$1.bak
-    mv money_$1.new money_$1.inc
+if [ x$1 = x ]; then
+    echo "Error! No projects specified"
+    exit 1
+else
+    args=$@
 fi
+
+echo "Updating static pages for projects $args"
+echo
+
+for project in $args; do
+    get_project $project
+done
