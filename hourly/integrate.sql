@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.9 2003/04/05 00:31:27 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.10 2003/04/07 01:54:29 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -240,8 +240,9 @@ insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 \echo Moving data from temptable to Email_Contrib_Today
 begin;
 delete from Email_Contrib_Today
-	from TEMP_Projects p
-	where Email_Contrib_Today.PROJECT_ID = p.PROJECT_ID
+	where PROJECT_ID IN (SELECT project_id
+                                                FROM TEMP_Projects p
+                                            )
 ;
 
 /*
@@ -307,8 +308,9 @@ insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 \echo Moving data from temptable to Platform_Contrib_Today
 begin;
 delete from Platform_Contrib_Today
-	from TEMP_Projects p
-	where Platform_Contrib_Today.PROJECT_ID = p.PROJECT_ID
+	where PROJECT_ID IN (SELECT project_id
+                                                FROM TEMP_Projects p
+                                            )
 ;
 
 insert into Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
@@ -340,15 +342,8 @@ insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
  import_bcp from projects we didn't know about
 */
 
-delete import_bcp
-	from Project_statsrun p
-	where import_bcp.PROJECT_ID = p.PROJECT_ID
-		and import_bcp.TIME_STAMP = p.LAST_HOURLY_DATE
+delete from import_bcp
+	where (project_id, time_stamp) IN (SELECT project_id, last_hourly_date
+                                                FROM TEMP_Projects p
+                                            )
 ;
-
-/*
-/* This line produces the number of rows imported for logging. The \echo is for the benefit of hourly.pl */
-select @@rowcount
-;
---go -f -h
-*/
