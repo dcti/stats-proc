@@ -1,14 +1,57 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.17 2002/01/07 23:29:30 decibel Exp $
+# $Id: retire.sql,v 1.18 2002/04/10 16:49:05 decibel Exp $
 #
-# Handles all pending retire_to's and black-balls
+# Handles all pending retire_tos and black-balls
 #
 # Arguments:
 #       Project_id
 
 use stats
 set rowcount 0
+go
+
+print 'Build a list of blocked participants'
+go
+select ID into #Blocked
+	from STATS_Participant
+	where LISTMODE >= 10
+go
+insert into #Blocked(ID)
+	select ID
+	from STATS_Participant sp, #Blocked b
+	where sp.RETIRE_TO > 0
+		and sp.RETIRE_TO = b.ID
+go
+
+print 'Update STATS_Participant_Blocked'
+go
+insert into STATS_Participant_Blocked(ID)
+	select ID
+	from #Blocked b
+	where not exists (select *
+				from STATS_Participant_Blocked spb
+				where spd.ID = b.ID)
+delete from STATS_Participant_Blocked spb
+	where ID not in (select ID from #Blocked)
+go
+
+print 'Update STATS_Team_Blocked'
+go
+insert into STATS_Team_Blocked(TEAM_ID)
+	select TEAM
+	from STATS_Team st
+	where st.LISTMODE >= 10
+		and TEAM not in (select TEAM_ID
+					from STATS_Team_Blocked stb
+					where std.TEAM_ID = st.TEAM_ID
+				)
+
+delete from STATS_Team_Blocked
+	where not exists (select *
+				from STATS_Team
+				where LISTMODE >= 10
+			)
 go
 
 print 'Remove retired or hidden participants from Email_Rank'
@@ -24,7 +67,11 @@ select RETIRE_TO, WORK_TOTAL, FIRST_DATE, LAST_DATE
 	where sp.ID = er.ID
 		and sp.RETIRE_TO >= 1
 		and sp.RETIRE_DATE = @stats_date
-		and sp.LISTMODE <= 9
+		and not exists (select *
+					from STATS_Participant_Blocked spb
+					where spb.ID = sp.ID
+						and spb.ID = er.ID
+				)
 		and er.PROJECT_ID = ${1}
 
 select RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, max(LAST_DATE) as LAST_DATE
@@ -61,7 +108,7 @@ update Email_Rank
 
 print ""
 print ""
-print "Delete retires from Email_Rank"
+print "Delete retires and blocked participants from Email_Rank"
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun
@@ -70,9 +117,13 @@ select @stats_date = LAST_HOURLY_DATE
 delete Email_Rank
 	from STATS_Participant
 	where STATS_Participant.ID = Email_Rank.ID
-		and ( (STATS_Participant.RETIRE_TO >= 1 and STATS_Participant.RETIRE_DATE = @stats_date)
-			or STATS_Participant.listmode >= 10)
+		and STATS_Participant.RETIRE_TO >= 1
+		and STATS_Participant.RETIRE_DATE = @stats_date
 		and Email_Rank.PROJECT_ID = ${1}
+
+delete Email_Rank
+	from STATS_Participant_Blocked spb
+	where spb.ID = Email_Rank.ID
 
 -- The following code should ensure that any "retire_to chains" eventually get eliminated
 -- It is also needed in case someone retires to an address that hasnt done any work in
@@ -107,7 +158,11 @@ select RETIRE_TO, TEAM_ID, WORK_TOTAL, FIRST_DATE, LAST_DATE
 	where sp.ID = tm.ID
 		and sp.RETIRE_TO >= 1
 		and sp.RETIRE_DATE = @stats_date
-		and sp.LISTMODE <= 9
+		and not exists (select *
+					from STATS_Participant_Blocked spb
+					where spb.ID = sp.ID
+						and spb.ID = tm.ID
+				)
 		and tm.PROJECT_ID = ${1}
 
 select RETIRE_TO, TEAM_ID, sum(WORK_TOTAL) as WORK_TOTAL, min(FIRST_DATE) as FIRST_DATE, max(LAST_DATE) as LAST_DATE
@@ -183,9 +238,8 @@ go
 print "Select IDs to remove"
 select distinct sp.ID
 	into #BadIDs
-	from Team_Members tm, STATS_Participant sp
-	where tm.ID = sp.ID
-		and sp.LISTMODE > 9
+	from Team_Members tm, STATS_Participant_Blocked spb
+	where tm.ID = spb.ID
 		and PROJECT_ID = ${1}
 go
 

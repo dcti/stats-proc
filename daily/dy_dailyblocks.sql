@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_dailyblocks.sql,v 1.10 2002/01/07 23:29:30 decibel Exp $
+# $Id: dy_dailyblocks.sql,v 1.11 2002/04/10 16:49:05 decibel Exp $
 #
 # Inserts the daily totals
 #
@@ -37,9 +37,10 @@ update Daily_Summary
 -- Number of Participants
 --
 select @count = count(distinct ect.CREDIT_ID)
-	from Email_Contrib_Today ect, STATS_Participant sp
-	where ect.CREDIT_ID = sp.ID
-		and sp.listmode < 9
+	from Email_Contrib_Today ect
+	where ect.CREDIT_ID not in (select ID
+					from STATS_Participant_Blocked
+				)
 		and ect.PROJECT_ID = ${1}
 update Daily_Summary
 	set PARTICIPANTS = @count
@@ -62,10 +63,11 @@ update Daily_Summary
 -- Number of Teams
 --
 select @count = count(distinct TEAM_ID)
-	from Email_Contrib_Today ect, STATS_Team st
+	from Email_Contrib_Today ect
 	where ect.TEAM_ID >= 1
-		and ect.TEAM_ID = st.team
-		and st.LISTMODE < 10
+		and ect.TEAM_ID not in (select TEAM_ID
+						from STATS_Team_Blocked
+					)
 		and ect.PROJECT_ID = ${1}
 update Daily_Summary
 	set teams = @count

@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.22 2002/03/28 06:00:59 decibel Exp $
+# $Id: tm_update.sql,v 1.23 2002/04/10 16:49:05 decibel Exp $
 
 TM_RANK
 
@@ -50,11 +50,15 @@ go
 select ect.CREDIT_ID, ect.TEAM_ID, ect.WORK_UNITS
 	into #TeamMembers
 	from Email_Contrib_Today ect, STATS_Participant sp, STATS_Team st
-	where sp.ID = ect.CREDIT_ID
-		and st.team = ect.TEAM_ID
-		and ect.TEAM_ID >= 1
-		and sp.LISTMODE <= 9	/* Don't insert hidden people */
-		and st.LISTMODE <= 9	/* Don't insert hidden teams */
+	where ect.TEAM_ID >= 1
+		and not exists (select *
+					from STATS_Participant_Blocked spb
+					where spb.ID = ect.CREDIT_ID
+				)
+		and not exists (select *
+					from STATS_Team_Blocked stb
+					where stb.ID = ect.TEAM_ID
+				)
 		and ect.PROJECT_ID = ${1}
 go
 
@@ -199,13 +203,11 @@ insert #TeamWork (TEAM_ID, WORK_TODAY, IS_NEW)
 
 print " Remove hidden teams from work table and rank table"
 delete #TeamWork
-	from STATS_Team
-	where STATS_Team.TEAM = #TeamWork.TEAM_ID
-		and STATS_Team.listmode >= 10
+	from STATS_Team_Blocked
+	where STATS_Team_Blocked.TEAM_ID = #TeamWork.TEAM_ID
 delete Team_Rank
-	from STATS_Team
-	where STATS_Team.TEAM = Team_Rank.TEAM_ID
-		and STATS_Team.listmode >= 10
+	from STATS_Team_Blocked
+	where STATS_Team_Blocked.TEAM_ID = Team_Rank.TEAM_ID
 		and PROJECT_ID = ${1}
 
 print " Flag existing teams as not-new"

@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_update.sql,v 1.3 2002/01/13 19:34:03 decibel Exp $
+# $Id: em_update.sql,v 1.4 2002/04/10 16:49:05 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -50,8 +50,12 @@ insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL
 	from Email_Contrib_Today ect, STATS_Participant sp
 	where ect.CREDIT_ID = sp.ID
 		and (sp.RETIRE_TO = 0 or sp.RETIRE_DATE > @stats_date)
-		and sp.LISTMODE <= 9
 		and ect.CREDIT_ID not in (select ID from Email_Rank where PROJECT_ID=${1})
+		and not exists (select *
+					from STATS_Participant_Blocked spb
+					where spb.ID = ect.CREDIT_ID
+						and spb.ID = sp.ID
+				)
 		and ect.PROJECT_ID = ${1}
 
 /*

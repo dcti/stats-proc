@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.24 2002/04/08 08:05:20 decibel Exp $
+# $Id: audit.sql,v 1.25 2002/04/10 16:49:04 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -50,10 +50,10 @@ print "Total work units ignored today (listmode >= 10)"
 go -f -h
 update	#audit
 	set ECTblcksum = (select isnull(sum(d.WORK_UNITS), 0)
-		from Email_Contrib_Today d, STATS_Participant p
-		where PROJECT_ID = ${1}
-			and d.CREDIT_ID = p.ID
-			and p.LISTMODE >= 10)
+			    from Email_Contrib_Today d, STATS_Participant_Blocked spb
+			    where PROJECT_ID = ${1}
+				    and d.CREDIT_ID = spb.ID
+			)
 select ECTblcksum from #audit
 go -f -h
 
@@ -67,13 +67,17 @@ print "Sum of team work in Email_Contrib_Today"
 go -f -h
 update #audit
 	set ECTteamsum = (select isnull(sum(d.WORK_UNITS), 0)
-		from Email_Contrib_Today d, STATS_Participant p, STATS_Team t
+		from Email_Contrib_Today d
 		where PROJECT_ID = ${1}
-			and d.CREDIT_ID = p.ID
-			and p.LISTMODE < 10
+			and d.CREDIT_ID not in (select ID
+						from STATS_Participant_Blocked spb
+						where spb.ID = d.CREDIT_ID
+					)
 			and d.TEAM_ID > 0
-			and t.TEAM=d.TEAM_ID
-			and t.LISTMODE < 10)
+			and d.TEAM_ID not in (select TEAM_ID
+						from STATS_Team_Blocked stb
+						where stb.TEAM_ID = d.TEAM_ID
+					)
 select ECTteamsum from #audit
 go -f -h
 
@@ -196,13 +200,15 @@ go
 declare @ECsum numeric (20)
 declare @ECblcksum numeric (20)
 declare @ECteamsum numeric (20)
-select @ECsum = sum(work_units), @ECblcksum = isnull(sum( convert(int, p.LISTMODE/10) * work_units ), 0),
-		@ECteamsum = isnull(sum( abs(1-convert(int, p.LISTMODE/10))
-			* sign(ws.TEAM_ID) * abs(1-convert(int, t.LISTMODE/10))
-			* ws.WORK_UNITS ), 0)
-	from #EmailContribSummary ws , STATS_Participant p, STATS_Team t
-	where ws.ID = p.ID
-		and ws.TEAM_ID *= t.TEAM
+select @ECsum = sum(work_units), @ECblcksum = sum( sign(isnull(spb.ID,0) * work_units ),
+		@ECteamsum = isnull(
+			    sum( ( 1-sign(isnull(spb.ID,0) )
+				* sign(ws.TEAM_ID) * sign(isnull(stb.TEAM_ID,0))
+				* ws.WORK_UNITS )
+			, 0)
+	from #EmailContribSummary ws , STATS_Participant_Blocked spb, STATS_Team_Blocked stb
+	where ws.ID *= spb.ID
+		and ws.TEAM_ID *= stb.TEAM_ID
 
 update	#audit
 	set ECsum = @ECsum, ECblcksum = @ECblcksum, ECteamsum = @ECteamsum
@@ -248,21 +254,29 @@ select @proj_date = LAST_HOURLY_DATE
 	from Project_statsrun
 	where PROJECT_ID = ${1}
 
+-- This will find all work for participants who are blocked, EXCEPT FOR the work of people
+-- who are retired into them
 update	#audit
 	set ECblcksumtdy = (select isnull(sum(e.WORK_UNITS), 0)
-		from Email_Contrib e, STATS_Participant p
+		from Email_Contrib e, STATS_Participant p, STATS_Participant_Blocked spb
 		where PROJECT_ID = ${1}
 			and e.DATE = @proj_date
 			and e.ID = p.ID
+			and e.ID = spb.ID
+			and p.ID = spb.ID
 			and p.RETIRE_TO = 0
-			and p.LISTMODE >= 10)
+		)
+
+-- This will find all work for participants who are retired into a participant that is blocked
 update	#audit
 	set ECblcksumtdy = ECblcksumtdy + (select isnull(sum(e.WORK_UNITS), 0)
-		from Email_Contrib e, STATS_Participant p
+		from Email_Contrib e, STATS_Participant p, STATS_Participant_Blocked spb
 		where PROJECT_ID = ${1}
 			and e.DATE = @proj_date
 			and e.ID = p.RETIRE_TO
-			and p.LISTMODE >= 10)
+			and spb.ID = p.ID
+		)
+
 select ECblcksumtdy from #audit
 go -f -h
 
