@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.4 2000/06/28 11:00:53 decibel Exp $
+# $Id: audit.sql,v 1.5 2000/07/15 08:19:56 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -136,7 +136,7 @@ update	#audit
 	set ECTblcksum = (select sum(d.WORK_UNITS)
 		from Email_Contrib_Today d, STATS_Participant p
 		where PROJECT_ID = ${1}
-			and d.ID = p.ID
+			and d.CREDIT_ID = p.ID
 			and p.LISTMODE >= 10)
 select ECTblcksum from #audit
 go -f -h
