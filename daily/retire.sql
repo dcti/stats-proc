@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.25.2.6 2003/04/27 21:12:34 decibel Exp $
+# $Id: retire.sql,v 1.25.2.7 2003/04/27 21:26:24 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -98,17 +98,17 @@ BEGIN;
     \echo 
     \echo Delete retires and blocked participants from Email_Rank
     DELETE FROM Email_Rank
-        where project_id = :ProjectID
-            and id IN  (SELECT id
+        WHERE project_id = :ProjectID
+            AND id IN  (SELECT id
                             FROM STATS_Participant sp
                             WHERE retire_to >= 1
-                                and retire_date = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
+                                AND retire_date = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
                         )
     ;
 
-    DELETE FROM Email_Rank
+    DELETE FROM email_rank
         WHERE project_id = :ProjectID
-            and id IN (SELECT id FROM STATS_Participant_Blocked)
+            AND EXISTS (SELECT 1 FROM stats_participant_blocked spb WHERE spb.id = email_rank.id)
     ;
 
     -- The following code should ensure that any "retire_to chains" eventually get eliminated
