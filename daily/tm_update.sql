@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.21 2002/03/26 08:09:32 decibel Exp $
+# $Id: tm_update.sql,v 1.22 2002/03/28 06:00:59 decibel Exp $
 
 TM_RANK
 
@@ -159,6 +159,10 @@ insert into #Work_Summary (ID, TEAM_ID, FIRST_DATE, WORK_UNITS)
 # We're doing min(tmw.WORK_TODAY) because there can be more than one record in #Work_Summary. Any time
 # there is, the row from tmw will be included multiple times. (tmw is already summarized)
 */
+declare @stats_date smalldatetime
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
+	where PROJECT_ID = ${1}
 insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
 		DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
 	select ${1}, ws.ID, ws.TEAM_ID, min(ws.FIRST_DATE), @stats_date, min(tmw.WORK_TODAY), sum(ws.WORK_UNITS),
