@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.11 2000/11/08 18:04:01 decibel Exp $
+# $Id: tm_update.sql,v 1.12 2000/11/08 18:21:52 decibel Exp $
 
 TM_RANK
 
@@ -212,8 +212,15 @@ go
 
 # New members work for today will have already been added to WORK_TOTAL by the update above, so
 # don't include it in the amount of work to add to WORK_TOTAL.
-select tm.TEAM_ID, min(tm.FIRST_DATE) as FIRST_DATE, sum(tm.WORK_TOTAL-tm.WORK_TODAY) as WORK_TOTAL
-	into #TeamWorkUpdate
+create table #TeamWorkUpdate (
+	TEAM_ID int,
+	FIRST_DATE smalldatetime,
+	WORK_TOTAL numeric(20,0)
+)
+go
+
+insert into #TeamWorkUpdate (TEAM_ID, FIRST_DATE, WORK_TOTAL)
+	select tm.TEAM_ID, min(tm.FIRST_DATE), sum(tm.WORK_TOTAL-tm.WORK_TODAY)
 	from Team_Members tm, #TeamMemberWork tmw
 	where tm.TEAM_ID = tmw.TEAM_ID
 		and tm.ID = tmw.ID
