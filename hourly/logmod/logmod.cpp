@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.4 2002/10/08 01:55:06 decibel Exp $
+ * $Id: logmod.cpp,v 1.5 2002/12/03 16:02:34 jlawson Exp $
  */
 
 #include <stdio.h>
@@ -9,13 +9,14 @@
 #include <ctype.h>
 
 enum Project {
-    RC5,
-    OGR
+    RC564,
+    OGR,
+    RC572
 };
 
 void usage()
 {
-    fprintf(stderr, "Usage: logmod [-rc5 | -ogr]\n");
+    fprintf(stderr, "Usage: logmod [-rc5 | -ogr | -rc572]\n");
     exit(1);
 }
 
@@ -58,10 +59,12 @@ int main(int argc, char *argv[])
         usage();
     }
     Project project;
-    if (strcmp(argv[1], "-rc5") == 0) {
-        project = RC5;
+    if (strcmp(argv[1], "-rc5") == 0 || strcmp(argv[1], "-rc564") == 0) {
+        project = RC564;
     } else if (strcmp(argv[1], "-ogr") == 0) {
         project = OGR;
+    } else if (strcmp(argv[1], "-rc572") == 0) {
+        project = RC572;
     } else {
         usage();
     }
@@ -78,10 +81,13 @@ int main(int argc, char *argv[])
         if (sscanf(date, "%d/%d/%d", &date_month, &date_day, &date_year) != 3) {
             goto next;
         }
+        if (date_year < 0 || date_month < 1 || date_day < 1) {
+            goto next;
+        }
         if (date_year < 97) {
-            date_year += 2000;
-        } else {
-            date_year += 1900;
+            date_year += 2000;   // two-digit year after y2k
+        } else if (date_year < 1900) {
+            date_year += 1900;   // two-digit year before y2k
         }
         p = charfwd(p, ',');
         if (p == NULL) {
@@ -106,9 +112,27 @@ int main(int argc, char *argv[])
         }
         *q = 0;
         len--;
-        char *endfieldptrs[5]; // up to 5 numeric fields at the end
+
+        // split off fields starting from the end.
+        int wantedfields = 0;
+        switch (project) {
+        case RC564:
+          wantedfields = 4;  // size,cpu,os,version
+          break;
+        case RC572:
+          wantedfields = 5;  // size,cpu,os,version,coreid
+          break;
+        case OGR:
+          wantedfields = 5;  // size,cpu,os,version,status
+          break;
+        default:
+          error(line, "unexpected project", buf, len);
+          abort();
+        }
+
+        char *endfieldptrs[6]; // up to 6 numeric fields at the end
         int endfields = 0;
-        while (endfields < (project == OGR ? 5 : 4)) {
+        while (endfields < wantedfields) {
             q--;
             if (!isdigit(*q)) {
                 if (*q == ',') {
@@ -120,22 +144,37 @@ int main(int argc, char *argv[])
             }
         }
         char *size, *os, *cpu, *version, *status;
-        if (endfields < 4) {
+        if (endfields < wantedfields) {
             error(line, "less than 4 numeric fields at end", buf, len);
             goto next;
-        } else if (endfields == 4) {
+        }
+        switch (project) {
+        case RC564:
             size    = endfieldptrs[3];
             os      = endfieldptrs[2];
             cpu     = endfieldptrs[1];
             version = endfieldptrs[0];
             status  = "0";
-        } else {
+            break;
+        case RC572:
+            size    = endfieldptrs[4];
+            os      = endfieldptrs[3];
+            cpu     = endfieldptrs[2];
+            version = endfieldptrs[1];
+            status  = "0";      // coreid is ignored
+            break;
+        case OGR:
             size    = endfieldptrs[4];
             os      = endfieldptrs[3];
             cpu     = endfieldptrs[2];
             version = endfieldptrs[1];
             status  = endfieldptrs[0];
+            break;
+        default:
+            error(line, "unexpected project", buf, len);
+            abort();
         }
+
         int nstatus = atoi(status);
         if (nstatus != 0 && nstatus != 2) {
             error(line, "status not in {0,2}", buf, len);
@@ -147,10 +186,23 @@ int main(int argc, char *argv[])
             error(line, "could not back up to workunit id", buf, len);
             goto next;
         }
+
+        // convert version to exclude buildfrac if it had it.
+        int iversion = atoi(version);
+        if (iversion >= 90010477 && 
+            iversion <  99000000) {
+            sprintf(version, "%d", iversion / 10000);
+        }
+          
+
+        // determine project id
         char *projectid;
         switch (project) {
-        case RC5:
+        case RC564:
             projectid = "205";
+            break;
+        case RC572:
+            projectid = "72";
             break;
         case OGR:
             projectid = q+1;
@@ -161,6 +213,8 @@ int main(int argc, char *argv[])
             break;
         }
         *q = 0;
+
+        // translate any commas in the email to periods.
         p = email;
         while(1) {
             p = charfwd(p, ',');
@@ -169,6 +223,8 @@ int main(int argc, char *argv[])
             }
             *p = '.';
         }
+
+        // write out the final entry.
         printf("%04d%02d%02d,%s,%s,%s,%s,%s,%s\n", date_year, date_month, date_day, email, projectid, size, os, cpu, version);
         }
 next:
