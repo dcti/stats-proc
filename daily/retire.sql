@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.18 2002/04/10 16:49:05 decibel Exp $
+# $Id: retire.sql,v 1.19 2002/04/11 06:01:23 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -18,7 +18,7 @@ select ID into #Blocked
 	where LISTMODE >= 10
 go
 insert into #Blocked(ID)
-	select ID
+	select sp.ID
 	from STATS_Participant sp, #Blocked b
 	where sp.RETIRE_TO > 0
 		and sp.RETIRE_TO = b.ID
