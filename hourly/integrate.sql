@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.5 2003/04/04 21:05:18 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.6 2003/04/04 21:16:53 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -20,7 +20,7 @@ select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, coalesce(sum(WORK_UNITS),0)
         count(*) as TOTAL_ROWS
 	into TEMP TEMP_Projects
 	from import_bcp i RIGHT JOIN Projects p ON p.PROJECT_ID = i.PROJECT_ID
-	where p.PROJECT_TYPE = ":ProjectType"
+	where p.PROJECT_TYPE = :ProjectType
 		and p.STATUS = 'O'
 	group by p.PROJECT_ID
 ;
