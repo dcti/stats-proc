@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.104 2002/08/11 21:41:04 decibel Exp $
+# $Id: hourly.pl,v 1.105 2002/08/11 22:32:29 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -119,13 +119,13 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 	  }
 	}
     } elsif ( $logext =~ /.bz2$/ ) {
-	#my $orgsize=(stat $workdir$basefn)[7];
+	my $orgsize=(stat $workdir$basefn)[7];
 	system("bzip2 -d $workdir$basefn");
 	if ($? == 0) {
 	    $rawfn = $basefn;
 	    $rawfn =~ s/.bz2//i;
 	    my $newsize=(stat "$workdir$project$rawfn")[7];
-	    stats::log($project,1,"$basefn successfully decompressed (" . int($newsize/$oldsize*100) . "% compression)");
+	    stats::log($project,1,"$basefn successfully decompressed (" . int($newsize/$orgsize*100) . "% compression)");
 	}
     }
     if( $rawfn eq "" ) {
