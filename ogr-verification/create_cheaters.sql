@@ -1,13 +1,20 @@
--- $Id: create_cheaters.sql,v 1.2 2002/12/23 13:40:45 nerf Exp $
+-- $Id: create_cheaters.sql,v 1.3 2002/12/24 21:54:14 nerf Exp $
 -- Create a table where we keep track of how many stubs someone has
 -- returned vs how many unique ones they have returned.  Used to find
 -- people who submit the same stub over and over.
 
-INSERT INTO TABLE cheaters
-	SELECT id, count(stub_id) AS returned,
-	count(DISTINCT stub_id) AS uniq_stubs
-FROM logdata
-GROUP BY id;
+CREATE TABLE cheaters (
+id INT NOT NULL,
+returned INT,
+uniq_stubs INT);
+
+INSERT INTO cheaters
+	SELECT I.id, count(A.stub_id) AS returned,
+		count(DISTINCT A.stub_id) AS uniq_stubs
+	FROM logdata L, id_lookup I, all_stubs A
+	WHERE L.email = I.email AND
+		L.stub_marks = A.stub_id
+	GROUP BY id;
 
 CREATE TABLE new_cheaters AS
 	SELECT * FROM cheaters 
