@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: get_idlookup.sh,v 1.2 2003/02/23 00:44:55 nerf Exp $
+# $Id: get_idlookup.sh,v 1.3 2003/03/20 18:39:51 nerf Exp $
 
 TABLE=Nerf_id_lookup
 FILENAME=/tmp/id_import.out
@@ -21,7 +21,7 @@ sqsh -SBLOWER -U ${SQLUSER} -P ${SQLPASSWD} -D stats << EOF
 	FROM STATS_participant;
 EOF
 
-rm -f ${FILENAME}
+rm -f ${FILENAME} ${FILENAME}.new
 ${BCP} stats.dbo.${TABLE} out ${FILENAME} -c -S BLOWER -U ${SQLUSER} -P ${SQLPASSWD}
 sed -e 's/\\/\\\\/g' < ${FILENAME} > ${FILENAME}.new &&
    mv ${FILENAME}.new ${FILENAME}
