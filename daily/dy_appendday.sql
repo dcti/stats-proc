@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.13 2000/11/07 18:52:30 decibel Exp $
+# $Id: dy_appendday.sql,v 1.14 2000/11/08 11:40:33 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -32,7 +32,7 @@ update Email_Contrib_Today
 		and PROJECT_ID = ${1}
 
 update Email_Contrib_Today
-	set TEAM_ID = sp.TEAM_ID
+	set TEAM_ID = tj.TEAM_ID
 	from Team_Joins tj
 	where tj.ID = Email_Contrib_Today.CREDIT_ID
 		and tj.join_date <= @stats_date
@@ -73,8 +73,8 @@ go
 print ":: Assigning old work to current team"
 go
 
--- This query will only get joins to teams (not to team 0) that have
--- taken place on the day that we're running stats for.
+#-- This query will only get joins to teams (not to team 0) that have
+#-- taken place on the day that we're running stats for.
 declare @proj_date smalldatetime
 select @proj_date = LAST_STATS_DATE
 	from Projects
