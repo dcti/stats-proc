@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_update.sql,v 1.8.2.2 2003/04/27 20:53:07 decibel Exp $
+# $Id: em_update.sql,v 1.8.2.3 2003/04/27 21:36:14 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -37,6 +37,7 @@ SELECT credit_id, sum(ect.work_units) AS work_today INTO TEMP retired_work
 ;
 
 BEGIN;
+    \set LOCAL enable_seqscan=off
     SELECT stats_set_last_update(:ProjectID, 'e', NULL);
 
     INSERT INTO email_rank (project_id, id, first_date, last_date)
