@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.31 2003/04/19 03:44:21 decibel Exp $
+# $Id: integrate.sql,v 1.32 2003/07/31 20:41:48 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -66,7 +66,10 @@ declare @stats_date smalldatetime
 update Project_statsrun
 	set LAST_HOURLY_DATE = isnull(p.STATS_DATE, LAST_HOURLY_DATE),
 		LOGS_FOR_DAY = LOGS_FOR_DAY + 1,
-		WORK_FOR_DAY = WORK_FOR_DAY + p.TOTAL_WORK
+		WORK_FOR_DAY = WORK_FOR_DAY + p.TOTAL_WORK * (select WORK_UNIT_IMPORT_MULTIPLIER
+								from Projects p
+								where p.PROJECT_ID = i.PROJECT_ID
+								)
 	from #Projects p
 	where Project_statsrun.PROJECT_ID = p.PROJECT_ID
 go
