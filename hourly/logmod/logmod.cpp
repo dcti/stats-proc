@@ -1,11 +1,13 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.7 2002/12/03 18:03:39 decibel Exp $
+ * $Id: logmod.cpp,v 1.7.2.1 2003/09/04 11:18:51 decibel Exp $
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 enum Project {
@@ -105,85 +107,185 @@ int main(int argc, char *argv[])
         p++;
         // this is the start of the email address
         char *email = p;
-        // now we'll start from the end of the string
-        char *q = buf + len;
-        if (q[-1] == '\n') {
-            q--;
-        }
-        *q = 0;
-        len--;
 
-        // split off fields starting from the end.
-        int wantedfields = 0;
-        switch (project) {
-        case RC564:
-          wantedfields = 4;  // size,cpu,os,version
-          break;
-        case RC572:
-          wantedfields = 5;  // size,cpu,os,version,coreid
-          break;
-        case OGR:
-          wantedfields = 5;  // size,cpu,os,version,status
-          break;
-        default:
-          error(line, "unexpected project", buf, len);
-          abort();
-        }
+        // 08/23/03 12:35:26,127.0.0.1,moo@web.de,CA:601D239C:00000000,1,27,2,90050484,7,CA:601D239C:039A1A18,1,1
 
-        char *endfieldptrs[6]; // up to 6 numeric fields at the end
-        int endfields = 0;
-        while (endfields < wantedfields) {
-            q--;
-            if (!isdigit(*q)) {
-                if (*q == ',') {
-                    *q = 0;
-                    endfieldptrs[endfields++] = q+1;
-                } else {
-                    break;
-                }
+        // count the number of trailing fields
+        // if it is sensible, use sane logic otherwise fall back to backscanning
+        int trailing = 0;
+        for (int i = 0; p[i] != 0; i++) {
+            if (p[i] == ',') {
+                trailing++;
             }
         }
-        char *size, *os, *cpu, *version, *status;
-        if (endfields != wantedfields) {
-            error(line, "wrong number of required numeric fields at end", buf, len);
-            goto next;
-        }
+        bool sane = false;
         switch (project) {
         case RC564:
-            size    = endfieldptrs[3];
-            os      = endfieldptrs[2];
-            cpu     = endfieldptrs[1];
-            version = endfieldptrs[0];
-            status  = "0";
+            sane = (trailing == 5);
             break;
         case RC572:
-            size    = endfieldptrs[4];
-            os      = endfieldptrs[3];
-            cpu     = endfieldptrs[2];
-            version = endfieldptrs[1];
-            status  = "0";      // coreid is ignored
+            sane = (trailing == 6 || trailing == 9);
             break;
         case OGR:
-            size    = endfieldptrs[4];
-            os      = endfieldptrs[3];
-            cpu     = endfieldptrs[2];
-            version = endfieldptrs[1];
-            status  = endfieldptrs[0];
+            sane = (trailing == 6);
             break;
         default:
             error(line, "unexpected project", buf, len);
             abort();
         }
 
+        char *projectid, *size, *os, *cpu, *version, *status;
+        if (sane) {
+
+            char *fields[10];
+            int i = 0;
+            for (; *p != 0; p++) {
+                if (*p == ',') {
+                    *p = 0;
+                    fields[i] = p+1;
+                    i++;
+                }
+            }
+            assert(i == trailing);
+            switch (project) {
+            case RC564:
+                projectid = "205",
+                size      = fields[1];
+                os        = fields[2];
+                cpu       = fields[3];
+                version   = fields[4];
+                status    = "0";
+                break;
+            case RC572:
+                projectid = "8";
+                size      = fields[1];
+                os        = fields[2];
+                cpu       = fields[3];
+                version   = fields[4];
+                status    = "0";      // coreid is ignored
+                break;
+            case OGR:
+                projectid = fields[0];
+                projectid[2] = 0;
+                if (atoi(projectid) == 26) {
+                    projectid = "25";
+                }
+                size      = fields[1];
+                os        = fields[2];
+                cpu       = fields[3];
+                version   = fields[4];
+                status    = fields[5];
+                break;
+            default:
+                error(line, "unexpected project", buf, len);
+                abort();
+            }
+
+        } else {
+
+            // This logic exists only because old clients could log
+            // commas in email addresses. This insane case should
+            // no longer need to change.
+
+            // we'll start from the end of the string
+            char *q = buf + len;
+            if (q[-1] == '\n') {
+                q--;
+            }
+            *q = 0;
+            len--;
+
+            // split off fields starting from the end.
+            int wantedfields = 0;
+            switch (project) {
+            case RC564:
+              wantedfields = 4;  // size,cpu,os,version
+              break;
+            case RC572:
+              wantedfields = 5;  // size,cpu,os,version,coreid
+              break;
+            case OGR:
+              wantedfields = 5;  // size,cpu,os,version,status
+              break;
+            default:
+              error(line, "unexpected project", buf, len);
+              abort();
+            }
+
+            char *endfieldptrs[10]; // room for several numeric fields at the end
+            int endfields = 0;
+            while (endfields < wantedfields) {
+                q--;
+                if (!isdigit(*q)) {
+                    if (*q == ',') {
+                        *q = 0;
+                        endfieldptrs[endfields++] = q+1;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if (endfields != wantedfields) {
+                error(line, "wrong number of required numeric fields at end", buf, len);
+                goto next;
+            }
+            switch (project) {
+            case RC564:
+                size    = endfieldptrs[3];
+                os      = endfieldptrs[2];
+                cpu     = endfieldptrs[1];
+                version = endfieldptrs[0];
+                status  = "0";
+                break;
+            case RC572:
+                size    = endfieldptrs[4];
+                os      = endfieldptrs[3];
+                cpu     = endfieldptrs[2];
+                version = endfieldptrs[1];
+                status  = "0";      // coreid is ignored
+                break;
+            case OGR:
+                size    = endfieldptrs[4];
+                os      = endfieldptrs[3];
+                cpu     = endfieldptrs[2];
+                version = endfieldptrs[1];
+                status  = endfieldptrs[0];
+                break;
+            default:
+                error(line, "unexpected project", buf, len);
+                abort();
+            }
+
+            q--;
+            q = charrev(q, ',');
+            if (q == NULL) {
+                error(line, "could not back up to workunit id", buf, len);
+                goto next;
+            }
+
+            // determine project id
+            switch (project) {
+            case RC564:
+                projectid = "205";
+                break;
+            case RC572:
+                projectid = "8";
+                break;
+            case OGR:
+                projectid = q+1;
+                projectid[2] = 0;
+                if (atoi(projectid) == 26) {
+                    projectid = "25";
+                }
+                break;
+            }
+            *q = 0;
+
+        }
+
         int nstatus = atoi(status);
         if (nstatus != 0 && nstatus != 2) {
             error(line, "status not in {0,2}", buf, len);
-            goto next;
-        }
-        q--;
-        q = charrev(q, ',');
-        if (q == NULL) {
-            error(line, "could not back up to workunit id", buf, len);
             goto next;
         }
 
@@ -193,26 +295,6 @@ int main(int argc, char *argv[])
             iversion <  99000000) {
             sprintf(version, "%d", iversion / 10000);
         }
-          
-
-        // determine project id
-        char *projectid;
-        switch (project) {
-        case RC564:
-            projectid = "205";
-            break;
-        case RC572:
-            projectid = "8";
-            break;
-        case OGR:
-            projectid = q+1;
-            projectid[2] = 0;
-            if (atoi(projectid) == 26) {
-                projectid = "25";
-            }
-            break;
-        }
-        *q = 0;
 
         // translate any commas in the email to periods.
         p = email;
