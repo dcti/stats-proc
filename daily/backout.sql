@@ -1,5 +1,5 @@
 /*
- $Id: backout.sql,v 1.10 2003/09/11 01:41:02 decibel Exp $
+ $Id: backout.sql,v 1.11 2004/08/24 18:04:43 decibel Exp $
 
  This script will back out all stats data to a given date
 
@@ -88,4 +88,11 @@ BEGIN;
             WHERE project_id = :ProjectID
                 AND backup_date = :KeepDate::date
     ;
+
+    \echo Updating last_update tables
+    UPDATE email_rank_last_update SET last_date=:KeepDate::date WHERE project_id=:ProjectID;
+    UPDATE team_members_last_update SET last_date=:KeepDate::date WHERE project_id=:ProjectID;
+    UPDATE team_rank_last_update SET last_date=:KeepDate::date WHERE project_id=:ProjectID;
+    UPDATE email_contrib_last_update SET last_date=:KeepDate::date WHERE project_id=:ProjectID;
+    UPDATE platform_contrib_last_update SET last_date=:KeepDate::date WHERE project_id=:ProjectID;
 COMMIT;
