@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.21 2002/05/10 13:47:43 decibel Exp $
+# $Id: integrate.sql,v 1.22 2002/05/10 14:57:19 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -15,13 +15,13 @@ go
 **	importing any data, which could be useful if we can get data in
 **	Email_Contrib_Today format but not import_bcp format.
 */
-print "Updating LAST_STATS_DATE for all projects"
+print "Updating LAST_STATS_DATE for ${1}"
 select p.PROJECT_ID,  min(TIME_STAMP) as STATS_DATE, isnull(sum(WORK_UNITS),0) as TOTAL_WORK
 	into #Projects
 	from import_bcp i, Projects p
 	where p.PROJECT_ID *= i.PROJECT_ID
-		and p.PROJECT_TYPE = ${1}
-		and p.PROJECT_STATUS = 'O'
+		and p.PROJECT_TYPE = "${1}"
+		and p.STATUS = 'O'
 	group by p.PROJECT_ID
 go
 
