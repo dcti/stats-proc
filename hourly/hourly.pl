@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.49 2000/09/01 04:58:09 nugget Exp $
+# $Id: hourly.pl,v 1.50 2000/09/01 05:02:25 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -105,7 +105,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
     my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
     my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
 
-    if ( $lasttime <> ($logtime - 86400)) {
+    if ( $lasttime != ($logtime - 86400)) {
       stats::log($project,131,"Aborting: I'm supposed to load a log from $yyyymmdd, but I haven't done a daily update since $lastday!");
       die;
     }
