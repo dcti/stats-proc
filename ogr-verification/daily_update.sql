@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.16 2003/11/15 14:10:23 nerf Exp $
+-- $Id: daily_update.sql,v 1.17 2003/12/05 18:53:51 nerf Exp $
 
 select now();
 
@@ -140,7 +140,8 @@ SET in_results = true
 WHERE exists
 (SELECT * FROM OGR_results WHERE day_results.id = OGR_results.id AND
     day_results.stub_id = OGR_results.stub_id AND
-    day_results.nodecount = OGR_results.nodecount AND);
+    day_results.nodecount = OGR_results.nodecount AND
+    day_results.platform_id = OGR_results.platform_id);
 select now();
 
 analyze day_results;
@@ -242,7 +243,7 @@ WHERE exists
 -- update where stub_id, nodecount, id are equal but platform is different
 -- We have decided that this should not count as having been done twice.
 UPDATE day_results
-SET in_results = true
+SET id = NULL
 WHERE day_results.id = ogr_results.id
     AND day_results.stub_id = ogr_results.stub_id
     AND day_results.nodecount = ogr_results.nodecount
@@ -269,6 +270,7 @@ SELECT stub_id, nodecount, count(DISTINCT l.stats_id) AS ids,
   GROUP BY stub_id, nodecount
 ;
 
+
 analyze day_summary;
 analyze OGR_summary;
 
@@ -288,7 +290,7 @@ WHERE exists
 CREATE INDEX day_stubnode ON day_summary (stub_id,nodecount)
   WHERE in_OGR_summary;
 
--- If it's threre already, update it
+-- If it's there already, update it
 --explain analyze
 UPDATE OGR_summary
     SET participants = participants + ids,
