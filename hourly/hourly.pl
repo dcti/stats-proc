@@ -17,29 +17,28 @@ my @sourcelist  = ("LOGS-SOURCE-FQDN:/home/master/logs/",
 for (my $i = 0; $i < @projectlist; $i++) {
   my $project = $projectlist[$i];
   my $lastlog = `cat ~/var/lastlog.$project`;
+  my $logtoload = "29991231-23";
   my @server = split /:/, $sourcelist[$i];
   chomp($lastlog);
 
   print "Project $i is $project.\n  My last log was $lastlog\n";
 
-  # my @files = split /\n/, `ssh $server[0] 'ls $server[1]$project*.gz'`;
-  #my $fcount = int @files;
-
-  #`/usr/local/bin/ssh $server[0] 'ls $server[1]$project*.gz'>~/var/filelist.$project`;
-  #`wc -l ~/var/filelist.$project`;
-
   open LS, "ssh $server[0] ls $server[1]$project*|";
   my $linecount = 0;
+  my $qualcount = 0;
 
   while (<LS>) {
     if( $_ =~ /.*\/$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
       my $lastdate = $1;
       if($lastdate gt $lastlog) {
-        print "  I need to load $1\n";
+        $qualcount++;
+        if($lastdate lt $logtoload) {
+          $logtoload = $lastdate;
+        }
       }
     }
     $linecount++;
   }
-  print "  (I saw $linecount lines)\n";
+  print "  Of $linecount logs available, $qualcount need to be loaded.  Next up is $logtoload.\n";
 }
 
