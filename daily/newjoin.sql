@@ -1,5 +1,5 @@
 /*
-# $Id: newjoin.sql,v 1.13.2.8 2003/04/27 21:33:14 decibel Exp $
+# $Id: newjoin.sql,v 1.13.2.9 2003/04/28 03:20:22 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -14,26 +14,26 @@
 -- taken place on the day that we're running stats for.
 \echo Building temporary tables
 SELECT id, team_id
-	INTO TEMP newjoins
-	FROM Team_Joins tj, Project_statsrun ps
-	WHERE tj.join_date = ps.last_date
-		AND (tj.last_date IS NULL OR tj.last_date >= ps.last_date)
+    INTO TEMP newjoins
+    FROM Team_Joins tj, Project_statsrun ps
+    WHERE tj.join_date = ps.last_date
+        AND (tj.last_date IS NULL OR tj.last_date >= ps.last_date)
 ;
 
 -- Get the retire_to info
 SELECT sp.id, sp.retire_to, sp.retire_to AS effective_id, nj.team_id
-	INTO TEMP nj_ids
-	FROM STATS_Participant sp, newjoins nj
-	WHERE sp.retire_to = nj.id
-		AND sp.retire_to > 0
-		AND nj.id > 0
+    INTO TEMP nj_ids
+    FROM STATS_Participant sp, newjoins nj
+    WHERE sp.retire_to = nj.id
+        AND sp.retire_to > 0
+        AND nj.id > 0
 ;
 
 -- Also insert the un-retired records
 INSERT INTO nj_ids (id, retire_to, effective_id, team_id)
-	SELECT sp.id, 0, sp.id, nj.team_id
-	FROM stats_participant sp, newjoins nj
-	WHERE sp.id = nj.id
+    SELECT sp.id, 0, sp.id, nj.team_id
+    FROM stats_participant sp, newjoins nj
+    WHERE sp.id = nj.id
 ;
 
 -- We'll also need to know what team0 work has been done
