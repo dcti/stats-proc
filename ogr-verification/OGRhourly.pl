@@ -1,7 +1,6 @@
-#!/usr/bin/perl -I../global
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: OGRhourly.pl,v 1.4 2003/01/19 21:31:12 decibel Exp $
+# $Id: OGRhourly.pl,v 1.5 2003/01/20 01:37:58 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -22,15 +21,6 @@
 # to access /dev/stderr.  *shrug*
 
 
-
-# OK, what's worse is using the stats-proc lockfile and breaking the statsrun. You're going to have to seperate this stuff out somehow.
-
-
-
-
-#OK, this is bad, force the sem to be unlocked
-stats::semflag('hourly') ne "OK";
-
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
 
@@ -39,6 +29,7 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
 #my $me = $2;
 #chdir $cwd;
 
+# Have to seperate this stuff out somehow.
 #use statsconf;
 #use stats;
 
@@ -55,7 +46,6 @@ my $project = "ogr-verification";
 # the lock.
 if ($_ = stats::semcheck('OGRhourly')) {
   stats::log($project,129,"Cannot obtain lock for OGRhourly.pl!  [$_] still running!");
-  #next RUNPROJECTS;
   die;
 }
 my $sourcelist = $statsconf::logsource{$project};
@@ -162,7 +152,7 @@ if( $qualcount > 0 ) {
 	}
     }
 
-    open COPYFROM, "psql ogr -U nerf -c\"COPY logdata FROM \'$homedir/$workdir$finalfn\' USING DELIMITERS ',';\" |";
+    open COPYFROM, "psql ogr -U nerf -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" |";
     if(!<COPYFROM>) {
       stats::log($project,131,"Error launching COPY FROM, aborting OGRhourly run.");
       die;
