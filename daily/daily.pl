@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.8 2000/08/16 18:24:35 nugget Exp $
+# $Id: daily.pl,v 1.9 2000/08/16 19:32:06 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -31,21 +31,35 @@ my $project = $ARGV[0];
 
 stats::log($project,1,"Beginning daily processing routines");
 
-my @pridlist = split /:/, $statsconf::prids{$project};
-for (my $i = 0; $i < @pridlist; $i++) {
-  my $project_id = int $pridlist[$i];
+if(!$statsconf::prids{$project}) {
+  stats::log($project,131,"I've never heard of project class $project!");
+  die;
+} else {
+  my $qs_update = "select convert(char(8),max(DATE),112) from Platform_Contrib where 2=1";
 
-  sqsh("retire.sql $project_id");
-  sqsh("dy_appendday.sql $project_id");
-  sqsh("em_rank.sql $project_id");
-  sqsh("tm_rank.sql $project_id");
-  sqsh("dy_dailyblocks.sql $project_id");
-  sqsh("audit.sql $project_id");
+  my @pridlist = split /:/, $statsconf::prids{$project};
+  for (my $i = 0; $i < @pridlist; $i++) {
+    my $project_id = int $pridlist[$i];
+    $qs_update = "$qs_update or PROJECT_ID = $project_id";
+  
+    sqsh("retire.sql $project_id");
+    sqsh("dy_appendday.sql $project_id");
+    sqsh("em_rank.sql $project_id");
+    sqsh("tm_rank.sql $project_id");
+    sqsh("dy_dailyblocks.sql $project_id");
+    sqsh("audit.sql $project_id");
 
-  sqsh("clearday.sql $project_id");
-  system "sudo pcpages_$project $project_id";
-  sqsh("backup.sql $project_id");
-   
+    sqsh("clearday.sql $project_id");
+    system "sudo pcpages_$project $project_id";
+    sqsh("backup.sql $project_id");
+  }
+  open TMP, ">/tmp/sqsh.tmp.$project";
+  print TMP "$qs_update\ngo";
+  close TMP;
+  my $lastdaynewval = `sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -w 999 -h -i /tmp/sqsh.tmp.$project`;
+  $lastdaynewval =~ s/[^0123456789]//g;
+  unlink "/tmp/sqsh.tmp.$project";
+  stats::lastday($project,$lastdaynewval);
 }
 
 sub sqsh {
