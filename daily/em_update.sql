@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_update.sql,v 1.7 2002/12/16 19:50:19 decibel Exp $
+# $Id: em_update.sql,v 1.8 2002/12/17 00:49:35 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -43,7 +43,7 @@ go
 
 print ' Insert new participants'
 go
-p_set_lastupdate_e ${1}, NULL
+exec p_set_lastupdate_e ${1}, NULL
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun

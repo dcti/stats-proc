@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.31 2002/12/16 19:50:39 decibel Exp $
+# $Id: tm_update.sql,v 1.32 2002/12/17 00:49:35 decibel Exp $
 
 TM_RANK
 
@@ -94,7 +94,7 @@ update #TeamMemberWork
 
 go
 print " Clear today info"
-p_set_lastupdate_m ${1}, NULL
+exec p_set_lastupdate_m ${1}, NULL
 update Team_Members
 	set WORK_TODAY = 0,
 		DAY_RANK = 1000000,
@@ -188,7 +188,7 @@ insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY,
 		and tmw.TEAM_ID = ws.TEAM_ID
 	group by ws.ID, ws.TEAM_ID
 
-p_set_lastupdate_m ${1}, @stats_date
+exec p_set_lastupdate_m ${1}, @stats_date
 go
 
 /*
@@ -246,7 +246,7 @@ go
 
 print " Insert new teams and update work for existing teams"
 go
-p_set_lastupdate_t ${1}, NULL
+exec p_set_lastupdate_t ${1}, NULL
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun
