@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.7 2000/07/15 10:15:40 decibel Exp $
+# $Id: integrate.sql,v 1.8 2000/07/15 10:46:09 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -110,7 +110,7 @@ go
 declare @idoffset int
 select @idoffset = max(id)
 	from STATS_Participant
-#select @idoffset as current_max_ID
+-- select @idoffset as current_max_ID
 
 -- [BW] If we switch to retire_to = id as the normal condition,
 --	this insert should insert (id, EMAIL, retire_to)
