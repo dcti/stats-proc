@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.8 2000/08/16 18:27:47 nugget Exp $
+# $Id: statsconf.pm.default,v 1.9 2000/10/04 06:43:44 decibel Exp $
 #
 # Stats global configuration
 #
@@ -9,7 +9,7 @@ package statsconf;
 $logtag = "statsbox-ii";
 @projects = ("ogr");
 %prids = (
-        "rc5"   => "1",
+        "rc5"   => "5",
         "ogr"   => "24:25",
 );
 %logdir = (
