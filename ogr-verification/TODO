@@ -1,4 +1,4 @@
-$Id: TODO,v 1.6 2002/12/26 01:44:44 nerf Exp $
+$Id: TODO,v 1.7 2002/12/30 13:56:52 nerf Exp $
 
 write script to get id_lookup from Sybase
 rename query3.sql
@@ -7,3 +7,4 @@ modify scripts that create tables to delete them if they already exist
 clean up temp tables when done with them
 error checking
 make separate tables for ogr24, ogr25 (etc)
+write script to download logs hourly
