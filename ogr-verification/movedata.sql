@@ -1,4 +1,4 @@
--- $Id: movedata.sql,v 1.17 2003/01/22 01:22:21 nerf Exp $ --
+-- $Id: movedata.sql,v 1.18 2003/01/22 08:45:36 nerf Exp $ --
 
 CREATE TEMP TABLE normal_stubs (
 	id INT,
@@ -16,21 +16,30 @@ BEGIN;
 	WHERE lower(L.email) = lower(I.email) AND
 		L.stub_marks = A.stub_marks;
 
---This update isn't working for some reason
+	CREATE INDEX normal_all ON normal_stubs
+		(id,stub_id,nodecount,os_type,cpu_type,version); 
+
 	UPDATE stubs
 	SET return_count = return_count +
 		( SELECT count(*)
-		FROM normal_stubs n, stubs
+		FROM normal_stubs n
 		WHERE n.id = stubs.id AND
-			n.stub_id = stubs.stub_id AND 
+			n.stub_id = stubs.stub_id AND
 			n.nodecount = stubs.nodecount AND
 			n.os_type = stubs.os_type AND
 			n.cpu_type = stubs.cpu_type AND
-			n.version = stubs.version);
+			n.version = stubs.version)
+	WHERE exists
+	(SELECT * from normal_stubs n WHERE n.id = stubs.id AND
+		n.stub_id = stubs.stub_id AND
+		n.nodecount = stubs.nodecount AND
+		n.os_type = stubs.os_type AND
+		n.cpu_type = stubs.cpu_type AND
+		n.version = stubs.version);
 
 	INSERT INTO stubs
 	SELECT n.id, n.stub_id, n.nodecount, n.os_type, n.cpu_type,
-		n.version --, count(*) as return_count
+		n.version 
 	FROM normal_stubs n 
 	WHERE NOT EXISTS (SELECT 1 WHERE n.id = stubs.id AND
 				n.stub_id = stubs.stub_id AND
@@ -40,9 +49,5 @@ BEGIN;
 				n.version = stubs.version)
 	GROUP BY n.id, n.stub_id, n.nodecount, n.os_type, n.cpu_type, n.version;
 
---	DROP TABLE logdata;
+	DROP TABLE logdata;
 COMMIT;
-
---CREATE INDEX stubs_id ON stubs(id);
---CREATE INDEX stubs_stub_id ON stubs(stub_id);
---CREATE INDEX stubs_nodecount ON stubs(nodecount);
