@@ -1,5 +1,5 @@
 /*
-# $Id: newjoin.sql,v 1.14 2003/09/11 01:41:02 decibel Exp $
+# $Id: newjoin.sql,v 1.15 2003/11/25 15:38:18 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -43,7 +43,7 @@ SELECT ni.effective_id, min(ni.team_id) AS team_id, sum(work_units) AS work, min
     INTO TEMP nj_work
     FROM email_contrib ec, nj_ids ni
     WHERE ec.project_id = :ProjectID
-        AND ec.team_id = 0
+        AND ec.team_id IS NULL
         AND ec.id = ni.id
     GROUP BY ni.effective_id
 ;
@@ -56,7 +56,7 @@ BEGIN;
         SET team_id = ni.team_id
         FROM nj_ids ni
         WHERE email_contrib.project_id = :ProjectID
-            AND email_contrib.team_id = 0
+            AND email_contrib.team_id IS NULL
             AND email_contrib.id = ni.id
     ;
 
