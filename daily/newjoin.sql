@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: newjoin.sql,v 1.8 2000/11/08 18:42:08 decibel Exp $
+# $Id: newjoin.sql,v 1.9 2000/11/09 03:58:47 decibel Exp $
 #
 # Assigns old work to current team
 #
@@ -36,7 +36,7 @@ go
 declare @id int, @retire_to int, @team_id int
 declare @work numeric(20,0), @first smalldatetime, @last smalldatetime
 declare @eff_id int, @curfirst smalldatetime, @curlast smalldatetime, @rank int
-declare @update_ids int, @total_ids int, @idrows int, @total_rows int
+declare @abort tinyint, @update_ids int, @total_ids int, @idrows int, @total_rows int
 select @update_ids = 0, @total_ids = 0, @total_rows = 0
 open ids
 fetch ids into @id, @retire_to, @team_id
@@ -53,6 +53,7 @@ begin
 # Don't do the update if there's no work for this person
 	if @work > 0
 	begin
+		select @abort = 0
 		begin transaction
 
 # Update Email_Contrib
@@ -61,7 +62,15 @@ begin
 				and PROJECT_ID = ${1}
 				and TEAM_ID = 0
 	
-		select @update_ids = @update_ids + 1, @idrows = @@rowcount, @total_rows = @total_rows + @@rowcount
+		if @@error > 0
+		begin
+			select @update_ids = @update_ids + 1, @idrows = @@rowcount, @total_rows = @total_rows + @@rowcount
+			select @abort = @abort + 1
+		end
+		else
+		begin
+			select @update_ids = @update_ids + 1, @idrows = @@rowcount, @total_rows = @total_rows + @@rowcount
+		end
 
 # Update Team_Members
 		if @retire_to = 0
@@ -90,6 +99,9 @@ begin
 				where ID = @eff_id
 					and PROJECT_ID = ${1}
 					and TEAM_ID = @team_id
+			
+			if @@error > 0
+				select @abort = @abort + 1
 		end
 		else
 		begin
@@ -98,6 +110,9 @@ begin
 					DAY_RANK, DAY_RANK_PREVIOUS, OVERALL_RANK, OVERALL_RANK_PREVIOUS)
 				values ( ${1}, @eff_id, @team_id, @first, @last, 0, @work,
 					@rank, 0, @rank, 0 )
+			
+			if @@error > 0
+				select @abort = @abort + 1
 		end
 # Update Team_Rank
 		if exists (select * from Team_Rank where PROJECT_ID = ${1} and TEAM_ID = @team_id)
@@ -121,6 +136,9 @@ begin
 					MEMBERS_CURRENT = MEMBERS_CURRENT + 1
 				where PROJECT_ID = ${1}
 					and TEAM_ID = @team_id
+			
+			if @@error > 0
+				select @abort = @abort + 1
 		end
 		else
 		begin
@@ -130,9 +148,20 @@ begin
 					MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_CURRENT)
 			values ( ${1}, @team_id, @first, @last, 0, @work,
 				@rank, 0, @rank, 0, 0, 0, 0 )
+			
+			if @@error > 0
+				select @abort = @abort + 1
 		end
 
-		commit transaction
+# Commit (or rollback)
+		if @abort = 0
+			commit transaction
+		else
+		begin
+			print "%1! error(s) encountered, rolling back transaction!", @abort
+			rollback transaction
+		end
+
 		print "  %1! rows processed for ID %2!, TEAM_ID %3!", @idrows, @id, @team_id
 	end
 
