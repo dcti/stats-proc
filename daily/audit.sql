@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.10 2000/10/26 01:57:51 decibel Exp $
+# $Id: audit.sql,v 1.11 2000/10/26 20:19:33 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -25,7 +25,7 @@ create table #audit (
 	TRsum		numeric(20)
 )
 go -f -h
-insert into #audit values(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+insert into #audit values(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 go -f -h
 
 
@@ -67,10 +67,10 @@ print "Sum of team work in Email_Contrib_Today"
 go -f -h
 update #audit
 	set ECTteamsum = (select isnull(sum(d.WORK_UNITS), 0)
-		from Email_Contb_Today d, STATS_Participant p, STATS_Team t
+		from Email_Contrib_Today d, STATS_Participant p, STATS_Team t
 		where PROJECT_ID = ${1}
 			and d.CREDIT_ID = p.ID
-			and p.LISTMODE >= 10)
+			and p.LISTMODE >= 10
 			and p.TEAM>0
 			and t.TEAM=p.TEAM
 			and t.LISTMODE >= 10)
@@ -96,6 +96,10 @@ go -f -h
 -- **************************
 --   PCsumtoday
 -- **************************
+declare @proj_date smalldatetime
+select @proj_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
 print "Sum of work in Platform_Contrib for today (%1!)", @proj_date
 go -f -h
 declare @proj_date smalldatetime
@@ -144,6 +148,10 @@ go -f -h
 -- **************************
 --   DSunits, DSusers
 -- **************************
+declare @proj_date smalldatetime
+select @proj_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
 print "Work Units, Participants in Daily_Summary for today (%1!)", @proj_date
 go -f -h
 declare @proj_date smalldatetime
@@ -181,6 +189,10 @@ go -f -h
 -- **************************
 --   ECsumtoday
 -- **************************
+declare @proj_date smalldatetime
+select @proj_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
 print "Sum of work in Email_Contrib for today (%1!)", @proj_date
 go -f -h
 declare @proj_date smalldatetime
@@ -246,7 +258,7 @@ update #audit
 		from Email_Contrib d, STATS_Participant p, STATS_Team t
 		where PROJECT_ID = ${1}
 			and d.CREDIT_ID = p.ID
-			and p.LISTMODE >= 10)
+			and p.LISTMODE >= 10
 			and p.TEAM>0
 			and t.TEAM=p.TEAM
 			and t.LISTMODE >= 10)
@@ -385,7 +397,7 @@ if (@ECteamsum <> @TMsum)
 	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Members sum (TMsum=%2!)", @ECteamsum, @TMsum
 if (@ECteamsum <> @TRsum)
 	print "ERROR! Email_Contrib team sum (ECteamsum=%1!) != Team_Members sum (TRsum=%2!)", @ECteamsum, @TRsum
-#go -f -h
+--go -f -h
 
 /* ECTteamsum, TMsumtoday, and TRsumtoday should all match */
 declare @ECTteamsum numeric(20)
