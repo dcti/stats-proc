@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.15 2000/10/30 13:32:28 decibel Exp $
+# $Id: retire.sql,v 1.16 2001/01/13 06:28:18 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -13,11 +13,17 @@ go
 
 print 'Remove retired or hidden participants from Email_Rank'
 go
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
 select RETIRE_TO, WORK_TOTAL, FIRST_DATE, LAST_DATE
 	into #temp
 	from Email_Rank er, STATS_Participant sp
 	where sp.ID = er.ID
 		and sp.RETIRE_TO >= 1
+		and sp.RETIRE_DATE = @stats_date
 		and sp.LISTMODE <= 9
 		and er.PROJECT_ID = ${1}
 
@@ -56,10 +62,15 @@ update Email_Rank
 print ""
 print ""
 print "Delete retires from Email_Rank"
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
 delete Email_Rank
 	from STATS_Participant
 	where STATS_Participant.ID = Email_Rank.ID
-		and (STATS_Participant.RETIRE_TO >= 1
+		and ( (STATS_Participant.RETIRE_TO >= 1 and STATS_Participant.RETIRE_DATE = @stats_date)
 			or STATS_Participant.listmode >= 10)
 		and Email_Rank.PROJECT_ID = ${1}
 
@@ -85,11 +96,17 @@ set flushmessage off
 print 'Remove retired participants from Team_Members'
 go
 print 'Select new retires'
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
 select RETIRE_TO, TEAM_ID, WORK_TOTAL, FIRST_DATE, LAST_DATE
 	into #temp
 	from Team_Members tm, STATS_Participant sp
 	where sp.ID = tm.ID
 		and sp.RETIRE_TO >= 1
+		and sp.RETIRE_DATE = @stats_date
 		and sp.LISTMODE <= 9
 		and tm.PROJECT_ID = ${1}
 
@@ -129,10 +146,16 @@ update Team_Members
 		and Team_Members.LAST_DATE < nr.LAST_DATE
 
 print "Delete retires from Team_Members"
+declare @stats_date smalldatetime
+select @stats_date = LAST_STATS_DATE
+	from Projects
+	where PROJECT_ID = ${1}
+
 delete Team_Members
 	from STATS_Participant sp
 	where sp.ID = Team_Members.ID
 		and sp.RETIRE_TO >= 1
+		and sp.RETIRE_DATE = @stats_date
 		and Team_Members.PROJECT_ID = ${1}
 
 -- This code *must* stay in order to handle retiring participants old team affiliations
