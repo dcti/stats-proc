@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.89 2002/02/23 18:03:05 decibel Exp $
+# $Id: hourly.pl,v 1.90 2002/02/24 03:32:26 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -25,14 +25,6 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin
 
 use statsconf;
 use stats;
-
-use Time::Local;
-
-my $yyyy = (gmtime(time-3600))[5]+1900;
-my $mm = (gmtime(time-3600))[4]+1;
-my $dd = (gmtime(time-3600))[3];
-my $hh = (gmtime(time-3600))[2];
-my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my $respawn = 0;
 
@@ -61,11 +53,8 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
   }
   my $sourcelist = $statsconf::logsource{$project};
   my $prefilter = $statsconf::prefilter{$project};
-  my $lastlog = stats::lastlog($project,"get");
-  my $logtoload = "29991231-23";
   my $outbuf = "";
   my @server = split /:/, $sourcelist;
-  chomp($lastlog);
 
   # Check to see if workdir is empty
   opendir WD, "$workdir" or die;
@@ -77,61 +66,9 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     die;
   }
 
-  stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
+  my ($logtoload,$qualcount) = findlog($project);
 
-  # Get list of logs that are on the master
-
-  # fscking linux.  There's a damn good reason why bash isn't a
-  # suitable replacement for sh and here's an example.
-  open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1]$project*.log*\"'|";
-  my $linecount = 0;
-  my $qualcount = 0;
-
-  while (<LS>) {
-    if( $_ =~ /-(...)(...)(...).*$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
-      my $lastdate = $4;
-
-      # Found a log. Is it newer than the last log we processed?
-      if($lastdate gt $lastlog) {
-        $qualcount++;
-        if($lastdate gt $datestr) {
-          # This log is the "active" log, we don't want to count it in our summary.
-          $qualcount--;
-        }
-	
-	# We start with $logtoload set impossibly high (new). If we find a log that's older than $logtoload,
-	# and it's older than our current time - 1 hour ($datestr), mark it as the log to load. Once we've
-	# processed all the available logs, $logtoload will have the lowest possible log we can load. Note
-	# that some unexpected things will happen if we don't get the log list sorted in date order according
-	# to the log filename
-        if(($lastdate lt $logtoload) and ($lastdate le $datestr)) {
-          if(! ($2 =~ /r/) ) {
-            stats::log($project,131,"I need to load log $lastdate, but I cannot because the master created it with the wrong permissions!");
-            die;
-          }
-          print $_;
-          if(! ($_ =~ /gz$/) ) {
-            stats::log($project,131,"The master failed to compress the $lastdate logfile.  Skipping to next project.");
-	    next RUNPROJECTS;
-          }
-          $logtoload = $lastdate;
-        }
-      }
-    }
-    $linecount++;
-  }
-
-  if($linecount == 0) {
-    stats::log($project,131,"Unable to contact log source!");
-  }
-
-  if( $logtoload le $datestr ) {
-    if($qualcount == 1) {
-      stats::log($project,1,"There are $linecount logs on the master, $qualcount is new to me.  Might as well load it while I'm thinking about it.");
-    } else {
-      stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
-    }
-
+  if( $logtoload ne "" ) {
     my ($yyyymmdd, $hh) = split /-/, $logtoload;
 
     my $lastday = stats::lastday($project);
@@ -201,7 +138,6 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       }
 
       open BCP, "bcp import_bcp in $finalfn -e$workdir\\bcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, |";
-
       if(!<BCP>) {
         stats::log($project,131,"Error launching BCP, aborting hourly run.");
         die;
@@ -330,6 +266,91 @@ sub spawn_daily {
   stats::log($f_project,1,"daily.pl complete for $f_project");
   chdir "../hourly";
 
+}
+
+sub findlog {
+  # Get list of logs that are on the master
+  # Accepts:
+  #    $project
+  #
+  # Returns
+  #    log to work with, or empty string if none.
+  #    number of logs left to process
+
+  $_ == 1 or die "Improper number of arguments passed to findlog";
+  my ($project) = @_;
+
+  my @server = split /:/, $statsconf::logsource{$project};
+
+  use Time::Local;
+  
+  my $yyyy = (gmtime(time-3600))[5]+1900;
+  my $mm = (gmtime(time-3600))[4]+1;
+  my $dd = (gmtime(time-3600))[3];
+  my $hh = (gmtime(time-3600))[2];
+  my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
+  my $logtoload = "29991231-23";
+  my $lastlog = stats::lastlog($project,"get");
+  chomp($lastlog);
+
+  stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
+
+  # fscking linux.  There's a damn good reason why bash isn't a
+  # suitable replacement for sh and here's an example.
+  if( !open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1]$project*.log*\"'|" ) {
+    stats::log($project,131,"Unable to contact log source!");
+    return "",0;
+  } 
+
+  my $linecount = 0;
+  my $qualcount = 0;
+
+  while (<LS>) {
+    if( $_ =~ /-(...)(...)(...).*$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
+      my $lastdate = $4;
+
+      # Found a log. Is it newer than the last log we processed?
+      if($lastdate gt $lastlog) {
+        $qualcount++;
+        if($lastdate gt $datestr) {
+          # This log is the "active" log, we don't want to count it in our summary.
+          $qualcount--;
+        }
+	
+	# We start with $logtoload set impossibly high (new). If we find a log that's older than $logtoload,
+	# and it's older than our current time - 1 hour ($datestr), mark it as the log to load. Once we've
+	# processed all the available logs, $logtoload will have the lowest possible log we can load. Note
+	# that some unexpected things will happen if we don't get the log list sorted in date order according
+	# to the log filename
+        if(($lastdate lt $logtoload) and ($lastdate le $datestr)) {
+          if(! ($2 =~ /r/) ) {
+            stats::log($project,131,"I need to load log $lastdate, but I cannot because the master created it with the wrong permissions!");
+            die;
+          }
+          print $_;
+          if(! ($_ =~ /gz$/) ) {
+            stats::log($project,131,"The master failed to compress the $lastdate logfile.  Skipping to next project.");
+	    return "",0;
+          }
+          $logtoload = $lastdate;
+        }
+      }
+    }
+    $linecount++;
+  }
+
+  if($linecount == 0) {
+    stats::log($project,131,"No log files found!");
+    return "",0;
+  }
+
+  if($qualcount == 1) {
+    stats::log($project,1,"There are $linecount logs on the master, $qualcount is new to me.  Might as well load it while I'm thinking about it.");
+  } else {
+    stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
+  }
+
+  return $logtoload,$qualcount;
 }
 
 sub num_format {
