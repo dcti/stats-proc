@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.44 2004/11/02 21:37:21 decibel Exp $
+# $Id: integrate.sql,v 1.45 2004/11/02 21:38:27 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -91,8 +91,9 @@ insert into TEMP_import (PROJECT_ID, EMAIL, WORK_UNITS)
                                 from Projects p
                                 where p.PROJECT_ID = i.PROJECT_ID
                                 )
-    from import_bcp i, Project_statsrun ps
+    from import_bcp i, Project_statsrun ps, TEMP_Projects tp
     where i.PROJECT_ID = ps.PROJECT_ID
+        and i.PROJECT_ID = tp.PROJECT_ID
         and i.TIME_STAMP = ps.LAST_DATE
     group by i.PROJECT_ID, i.EMAIL
 ;
