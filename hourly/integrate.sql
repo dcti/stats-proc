@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.5 2000/06/28 10:59:02 decibel Exp $
+# $Id: integrate.sql,v 1.6 2000/07/15 00:19:11 statproc Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -108,6 +108,7 @@ go
 declare @idoffset int
 select @idoffset = max(id)
 	from STATS_Participant
+select @idoffset as current_max_ID
 
 -- [BW] If we switch to retire_to = id as the normal condition,
 --	this insert should insert (id, EMAIL, retire_to)
@@ -188,10 +189,11 @@ go
 
 print "Clear import_bcp"
 go
+
+print "Total rows in import table:"
 delete import_bcp
 	where 1 = 1
 
 /* This line produces the number of rows imported for logging. The print is for the benefit of hourly.pl */
-print "Total rows in import table:"
 select @@rowcount
 go -f -h
