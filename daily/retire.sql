@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.13 2000/10/09 05:35:16 decibel Exp $
+# $Id: retire.sql,v 1.14 2000/10/29 09:35:46 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -30,7 +30,11 @@ drop table #temp
 --select * from #NewRetiresER
 go
 
+print "Begin update"
+set flushmessage on
+go
 begin transaction
+print "Update Email_Rank with new information"
 update Email_Rank
 	set Email_Rank.WORK_TOTAL = Email_Rank.WORK_TOTAL + nr.WORK_TOTAL
 	from #NewRetiresER nr
@@ -49,6 +53,8 @@ update Email_Rank
 		and Email_Rank.LAST_DATE < nr.LAST_DATE
 		and Email_Rank.PROJECT_ID = ${1}
 
+print ""
+print "Delete retires from Email_Rank"
 delete Email_Rank
 	from STATS_Participant
 	where STATS_Participant.ID = Email_Rank.ID
@@ -59,6 +65,7 @@ delete Email_Rank
 -- The following code should ensure that any "retire_to chains" eventually get eliminated
 -- It is also needed in case someone retires to an address that hasnt done any work in
 -- this contest.
+print "Insert remaining retires"
 delete #NewRetiresER
 	from Email_Rank er
 	where #NewRetiresER.RETIRE_TO = er.ID
@@ -73,8 +80,10 @@ insert into Email_Rank(PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
 commit transaction
 go
 
-print 'Remove retired or hidden participants from Team_Members'
+set flushmessage off
+print 'Remove retired participants from Team_Members'
 go
+print 'Select new retires'
 select RETIRE_TO, TEAM_ID, WORK_TOTAL, FIRST_DATE, LAST_DATE
 	into #temp
 	from Team_Members tm, STATS_Participant sp
@@ -92,7 +101,11 @@ drop table #temp
 --select * from #NewRetiresTM
 go
 
+set flushmessage on
+print "Begin update"
+go
 begin transaction
+print "Update Team_Members with new information for retires"
 update Team_Members
 	set Team_Members.WORK_TOTAL = Team_Members.WORK_TOTAL + nr.WORK_TOTAL
 	from #NewRetiresTM nr
@@ -114,14 +127,16 @@ update Team_Members
 		and Team_Members.PROJECT_ID = ${1}
 		and Team_Members.LAST_DATE < nr.LAST_DATE
 
+print "Delete retires from Team_Members"
 delete Team_Members
 	from STATS_Participant sp
 	where sp.ID = Team_Members.ID
-		and (sp.RETIRE_TO >= 1
-			or sp.LISTMODE >= 10)
+		and sp.RETIRE_TO >= 1
 		and Team_Members.PROJECT_ID = ${1}
 
 -- This code *must* stay in order to handle retiring participants old team affiliations
+print ""
+print "Insert remaining retires"
 delete #NewRetiresTM
 	from Team_Members tm
 	where #NewRetiresTM.RETIRE_TO = tm.ID
@@ -134,5 +149,43 @@ insert into Team_Members(PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TO
 
 --select * from #NewRetiresTM
 
+commit transaction
+go
+
+set flushmessage off
+print "Remove hidden participants"
+go
+print "Select IDs to remove"
+select distinct sp.ID
+	into #BadIDs
+	from Team_Members tm, STATS_Participant sp
+	where tm.ID = sp.ID
+		and sp.LISTMODE > 9
+		and PROJECT_ID = ${1}
+go
+
+print "Summarize team work to be removed"
+select TEAM_ID, sum(WORK_TOTAL) as BAD_WORK_TOTAL
+	into #BadWork
+	from Team_Members tm, #BadIDs b
+	where tm.ID = b.ID
+		and PROJECT_ID = ${1}
+	group by TEAM_ID
+go
+
+set flushmessage on
+go
+begin transaction
+print "Update Team_Rank to account for removed IDs"
+update Team_Rank
+	set WORK_TOTAL = WORK_TOTAL - BAD_WORK_TOTAL
+	from #BadWork bw
+	where Team_Rank.TEAM_ID = bw.TEAM_ID
+
+print "Delete from Team_Members"
+delete Team_Members
+	from #BadIDs b
+	where Team_Members.ID = b.ID
+		and Team_Members.PROJECT_ID = ${1}
 commit transaction
 go
