@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_update.sql,v 1.6 2002/12/11 03:02:13 decibel Exp $
+# $Id: em_update.sql,v 1.7 2002/12/16 19:50:19 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -41,9 +41,33 @@ insert #retired_work
 	group by ect.CREDIT_ID
 go
 
-print ' Remove or move "today" info '
+print ' Insert new participants'
+go
+p_set_lastupdate_e ${1}, NULL
+declare @stats_date smalldatetime
+select @stats_date = LAST_HOURLY_DATE
+	from Project_statsrun
+	where PROJECT_ID = ${1}
+declare @max_rank int
+select @max_rank = count(*)+1 from STATS_Participant
+
+insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
+		OVERALL_RANK, OVERALL_RANK_PREVIOUS)
+	select distinct ${1}, ect.CREDIT_ID, @stats_date, @stats_date, 0, 0, @max_rank, @max_rank, @max_rank, @max_rank
+	from Email_Contrib_Today ect, STATS_Participant sp
+	where ect.CREDIT_ID = sp.ID
+		and (sp.RETIRE_TO = 0 or sp.RETIRE_DATE > @stats_date)
+		and ect.CREDIT_ID not in (select ID from Email_Rank where PROJECT_ID=${1})
+		and not exists (select *
+					from STATS_Participant_Blocked spb
+					where spb.ID = ect.CREDIT_ID
+						and spb.ID = sp.ID
+				)
+		and ect.PROJECT_ID = ${1}
 go
 
+print ' Remove or move "today" info '
+go
 declare @stats_date smalldatetime
 select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun
@@ -58,23 +82,6 @@ update Email_Rank
 		OVERALL_RANK = @max_rank,
 		WORK_TODAY = 0
 	where Email_Rank.PROJECT_ID = ${1}
-
-print ""
-print ""
-print ' Insert new participants'
-insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
-		OVERALL_RANK, OVERALL_RANK_PREVIOUS)
-	select distinct ${1}, ect.CREDIT_ID, @stats_date, @stats_date, 0, 0, @max_rank, @max_rank, @max_rank, @max_rank
-	from Email_Contrib_Today ect, STATS_Participant sp
-	where ect.CREDIT_ID = sp.ID
-		and (sp.RETIRE_TO = 0 or sp.RETIRE_DATE > @stats_date)
-		and ect.CREDIT_ID not in (select ID from Email_Rank where PROJECT_ID=${1})
-		and not exists (select *
-					from STATS_Participant_Blocked spb
-					where spb.ID = ect.CREDIT_ID
-						and spb.ID = sp.ID
-				)
-		and ect.PROJECT_ID = ${1}
 
 print ""
 print ""
