@@ -1,8 +1,8 @@
--- $Id: donestubs.sql,v 1.4 2003/01/08 02:22:29 joel Exp $ --
+-- $Id: donestubs.sql,v 1.5 2003/02/16 19:18:42 nerf Exp $ --
 
-DROP TABLE donestubs;
+DROP TABLE OGR_summary;
 
-CREATE TABLE donestubs (
+CREATE TABLE OGR_summary (
 stub_id INT,
 nodecount BIGINT,
 participants SMALLINT);

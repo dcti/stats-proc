@@ -1,4 +1,4 @@
--- $Id: daily.sql,v 1.5 2002/12/23 18:44:06 nerf Exp $ --
+-- $Id: daily.sql,v 1.6 2003/02/16 19:18:42 nerf Exp $ --
 
 --Create the logdata table and fill it with filtered(filter.pl) data. (addlog.sql)
 -- This file needs to be recreated from scratch
@@ -21,24 +21,28 @@ CREATE INDEX nodecount_idx on logdata (nodecount);
 CREATE INDEX stubid_idx on logdata (stub_id);
 
 
---Create the id_lookup table and fill it with 1 entry(email) per participant. (id_lookup1.sql)
-DROP TABLE id_lookup;
-DROP SEQUENCE id_lookup_stats_id_seq;
+--Create the OGR_idlookup table and fill it with 1 entry(email) per participant. (id_lookup1.sql)
+DROP TABLE OGR_idlookup;
+DROP SEQUENCE OGR_idlookup_stats_id_seq;
 CREATE SEQUENCE stats_id START 1;
 
-CREATE TABLE id_lookup (
+CREATE TABLE OGR_idlookup (
 stats_id BIGSERIAL,
 email VARCHAR(50),
 PRIMARY KEY (stats_id));
 
-INSERT INTO id_lookup SELECT nextval('stats_id'), email FROM stubs GROUP BY email;
+INSERT INTO OGR_idlookup
+	SELECT nextval('stats_id'), email
+	FROM OGR_results
+	GROUP BY email;
 
-CREATE INDEX id_lookup_email_idx on id_lookup (email);
+CREATE INDEX OGR_idlookup_email_idx on OGR_idlookup (email);
 
 
---Insert only valid data into stubs. (movedata.sql)
-INSERT INTO stubs
-SELECT DISTINCT email , stub_id , nodecount, os_type, cpu_type, version FROM logdata;
+--Insert only valid data into OGR_results. (movedata.sql)
+INSERT INTO OGR_results
+SELECT DISTINCT email , stub_id , nodecount, os_type, cpu_type, version
+	FROM logdata;
 
 --CREATE INDEX stubs_email ON stubs(email);
 --CREATE INDEX stubs_stub_id ON stubs(stub_id);
@@ -47,9 +51,9 @@ SELECT DISTINCT email , stub_id , nodecount, os_type, cpu_type, version FROM log
 --CREATE INDEX stubs_cpu_type ON stubs(cpu_type);
 --CREATE INDEX stubs_version ON stubs(version);
 
---Create donestubs table. (donestubs.sql)
-DROP TABLE donestubs;
-CREATE TABLE donestubs (
+--Create OGR_summary table. (donestubs.sql)
+DROP TABLE OGR_summary;
+CREATE TABLE OGR_summary (
  stub_id    TEXT,
  nodecount  BIGINT,
 participants INTEGER);
@@ -57,8 +61,10 @@ participants INTEGER);
 
 
 --Run (query2.sql) the big query.
-INSERT INTO donestubs
+INSERT INTO OGR_summary
 SELECT DISTINCT stub_id, nodecount, (select count(distinct p.stats_id)
-FROM stubs B, id_lookup p
-WHERE p.email = B.email AND B.nodecount = A.nodecount and B.stub_id = A.stub_id) AS participants
-from stubs A;
+	FROM OGR_results R, OGR_idlookup p
+	WHERE p.email = R.email
+	AND R.nodecount = A.nodecount
+	and R.stub_id = A.stub_id) AS participants
+FROM OGR_results A;

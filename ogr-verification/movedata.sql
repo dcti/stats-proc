@@ -1,9 +1,9 @@
--- $Id: movedata.sql,v 1.22 2003/02/03 05:47:39 nerf Exp $
+-- $Id: movedata.sql,v 1.23 2003/02/16 19:18:42 nerf Exp $
 
 INSERT INTO platform (os_type,cpu_type,"version")
 SELECT DISTINCT L.os_type, L.cpu_type, L.version 
 FROM logdata L
-WHERE NOT EXISTS (SELECT * from platform WHERE 
+WHERE NOT EXISTS (SELECT * FROM platform WHERE 
 			L.os_type = platform.os_type AND
 			L.cpu_type = platform.cpu_type AND
 			L.version = platform.version);
@@ -15,54 +15,54 @@ CREATE TEMP TABLE day_results (
 	nodecount BIGINT,
 	platform_id INT,
 	return_count INT,
-	in_stubs bool DEFAULT false NOT NULL
+	in_results bool DEFAULT false NOT NULL
 ) WITHOUT OIDS;
 select now();
 
 -- aggregate all the data
 INSERT INTO day_results(id, stub_id, nodecount, platform_id, return_count)
 SELECT I.id, A.stub_id, L.nodecount, P.platform_id, count(*)
-	FROM logdata L, id_lookup I, all_stubs A, platform P
+	FROM logdata L, OGR_idlookup I, OGR_stubs S, platform P
 	WHERE lower(L.email) = lower(I.email)
-	AND L.stub_marks = A.stub_marks
+	AND L.stub_marks = S.stub_marks
 	AND L.os_type = P.os_type
 	AND L.cpu_type = P.cpu_type
 	AND L.version = P.version
-	GROUP BY I.id, A.stub_id, L.nodecount, P.platform_id
+	GROUP BY I.id, S.stub_id, L.nodecount, P.platform_id
 ;
 select now();
 
-CREATE unique INDEX dayresults_all ON day_results
+CREATE UNIQUE INDEX dayresults_all ON day_results
 	(id,stub_id,nodecount,platform_id);
 
 UPDATE day_results
-SET in_stubs = true
+SET in_results = true
 WHERE exists
-(SELECT * from stubs WHERE day_results.id = stubs.id AND
-	day_results.stub_id = stubs.stub_id AND
-	day_results.nodecount = stubs.nodecount AND
-	day_results.platform_id = stubs.platform_id);
+(SELECT * FROM OGR_results WHERE day_results.id = OGR_results.id AND
+	day_results.stub_id = OGR_results.stub_id AND
+	day_results.nodecount = OGR_results.nodecount AND
+	day_results.platform_id = OGR_results.platform_id);
 select now();
 
 CREATE unique INDEX dayresults_all_count ON day_results
-	(id,stub_id,nodecount,platform_id,return_count) WHERE in_stubs = false;
+	(id,stub_id,nodecount,platform_id,return_count) WHERE in_results = false;
 
 BEGIN;
 
-	UPDATE stubs
-	SET return_count = COALESCE(stubs.return_count,0) + dr.return_count
+	UPDATE OGR_results
+	SET return_count = COALESCE(OGR_results.return_count,0) + dr.return_count
 	FROM day_results dr
-	WHERE dr.id = stubs.id AND
-		dr.stub_id = stubs.stub_id AND
-		dr.nodecount = stubs.nodecount AND
-		dr.platform_id = stubs.platform_id AND
-		dr.in_stubs = true;
+	WHERE dr.id = OGR_results.id AND
+		dr.stub_id = OGR_results.stub_id AND
+		dr.nodecount = OGR_results.nodecount AND
+		dr.platform_id = OGR_results.platform_id AND
+		dr.in_results = true;
 select now();
 
-	INSERT INTO stubs
+	INSERT INTO OGR_results
 	SELECT dr.id, dr.stub_id, dr.nodecount, dr.platform_id, dr.return_count
 	FROM day_results dr 
-	WHERE dr.in_stubs = false;
+	WHERE dr.in_results = false;
 select now();
 
 	DROP TABLE logdata;

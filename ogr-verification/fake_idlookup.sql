@@ -1,19 +1,19 @@
--- $Id: fake_idlookup.sql,v 1.3 2002/12/23 00:30:37 joel Exp $
+-- $Id: fake_idlookup.sql,v 1.4 2003/02/16 19:18:42 nerf Exp $
 
-DROP TABLE id_lookup;
+DROP TABLE OGR_idlookup;
 DROP SEQUENCE id;
-DROP SEQUENCE id_lookup_id_seq;
+DROP SEQUENCE OGR_idlookup_id_seq;
 CREATE SEQUENCE id START 1;
 
-CREATE TABLE id_lookup (
+CREATE TABLE OGR_idlookup (
 id BIGSERIAL,
 stats_id INT,
 email VARCHAR(64),
 PRIMARY KEY (id));
 
-INSERT INTO id_lookup 
+INSERT INTO OGR_idlookup 
 SELECT nextval('id'), nextval('id'), email 
 FROM logdata 
 GROUP BY email;
 
-CREATE INDEX idlookup_email_idx ON id_lookup (email);
+CREATE INDEX idlookup_email_idx ON OGR_idlookup (email);
