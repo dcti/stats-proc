@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.9 2000/10/25 23:25:43 decibel Exp $
+# $Id: audit.sql,v 1.10 2000/10/26 01:57:51 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -243,7 +243,7 @@ print "Sum of team work in Email_Contrib"
 go -f -h
 update #audit
 	set ECteamsum = (select isnull(sum(d.WORK_UNITS), 0)
-		from Email_Contib d, STATS_Participant p, STATS_Team t
+		from Email_Contrib d, STATS_Participant p, STATS_Team t
 		where PROJECT_ID = ${1}
 			and d.CREDIT_ID = p.ID
 			and p.LISTMODE >= 10)
