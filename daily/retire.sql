@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.6 2000/07/18 10:46:58 decibel Exp $
+# $Id: retire.sql,v 1.7 2000/07/19 04:07:29 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -14,12 +14,20 @@ go
 print 'Remove retired or hidden participants from Email_Rank'
 go
 select RETIRE_TO, WORK_TOTAL, FIRST_DATE, LAST_DATE
-	into #NewRetiresER
+	into #temp
 	from Email_Rank er, STATS_Participant sp
 	where sp.ID = er.ID
 		and sp.RETIRE_TO >= 1
 		and sp.LISTMODE <= 9
 		and er.PROJECT_ID = ${1}
+
+select RETIRE_TO, sum(WORK_TOTAL) as WORK_TOTAL, FIRST_DATE, LAST_DATE
+	into #NewRetiresER
+	from #temp
+	group by RETIRE_TO
+go
+drop table #temp
+go
 
 begin transaction
 update Email_Rank
@@ -64,12 +72,20 @@ go
 print 'Remove retired or hidden participants from Team_Members'
 go
 select RETIRE_TO, TEAM_ID, WORK_TOTAL, FIRST_DATE, LAST_DATE
-	into #NewRetiresTM
+	into #temp
 	from Team_Members tm, STATS_Participant sp
 	where sp.ID = tm.ID
 		and sp.RETIRE_TO >= 1
 		and sp.LISTMODE <= 9
 		and tm.PROJECT_ID = ${1}
+
+select RETIRE_TO, TEAM_ID, sum(WORK_TOTAL) as WORK_TOTAL, FIRST_DATE, LAST_DATE
+	into #NewRetiresTM
+	from #temp
+	group by RETIRE_TO, TEAM_ID
+go
+drop table #temp
+go
 
 begin transaction
 update Team_Members
