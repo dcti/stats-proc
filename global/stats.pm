@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.8 2000/08/16 17:40:26 nugget Exp $
+# $Id: stats.pm,v 1.9 2000/08/16 18:28:22 nugget Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -133,4 +133,34 @@ sub semcheck {
 	} else {
 		return NULL;
 	}
+}
+
+sub lastlog {
+  # This function will either return or store the lastlog value for the specified project.
+  #
+  # lastlog("ogr","get") will return lastlog value.
+  # lastlog("ogr","20001231-01") will set lastlog value to 31-Dec-2000 01:00 UTC
+
+  my ($f_project, $f_action) = @_;
+
+  if( $f_action =~ /get/i) {
+    return `cat ~/var/lastlog.$f_project`;
+  } else {
+    return `echo $f_action > ~/var/lastlog.$f_project`;
+  }
+}
+
+sub lastday {
+  # This function will either return or store the lastlog value for the specified project.
+  #
+  # lastday("ogr","get") will return lastday value.
+  # lastday("ogr","20001231") will set lastday value to 31-Dec-2000
+
+  my ($f_project, $f_action) = @_;
+
+  if( $f_action =~ /get/i) {
+    return `cat ~/var/lastday.$f_project`;
+  } else {
+    return `echo $f_action > ~/var/lastday.$f_project`;
+  }
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.45 2000/08/16 17:47:19 nugget Exp $
+# $Id: hourly.pl,v 1.46 2000/08/16 18:28:22 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -46,7 +46,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
   }
   my $sourcelist = $statsconf::logsource{$project};
   my $prefilter = $statsconf::prefilter{$project};
-  my $lastlog = lastlog($project,"get");
+  my $lastlog = stats::lastlog($project,"get");
   my $logtoload = "29991231-23";
   my $outbuf = "";
   my @server = split /:/, $sourcelist;
@@ -93,7 +93,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
     my ($yyyymmdd, $hh) = split /-/, $logtoload;
 
-    my $lastday = lastday($project,"get");
+    my $lastday = stats::lastday($project,"get");
     chomp $lastday;
     if( $lastday ne ($yyyymmdd - 1)) {
       stats::log($project,131,"Aborting: I'm supposed to load a log from $yyyymmdd, but I haven't done a daily update since $lastday!");
@@ -214,10 +214,10 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       # It's always good to clean up after ourselves for the next run.
       unlink $finalfn, $rawfn;
 
-      lastlog($project,$logtoload);
+      stats::lastlog($project,$logtoload);
 
       if($hh == 23) {
-        if(lastday($project,"get") < $yyyymmdd) {
+        if(stats::lastday($project,"get") < $yyyymmdd) {
           spawn_daily($project);
         }
       }
@@ -239,36 +239,6 @@ sub spawn_daily {
   my ($f_project) = @_;
 
   die;
-}
-
-sub lastlog {
-  # This function will either return or store the lastlog value for the specified project.
-  #
-  # lastlog("ogr","get") will return lastlog value.
-  # lastlog("ogr","20001231-01") will set lastlog value to 31-Dec-2000 01:00 UTC
-
-  my ($f_project, $f_action) = @_;
-
-  if( $f_action =~ /get/i) {
-    return `cat ~/var/lastlog.$f_project`;
-  } else {
-    return `echo $f_action > ~/var/lastlog.$f_project`;
-  }
-}
-
-sub lastday {
-  # This function will either return or store the lastlog value for the specified project.
-  #
-  # lastday("ogr","get") will return lastday value.
-  # lastday("ogr","20001231") will set lastday value to 31-Dec-2000
-
-  my ($f_project, $f_action) = @_;
-
-  if( $f_action =~ /get/i) {
-    return `cat ~/var/lastday.$f_project`;
-  } else {
-    return `echo $f_action > ~/var/lastday.$f_project`;
-  }
 }
 
 sub num_format {
