@@ -10,4 +10,4 @@ if [ x$2 = x ]; then
     exit 1
 fi
 
-psql -f audit.sql -v ProjectID=$1 -v "KeepDate='$2'" stats
+psql -f backout.sql -v ProjectID=$1 -v "KeepDate='$2'" stats
