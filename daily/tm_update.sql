@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.2 2000/10/30 00:21:39 decibel Exp $
+# $Id: tm_update.sql,v 1.3 2000/10/30 00:54:16 decibel Exp $
 
 TM_RANK
 
@@ -67,7 +67,7 @@ go
 insert #TeamMemberWork (ID, TEAM_ID, WORK_TODAY, IS_NEW)
 	select CREDIT_ID, TEAM_ID, sum(WORK_UNITS) as WORK_UNITS, 1
 	from #TeamMembers
-	group by CREDIT_ID, TEAM
+	group by CREDIT_ID, TEAM_ID
 go
 
 print " Flag existing members as not-new"
