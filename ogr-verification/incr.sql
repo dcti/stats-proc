@@ -1,4 +1,4 @@
--- $Id: incr.sql,v 1.5 2003/08/02 12:58:42 nerf Exp $ --
+-- $Id: incr.sql,v 1.6 2003/08/31 17:29:31 nerf Exp $ --
 ----------------
 -- day_results and retire_today will probably be handled somewhere else
 -- in the future, but it's here for not to facilitate testing
@@ -13,7 +13,17 @@ CREATE TEMP TABLE day_results (
 	in_results bool DEFAULT false NOT NULL
 ) WITHOUT OIDS;
 
-analyze logadata;
+analyze logdata;
+
+begin;
+INSERT INTO platform (os_type,cpu_type,"version")
+SELECT DISTINCT L.os_type, L.cpu_type, L.version
+FROM logdata L
+WHERE NOT EXISTS (SELECT * FROM platform WHERE
+                        L.os_type = platform.os_type AND
+                        L.cpu_type = platform.cpu_type AND
+                        L.version = platform.version);
+select now();
 
 -- aggregate and normalize data
 INSERT INTO day_results
@@ -41,27 +51,8 @@ CREATE UNIQUE INDEX dayresults_all ON day_results
 CREATE unique INDEX dayresults_all_count ON day_results
 	(id,stub_id,nodecount,platform_id,return_count) ;
 
-
 select now();
 ----------------
-
-CREATE TEMP TABLE retire_today (
-email VARCHAR (64) NOT NULL,
-id INTEGER NOT NULL,
-stats_id INTEGER NOT NULL
-) WITHOUT OIDS;
-
-INSERT INTO retire_today
-	SELECT email,
-		id,
-		(stats_id*(sign(stats_id))+id*(1-sign(stats_id)))
-			AS stats_id
-	FROM ogr_idlookup
-	WHERE retire_date >= '20030701';
-
-select now();
-----------------
-select * from retire_today;
 
 CREATE TEMP TABLE retired_stub_id (
 stub_id integer NOT NULL,
@@ -69,7 +60,6 @@ nodecount bigint NOT NULL,
 id integer NOT NULL
 ) WITHOUT OIDS;
 
---ANALYZE OGR_results;
 ANALYZE retire_today;
 
 SET enable_seqscan = false;
@@ -107,7 +97,7 @@ select now();
 -- reduce the number of participants for a given stub, but only if what
 -- we previous thought was two different people are now (because of retires)
 -- seen as a single person
-explain UPDATE ogr_summary
+explain analyze UPDATE ogr_summary
 SET participants = participants - duplicated_ids
 FROM (SELECT stub_id, nodecount, count(*) AS duplicated_ids
 	FROM retired_stub_id GROUP BY stub_id, nodecount) dw
@@ -138,7 +128,7 @@ AND NOT EXISTS (
 ;
 select now();
 CREATE INDEX day_stubnode ON day_summary (stub_id,nodecount)
-    WHERE ds.in_ogr_summary;
+    WHERE in_ogr_summary;
 
 analyze day_summary;
 select now();
@@ -155,7 +145,7 @@ WHERE exists
         );
 
 -- If it's threre already, update it
-explain UPDATE OGR_summary
+explain analyze UPDATE OGR_summary
     SET participants = participants + ids
         , max_client = max(max_client, max_version)
     FROM day_summary ds
@@ -166,7 +156,7 @@ explain UPDATE OGR_summary
 
 -- If it's not there, add it
 -- Note that most of the stubs will fall under this category
-explain INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
+explain analyze INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
     SELECT stub_id, nodecount, ids, max_version
     FROM day_summary ds
     WHERE NOT ds.in_ogr_summary
@@ -174,3 +164,4 @@ explain INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
 
 select now();
 select 'All done!';
+end;
