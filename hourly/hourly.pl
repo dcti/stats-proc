@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.55 2000/09/11 15:16:51 nugget Exp $
+# $Id: hourly.pl,v 1.56 2000/09/11 15:42:42 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -74,18 +74,26 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
   # fscking linux.  There's a damn good reason why bash isn't a
   # suitable replacement for sh and here's an example.
  
-  open LS, "tcsh -c 'ssh $server[0] \"ls $server[1]$project*.log.gz\"'|";
+  open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1]$project*.log.gz\"'|";
   my $linecount = 0;
   my $qualcount = 0;
 
   while (<LS>) {
-    if( $_ =~ /.*\/$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
-      my $lastdate = $1;
+    if( $_ =~ /-(...)(...)(...).*$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
+      my $lastdate = $4;
 
       if($lastdate gt $lastlog) {
         $qualcount++;
         if($lastdate lt $logtoload) {
-          $logtoload = $lastdate;
+          if($2 =~ /r/) {
+            $logtoload = $lastdate;
+          } else {
+            stats::log($project,131,"I need to load log $4, but I cannot because the master created it with the wrong permissions!");
+            if(stats::semflag($project) ne "OK") {
+              stats::log($project,131,"Error clearing hourly.pl lock");
+            }
+            die;
+          }
         }
       }
     }
@@ -136,6 +144,8 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
     }
     close SCP;
     stats::log($project,1,$outbuf);
+
+    die;
 
     open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
     my $rawfn = "";
