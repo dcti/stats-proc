@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.14 2003/09/11 01:41:02 decibel Exp $
+# $Id: statsconf.pm.default,v 1.15 2003/12/15 22:22:24 decibel Exp $
 #
 # Stats global configuration
 #
@@ -19,45 +19,23 @@ $lockfile = "$homedir/log/statsrun.lck";
 # project logfiles!
 %logdir = (
 	"stats"	=> "/var/log/",
-	"rc5"	=> "$homedir/log/",
-	"des"	=> "$homedir/log/",
+	"r72"	=> "$homedir/log/",
 	"ogr"	=> "$homedir/log/",
-	"csc"	=> "$homedir/log/",
 );
 %logsource = (
-	"rc5"	=> "keymaster.distributed.net:/home/master/logs/",
-	"des"	=> "keymaster.distributed.net:/home/master/logs/",
+	"r72"	=> "keymaster.distributed.net:/home/master/logs/",
 	"ogr"	=> "keymaster.distributed.net:/home/master/logs/",
-	"csc"	=> "keymaster.distributed.net:/home/master/logs/",
 );
 
 %htdocs = (
 	"stats"	=> "/htdocs/",
-	"rc5"	=> "/htdocs/rc5/",
-	"des"	=> "/htdocs/des/",
+	"r72"	=> "/htdocs/r72/",
 	"ogr"	=> "/htdocs/ogr/",
-	"csc"	=> "/htdocs/csc/",
-);
-%incoming =  (
-	"stats"	=> ".",
-	"rc5"	=> "/usr/home/incoming/newlogs-rc5",
-	"des"	=> "/usr/home/incoming/newlogs-des",
-	"ogr"	=> "/usr/home/incoming/newlogs-ogr",
-	"csc"	=> "/usr/home/incoming/newlogs-csc",
-);
-
-%projectdir = (
-	"rc5"	=> "$homedir/stats-rc5",
-	"des"	=> "$homedir/stats-des",
-	"ogr"	=> "$homedir/stats-ogr",
-	"csc"	=> "$homedir/stats-csc",
 );
 
 %prefilter = (
-	"rc5"	=> "./logmod/logmod -rc5",
-	"des"	=> "",
+	"r72"	=> "./logmod/logmod -rc5",
 	"ogr"	=> "./logmod/logmod -ogr",
-	"csc"	=> "",
 );
 
 # the $dctievent variable holds the hostname of the irc repeater
@@ -73,9 +51,9 @@ $lockfile = "$homedir/log/statsrun.lck";
 
 $dctievent = "FQDN";
 @ircchannels = (
-        "1:#dcti-logs:999:PASS1:PASS2",
-        "2:#dcti:998:PASS1:PASS2",
-        "4:#distributed:998:PASS1:PASS2",
+#        "1:#dcti-logs:999:PASS1:PASS2",
+#        "2:#dcti:998:PASS1:PASS2",
+#        "4:#distributed:998:PASS1:PASS2",
 );
 
 $database = "stats";
