@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.27 2002/04/11 08:09:29 decibel Exp $
+# $Id: audit.sql,v 1.28 2002/04/12 18:03:28 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -275,7 +275,7 @@ update	#audit
 		where PROJECT_ID = ${1}
 			and e.DATE = @proj_date
 			and e.ID = p.RETIRE_TO
-			and p.RETIRE_DATE <= @proj_date
+			and (p.RETIRE_DATE <= @proj_date or p.RETIRE_DATE is null)
 			and spb.ID = p.ID
 		)
 
