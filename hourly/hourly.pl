@@ -122,6 +122,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
       close SQL;
 
       # perform sanity checking here
+      stats::log($project,1,"$logtoload successfully processed.");
 
       # If hour = 23 or day > lastlog(day)
       # queue daily processing for this project
