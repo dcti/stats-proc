@@ -5,5 +5,5 @@ if [ x$1 = x ]; then
 	exit 1
 fi
 
-psql -d stats -v ProjectID=$1 -f clearday.sql
+psql -d stats -v ProjectID=$1 -f clearday.sql &&
 psql -d stats -v ProjectID=$1 -f backup.sql
