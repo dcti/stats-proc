@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.26 2003/09/02 18:36:50 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.27 2003/09/03 23:03:22 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -26,209 +26,210 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin
 use statsconf;
 use stats;
 
-my $respawn = 0;
+my $respawn = 1;
 
 my $workdir = "./workdir/";
 
-RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
-  my $project = $statsconf::projects[$i];
-  
-  # Check to see if we're locked, but don't set it until it's time to actually do some work
-  #
-  # NOTE:
-  # This means that anything that actually modifies data should not happen until after we set
-  # the lock.
-  if ($_ = stats::semcheck('hourly')) {
-    stats::log($project,129,"Cannot obtain lock for hourly.pl!  [$_] still running!");
-    #next RUNPROJECTS;
-    die;
-  }
-  my $sourcelist = $statsconf::logsource{$project};
-  my $prefilter = $statsconf::prefilter{$project};
-  my $outbuf = "";
-  my @server = split /:/, $sourcelist;
-  $server[1] .= "/";
-
-  # Check to see if workdir is empty
-  opendir WD, "$workdir" or die;
-  my @wdcontents = grep !/^(CVS|\.\.?)$/, readdir WD;
-  closedir WD;
-
-  if(@wdcontents > 0) {
-    stats::log($project,131,"Workdir is not empty!  I refuse to proceed with hourly processing.");
-    die;
-  }
-
-  my ($logtoload,$logext,$qualcount) = findlog($project);
-
-  if( $qualcount > 0 ) {
-    my ($yyyymmdd, $hh) = split /-/, $logtoload;
-
-    my $lastday = stats::lastday($project);
-    chomp $lastday;
-
-    if ($lastday eq "") {
-      stats::log($project,131,"Warning: It appears that there has never been a daily run for this project.");
-    } else {
-      my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
-      my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
-  
-      if ( $lasttime != ($logtime - 86400)) {
-        stats::log($project,139,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
-        die;
-      }
-    }
-
-    if($qualcount > 1) {
-       # We should respawn at the end to catch up...
-       $respawn = 1;
-    }
-
-    my $fullfn = "$server[1]$project$logtoload$logext";
-    my $basefn = "$project$logtoload$logext";
-
-    # Go ahead and set the lock now
-    if($_ = stats::semflag('hourly',"hourly.pl") ne "OK") {
+while ($respawn = 1 and not -e 'stop') {
+  $respawn = 0;
+  RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
+    my $project = $statsconf::projects[$i];
+    
+    # Check to see if we're locked, but don't set it until it's time to actually do some work
+    #
+    # NOTE:
+    # This means that anything that actually modifies data should not happen until after we set
+    # the lock.
+    if ($_ = stats::semcheck('hourly')) {
       stats::log($project,129,"Cannot obtain lock for hourly.pl!  [$_] still running!");
+      #next RUNPROJECTS;
+      die;
+    }
+    my $sourcelist = $statsconf::logsource{$project};
+    my $prefilter = $statsconf::prefilter{$project};
+    my $outbuf = "";
+    my @server = split /:/, $sourcelist;
+    $server[1] .= "/";
+
+    # Check to see if workdir is empty
+    opendir WD, "$workdir" or die;
+    my @wdcontents = grep !/^(CVS|\.\.?)$/, readdir WD;
+    closedir WD;
+
+    if(@wdcontents > 0) {
+      stats::log($project,131,"Workdir is not empty!  I refuse to proceed with hourly processing.");
       die;
     }
 
-    $outbuf = "";
-    open SCP, "scp -Bv $server[0]:$fullfn $workdir 2> /dev/stdout |";
-    while (<SCP>) {
-      if ($_ =~ /Transferred: stdin (\d+), stdout (\d+), stderr (\d+) bytes in (\d+.\d) seconds/) {
-        my $rate = rate_calc($2,$4);
-        my $size = num_format($2);
-        my $time = num_format($4);
-        $outbuf = "$basefn received: $size bytes in $time seconds ($rate)";
-      }
-    }
-    close SCP;
-    if ($outbuf eq "") {
-      stats::log($project,1,"$basefn received");
-    } else {
-      stats::log($project,1,$outbuf);
-    }
+    my ($logtoload,$logext,$qualcount) = findlog($project);
 
-    my $rawfn = "";
-    if ( $logext =~ /.gz$/ ) {
-	open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
-	while (<GZIP>) {
-	  if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
-	    $rawfn = $2;
-	    $rawfn =~ s/$workdir//;
-	    stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
-	  }
-	}
-    } elsif ( $logext =~ /.bz2$/ ) {
-	my $orgsize=(stat "$workdir$basefn")[7];
-	system("bzip2 -d $workdir$basefn");
-	if ($? == 0) {
-	    $rawfn = $basefn;
-	    $rawfn =~ s/.bz2//i;
-	    my $newsize=(stat "$workdir$rawfn")[7];
-      if ( $newsize == 0 ) {
-        stats::log($project,1,"$basefn successfully decompressed, and the file is empty.");
+    if( $qualcount > 0 ) {
+      my ($yyyymmdd, $hh) = split /-/, $logtoload;
+
+      my $lastday = stats::lastday($project);
+      chomp $lastday;
+
+      if ($lastday eq "") {
+        stats::log($project,131,"Warning: It appears that there has never been a daily run for this project.");
       } else {
-        stats::log($project,1,"$basefn successfully decompressed (" . int((1-$orgsize/$newsize)*100) . "% compression)");
+        my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
+        my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
+    
+        if ( $lasttime != ($logtime - 86400)) {
+          stats::log($project,139,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
+          die;
+        }
       }
-	}
-    }
-    if( $rawfn eq "" ) {
-      stats::log($project,130,"$basefn failed decompression!");
-    } else {
-      my $finalfn = "$rawfn.filtered";
-      if( $prefilter eq "" ) {
-        stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
-        $finalfn = $rawfn;
+
+      if($qualcount > 1) {
+         # We should respawn at the end to catch up...
+         $respawn = 1;
+      }
+
+      my $fullfn = "$server[1]$project$logtoload$logext";
+      my $basefn = "$project$logtoload$logext";
+
+      # Go ahead and set the lock now
+      if($_ = stats::semflag('hourly',"hourly.pl") ne "OK") {
+        stats::log($project,129,"Cannot obtain lock for hourly.pl!  [$_] still running!");
+        die;
+      }
+
+      $outbuf = "";
+      open SCP, "scp -Bv $server[0]:$fullfn $workdir 2> /dev/stdout |";
+      while (<SCP>) {
+        if ($_ =~ /Transferred: stdin (\d+), stdout (\d+), stderr (\d+) bytes in (\d+.\d) seconds/) {
+          my $rate = rate_calc($2,$4);
+          my $size = num_format($2);
+          my $time = num_format($4);
+          $outbuf = "$basefn received: $size bytes in $time seconds ($rate)";
+        }
+      }
+      close SCP;
+      if ($outbuf eq "") {
+        stats::log($project,1,"$basefn received");
       } else {
-	`cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> ./filter_$project.err`;
-	if ($? == 0) {
-	    stats::log($project,1,"$rawfn successfully filtered through $prefilter.");
-	} else {
-	    stats::log($project,131,"unable to filter $rawfn through $prefilter!");
-	    die;
-	}
+        stats::log($project,1,$outbuf);
       }
 
-      my $bcprows = `cat $workdir$finalfn | wc -l`;
-      $bcprows =~ s/ +//g;
-      chomp $bcprows;
-
-      my $bcp = `time ./bcp.sh $statsconf::database $workdir$finalfn 2>&1`;
-      if($? != 0) {
-        print "bcp error: $bcp\n";
-        stats::log($project,131,"Error launching BCP, aborting hourly run.");
-        die;
-      }
-
-      $bcp =~ /([0123456789.]+)/;
-      my $rate = int($bcprows / $1);
-
-	  stats::log($project,1,"$finalfn successfully BCP'd; $bcprows rows at $rate rows/second.");
-
-      if($bcprows == 0) {
-        stats::log($project,139,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
-      }
-
-      my $bufstorage = "";
-      my $psqlsuccess = 0;
-      my $sqlrows = 0;
-      if(!open SQL, "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |") {
-        stats::log($project,139,"Error launching psql, aborting hourly run.");
-        die;
-      }
-      while (<SQL>) {
-        my $buf = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]) . $_;
-        chomp $buf;
-        if ( $buf ne '') {
-          stats::log($project,0,$buf);
-          $bufstorage = "$bufstorage$buf\n";
-        }
-        if( $_ =~ /^Msg|ERROR/ ) {
-          $psqlsuccess = 1;
-        } elsif ( $_ =~ /^ Total rows: *(\d+)/ ) {
-          $sqlrows = $1;
-        }
-      }
-      close SQL;
-      if( $psqlsuccess > 0) {
-        stats::log($project,139,"integrate.sql failed on $basefn - aborting.  Details are in $workdir\psql_errors");
-        open SQERR, ">$workdir\psql_errors";
-        print SQERR "$bufstorage";
-        close SQERR;
-        die;
-      }
-
-      # perform sanity checking here
-      if ( $sqlrows != $bcprows ) {
-	stats::log($project,139,"Row counts for BCP($bcprows) and SQL($sqlrows) do not match, aborting.");
-	die;
-      }
-      stats::log($project,1,"$basefn successfully processed.");
-
-      # It's always good to clean up after ourselves for the next run.
-      unlink "$workdir$finalfn", "$workdir$rawfn";
-
-      if($hh == 23) {
-        if(stats::lastday($project) < $yyyymmdd) {
-          # Note -- CWD is not clean after calling spawn_daily.  Always use absolute
-          # Paths after calling this.  (yeah, I know that's ugly)
-          spawn_daily($project);
-        }
+      my $rawfn = "";
+      if ( $logext =~ /.gz$/ ) {
+    open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
+    while (<GZIP>) {
+      if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
+        $rawfn = $2;
+        $rawfn =~ s/$workdir//;
+        stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
       }
     }
-    close GZIP;
-  }
-  if(stats::semflag('hourly') ne "OK") {
-    stats::log($project,139,"Error clearing hourly.pl lock");
+      } elsif ( $logext =~ /.bz2$/ ) {
+    my $orgsize=(stat "$workdir$basefn")[7];
+    system("bzip2 -d $workdir$basefn");
+    if ($? == 0) {
+        $rawfn = $basefn;
+        $rawfn =~ s/.bz2//i;
+        my $newsize=(stat "$workdir$rawfn")[7];
+        if ( $newsize == 0 ) {
+          stats::log($project,1,"$basefn successfully decompressed, and the file is empty.");
+        } else {
+          stats::log($project,1,"$basefn successfully decompressed (" . int((1-$orgsize/$newsize)*100) . "% compression)");
+        }
+    }
+      }
+      if( $rawfn eq "" ) {
+        stats::log($project,130,"$basefn failed decompression!");
+      } else {
+        my $finalfn = "$rawfn.filtered";
+        if( $prefilter eq "" ) {
+          stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
+          $finalfn = $rawfn;
+        } else {
+    `cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> ./filter_$project.err`;
+    if ($? == 0) {
+        stats::log($project,1,"$rawfn successfully filtered through $prefilter.");
+    } else {
+        stats::log($project,131,"unable to filter $rawfn through $prefilter!");
+        die;
+    }
+        }
+
+        my $bcprows = `cat $workdir$finalfn | wc -l`;
+        $bcprows =~ s/ +//g;
+        chomp $bcprows;
+
+        my $bcp = `time ./bcp.sh $statsconf::database $workdir$finalfn 2>&1`;
+        if($? != 0) {
+          print "bcp error: $bcp\n";
+          stats::log($project,131,"Error launching BCP, aborting hourly run.");
+          die;
+        }
+
+        $bcp =~ /([0123456789.]+)/;
+        my $rate = int($bcprows / $1);
+
+      stats::log($project,1,"$finalfn successfully BCP'd; $bcprows rows at $rate rows/second.");
+
+        if($bcprows == 0) {
+          stats::log($project,139,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+        }
+
+        my $bufstorage = "";
+        my $psqlsuccess = 0;
+        my $sqlrows = 0;
+        if(!open SQL, "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |") {
+          stats::log($project,139,"Error launching psql, aborting hourly run.");
+          die;
+        }
+        while (<SQL>) {
+          my $buf = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]) . $_;
+          chomp $buf;
+          if ( $buf ne '') {
+            stats::log($project,0,$buf);
+            $bufstorage = "$bufstorage$buf\n";
+          }
+          if( $_ =~ /^Msg|ERROR/ ) {
+            $psqlsuccess = 1;
+          } elsif ( $_ =~ /^ Total rows: *(\d+)/ ) {
+            $sqlrows = $1;
+          }
+        }
+        close SQL;
+        if( $psqlsuccess > 0) {
+          stats::log($project,139,"integrate.sql failed on $basefn - aborting.  Details are in $workdir\psql_errors");
+          open SQERR, ">$workdir\psql_errors";
+          print SQERR "$bufstorage";
+          close SQERR;
+          die;
+        }
+
+        # perform sanity checking here
+        if ( $sqlrows != $bcprows ) {
+    stats::log($project,139,"Row counts for BCP($bcprows) and SQL($sqlrows) do not match, aborting.");
     die;
+        }
+        stats::log($project,1,"$basefn successfully processed.");
+
+        # It's always good to clean up after ourselves for the next run.
+        unlink "$workdir$finalfn", "$workdir$rawfn";
+
+        if($hh == 23) {
+          if(stats::lastday($project) < $yyyymmdd) {
+            # Note -- CWD is not clean after calling spawn_daily.  Always use absolute
+            # Paths after calling this.  (yeah, I know that's ugly)
+            spawn_daily($project);
+          }
+        }
+      }
+      close GZIP;
+    }
+    if(stats::semflag('hourly') ne "OK") {
+      stats::log($project,139,"Error clearing hourly.pl lock");
+      die;
+    }
   }
 }
 
-if ($respawn > 0 and not -e 'stop') {
-  exec "./hourly.pl";
-}
+exit 0;
 
 sub spawn_daily {
 
