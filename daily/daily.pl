@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.13 2000/09/07 18:54:11 decibel Exp $
+# $Id: daily.pl,v 1.14 2000/09/07 19:00:07 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -30,8 +30,8 @@ if(!$ARGV[0]) {
 my $project = $ARGV[0];
 
 # This is a big-time kludge to make sure we don't walk on the RC5 run
-if (-e /home/incoming/newlogs-rc5/nologs.lck) {
-  stats::log($project,131,"/usr/home/incoming/newlogs-rc5/nologs.lck exists; aborting.");
+if (-e '/home/incoming/newlogs-rc5/nologs.lck') {
+  stats::log($project,131,'/usr/home/incoming/newlogs-rc5/nologs.lck exists; aborting.');
   die;
 }
 

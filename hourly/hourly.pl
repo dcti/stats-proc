@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.53 2000/09/07 18:54:11 decibel Exp $
+# $Id: hourly.pl,v 1.54 2000/09/07 19:00:07 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -41,8 +41,8 @@ my $workdir = "./workdir/";
 for (my $i = 0; $i < @statsconf::projects; $i++) {
   my $project = $statsconf::projects[$i];
   # This is a big-time kludge to make sure we don't walk on the RC5 run
-  if (-e /home/incoming/newlogs-rc5/nologs.lck) {
-    stats::log($project,1,"/usr/home/incoming/newlogs-rc5/nologs.lck exists; aborting.");
+  if (-e '/home/incoming/newlogs-rc5/nologs.lck') {
+    stats::log($project,1,'/usr/home/incoming/newlogs-rc5/nologs.lck exists; aborting.');
     die;
   }
   
