@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.27 2002/04/11 06:33:47 decibel Exp $
+# $Id: tm_update.sql,v 1.28 2002/04/16 05:40:16 decibel Exp $
 
 TM_RANK
 
@@ -142,14 +142,14 @@ select @stats_date = LAST_HOURLY_DATE
 	from Project_statsrun
 	where PROJECT_ID = ${1}
 insert into #NewTeamMembers(EC_ID, PROJECT_ID, CREDIT_ID, TEAM_ID)
-	select sp.ID, 5, tmw.ID, tmw.TEAM_ID
+	select sp.ID, ${1}, tmw.ID, tmw.TEAM_ID
 	from #TeamMemberWork tmw, STATS_Participant sp
 	where IS_NEW = 1
 		and sp.RETIRE_TO = tmw.ID
 		and (sp.RETIRE_DATE <= @stats_date or sp.RETIRE_DATE is NULL)
 go
 insert into #NewTeamMembers(EC_ID, PROJECT_ID, CREDIT_ID, TEAM_ID)
-	select tmw.ID, 5, tmw.ID, tmw.TEAM_ID
+	select tmw.ID, ${1}, tmw.ID, tmw.TEAM_ID
 	from #TeamMemberWork tmw
 	where IS_NEW = 1
 go
