@@ -1,4 +1,4 @@
--- $Id: stats.sql,v 1.3 2003/04/07 01:12:31 nerf Exp $
+-- $Id: stats.sql,v 1.4 2003/04/25 21:12:30 nerf Exp $
 
 select now();
 
@@ -53,8 +53,10 @@ where s.stub_id = su.stub_id
 	and su.participants >=2
 group by project_id;
 
+analyze ogr_stats;
+
 INSERT INTO ogr_complete
-SELECT CURRENT_DATE-1 as rundate,Cnt.project_id, Cnt.result as count, 
+SELECT :RUNDATE as rundate,Cnt.project_id, Cnt.result as count, 
         P1.result as Pass1, P2.result as Pass2
 FROM ogr_stats as Cnt, ogr_stats as P1, ogr_stats as P2 
 WHERE Cnt.function = 'count' AND P1.function = 'pass1'
