@@ -13,5 +13,6 @@ run_test () {
     rm -f test-test
 }
 
+make
 run_test rc572
 run_test ogr
