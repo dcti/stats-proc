@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.30 2003/04/29 21:58:41 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.31 2003/04/29 22:06:59 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -8,6 +8,14 @@
 #       ProjectType (OGR, RC5, etc.)
 #       LogDate
 #       HourNumber
+*/
+
+/*
+TODO:
+
+Do an update/insert into email_contrib_today and platform_contrib_today
+
+Accept BCPcount as an argument and puke if our rowcounts don't match
 */
 
 \t
