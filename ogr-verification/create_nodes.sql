@@ -1,4 +1,4 @@
--- $Id --
+-- $Id: create_nodes.sql,v 1.2 2002/12/20 23:55:45 nerf Exp $ --
 
 CREATE TABLE nodes (
 email VARCHAR(64),

@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id
+# $Id: daily.pl,v 1.2 2002/12/20 23:55:45 nerf Exp $
 
 # addlog.sql drops and creates the logdata table each day, and fills it with filtered(filter.pl) data.
 # id_lookup1.sql creates a table containing an id and an email for each participant.

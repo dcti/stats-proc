@@ -1,4 +1,4 @@
--- $Id --
+-- $Id: daily.sql,v 1.2 2002/12/20 23:55:45 nerf Exp $ --
 
 --Create the logdata table and fill it with filtered(filter.pl) data. (addlog.sql)
 DROP TABLE logdata;

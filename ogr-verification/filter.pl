@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # 11/28/2002 - Joel Von Holdt for distributed.net
-# $Id
+# $Id: filter.pl,v 1.2 2002/12/20 23:55:45 nerf Exp $
 
 use strict;
 my ( $var, $fn, $fn24, $fn25, $reject, $numargs, $i );
