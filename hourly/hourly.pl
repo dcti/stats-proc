@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.90 2002/02/24 03:32:26 decibel Exp $
+# $Id: hourly.pl,v 1.91 2002/02/24 06:11:23 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -277,7 +277,7 @@ sub findlog {
   #    log to work with, or empty string if none.
   #    number of logs left to process
 
-  $_ == 1 or die "Improper number of arguments passed to findlog";
+  scalar(@_) == 1 or die "Improper number of arguments (" . scalar(@_) . ") passed to findlog";
   my ($project) = @_;
 
   my @server = split /:/, $statsconf::logsource{$project};
