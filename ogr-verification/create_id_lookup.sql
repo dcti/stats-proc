@@ -1,4 +1,4 @@
--- $Id: create_id_lookup.sql,v 1.7 2002/12/23 13:39:53 nerf Exp $ --
+-- $Id: create_id_lookup.sql,v 1.8 2002/12/24 22:00:49 nerf Exp $ --
 
 DROP TABLE import_id;
 
@@ -14,7 +14,7 @@ DROP TABLE id_lookup;
 
 CREATE TABLE id_lookup (
 email VARCHAR (64),
-id INTEGER
+id INTEGER,
 stats_id INTEGER);
 
 INSERT INTO id_lookup
