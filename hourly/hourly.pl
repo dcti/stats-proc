@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.80 2000/11/01 19:53:23 decibel Exp $
+# $Id: hourly.pl,v 1.81 2000/11/01 19:57:00 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -53,7 +53,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
   # the lock.
   if ($_ = stats::semcheck($project)) {
     stats::log($project,131,"Cannot obtain lock for hourly.pl!  [$_] still running!");
-    die;
+    next RUNPROJECTS;
   }
   my $sourcelist = $statsconf::logsource{$project};
   my $prefilter = $statsconf::prefilter{$project};
@@ -69,7 +69,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 
   if(@wdcontents > 0) {
     stats::log($project,131,"Workdir is not empty!  I refuse to proceed with hourly processing.");
-    next RUNPROJECTS;
+    die;
   }
 
   stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
