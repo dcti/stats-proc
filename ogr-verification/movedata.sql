@@ -1,4 +1,4 @@
--- $Id: movedata.sql,v 1.23 2003/02/16 19:18:42 nerf Exp $
+-- $Id: movedata.sql,v 1.24 2003/03/20 18:39:04 nerf Exp $
 
 INSERT INTO platform (os_type,cpu_type,"version")
 SELECT DISTINCT L.os_type, L.cpu_type, L.version 
@@ -21,7 +21,7 @@ select now();
 
 -- aggregate all the data
 INSERT INTO day_results(id, stub_id, nodecount, platform_id, return_count)
-SELECT I.id, A.stub_id, L.nodecount, P.platform_id, count(*)
+SELECT I.id, S.stub_id, L.nodecount, P.platform_id, count(*)
 	FROM logdata L, OGR_idlookup I, OGR_stubs S, platform P
 	WHERE lower(L.email) = lower(I.email)
 	AND L.stub_marks = S.stub_marks
@@ -77,4 +77,7 @@ select now();
 	WITHOUT OIDS;
 
 COMMIT;
+
+analyze ogr_results;
+
 select now();
