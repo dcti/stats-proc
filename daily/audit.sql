@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.37 2004/11/08 04:41:33 decibel Exp $
+-- $Id: audit.sql,v 1.38 2004/11/08 05:26:32 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -198,7 +198,7 @@ UPDATE email_contrib_summary
 ;
 
 UPDATE audit
-    SET ECsum = sum_workunits)
+    SET ECsum = sum_workunits
             , ECblcksum = sum_blocked
             , ECteamsum = sum_team
     FROM (
@@ -209,12 +209,13 @@ UPDATE audit
                                                 AND stb.team_id IS NULL
                                             THEN ws.work_units
                                         END) AS sum_team
-            FROM email_contrib_summary ws
+            FROM audit a
+		, email_contrib_summary ws
                 LEFT JOIN stats_participant_blocked spb ON ws.id = spb.id
                 LEFT JOIN stats_team_blocked stb ON ws.team_id = stb.team_id
-            WHERE spb.block_date <= audit.date
-                AND stb.block_date <= audit.date
-        ) a
+            WHERE spb.block_date <= a.date
+                AND stb.block_date <= a.date
+        ) b
 ;
 SELECT ECsum, ECblcksum, ECteamsum FROM audit
 ;
@@ -272,7 +273,7 @@ UPDATE audit
             AND e.date <= audit.date
             AND e.id = p.id
             AND p.retire_to > 0
-            AND (p.retire_date <<= audit.date or p.retire_date IS NULL)
+            AND (p.retire_date <= audit.date or p.retire_date IS NULL)
             AND spb.id = p.retire_to
             AND spb.block_date <= audit.date
         )
