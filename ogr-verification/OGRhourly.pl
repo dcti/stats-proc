@@ -1,6 +1,6 @@
-#!/usr/bin/perl -Tw -I../global
+#!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.5 2003/01/20 01:37:58 nerf Exp $
+# $Id: OGRhourly.pl,v 1.6 2003/02/03 05:51:17 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -30,8 +30,8 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
 #chdir $cwd;
 
 # Have to seperate this stuff out somehow.
-#use statsconf;
-#use stats;
+use statsconf;
+use stats;
 
 my $respawn = 0;
 
@@ -152,12 +152,13 @@ if( $qualcount > 0 ) {
 	}
     }
 
-    open COPYFROM, "psql ogr -U nerf -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" |";
-    if(!<COPYFROM>) {
-      stats::log($project,131,"Error launching COPY FROM, aborting OGRhourly run.");
+    print "$workdir$finalfn $workdir$rawfn", "\n";
+
+    if ( ($_ = system ("psql ogr -U nerf -c \"\\copy logdata FROM \'$workdir$finalfn\' using delimiters ','\" ")) != 0 )
+    {
+      stats::log($project,131,"Copy from generated error code of $_, aborting OGRhourly run.");
       die;
     }
-
 
       # It's always good to clean up after ourselves for the next run.
       unlink "$workdir$finalfn", "$workdir$rawfn";
@@ -187,7 +188,7 @@ sub spawn_daily {
 
   my ($f_project) = @_;
 
-  stats::log($f_project,1,"Spawning movedata.sql");
+  stats::log($f_project,1,"Spawning daily.sh");
   if ( ($_ = system("./daily.sh")) != 0 ) {
     stats::log($f_project,1,"daily.sh generated an error code of $_, \"$!\"!");
     die;
