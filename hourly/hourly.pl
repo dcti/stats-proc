@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.3 2003/03/27 21:22:27 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.4 2003/04/02 23:32:22 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -240,8 +240,6 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       # It's always good to clean up after ourselves for the next run.
       unlink "$workdir$finalfn", "$workdir$rawfn";
 
-      stats::lastlog($project,$logtoload);
-
       if($hh == 23) {
         if(stats::lastday($project) < $yyyymmdd) {
           # Note -- CWD is not clean after calling spawn_daily.  Always use absolute
@@ -301,7 +299,7 @@ sub findlog {
   my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
   my $logtoload = "29991231-23";
   my $logext;
-  my $lastlog = stats::lastlog($project,"get");
+  my $lastlog = stats::lastlog($project);
   chomp($lastlog);
 
   stats::log($project,1,"Looking for new logs, last log processed was $lastlog");

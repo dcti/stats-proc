@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.28.2.2 2003/03/26 04:17:08 decibel Exp $
+# $Id: stats.pm,v 1.28.2.3 2003/04/02 23:32:22 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -157,21 +157,17 @@ sub semcheck {
 	}
 }
 
-sub lastlog {
-  # This function will either return or store the lastlog value for the specified project.
-  #
-  # lastlog("ogr","get") will return lastlog value.
-  # lastlog("ogr","20001231-01") will set lastlog value to 31-Dec-2000 01:00 UTC
+sub lastlog ($) {
+    # This function will either return or store the lastlog value for the specified project.
+    #
+    # lastlog("ogr","get") will return lastlog value.
+    # lastlog("ogr","20001231-01") will set lastlog value to 31-Dec-2000 01:00 UTC
 
-  my ($f_project, $f_action) = @_;
+    my ($f_project_type) = @_;
 
-  if( $f_action =~ /get/i) {
-    $_ = `cat ~/postgresql/var/lastlog.$f_project`;
+    `psql -d $statsconf::database -t -c "select to_char(max(log_timestamp), 'YYYYMMDD-HH') from Projects p, Log_Info l WHERE l.project_id = p.project_id AND p.project_type='$f_project_type'"`;
     chomp;
     return $_;
-  } else {
-    return `echo $f_action > ~/postgresql/var/lastlog.$f_project`;
-  }
 }
 
 sub lastday {
