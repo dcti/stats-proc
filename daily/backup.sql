@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: backup.sql,v 1.2 2000/07/15 08:23:26 decibel Exp $
+# $Id: backup.sql,v 1.3 2000/08/08 00:50:31 decibel Exp $
 #
 # Makes backup copies of Email_Rank, Team_Rank, and Team_Members
 # Arguments:
@@ -35,7 +35,7 @@ insert into statproc.Email_Rank_Backup (BACKUP_DATE, PROJECT_ID, ID, FIRST_DATE,
 	from Email_Rank
 	where PROJECT_ID = ${1}
 go
-print "Backing up Email_Rank"
+print "Backing up Team_Rank"
 go
 
 declare @stats_date smalldatetime
