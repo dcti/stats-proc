@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.26 2002/04/11 07:13:11 decibel Exp $
+# $Id: audit.sql,v 1.27 2002/04/11 08:09:29 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -265,7 +265,7 @@ update	#audit
 			and e.ID = p.ID
 			and e.ID = spb.ID
 			and p.ID = spb.ID
-			and p.RETIRE_TO = 0
+			and (p.RETIRE_TO = 0 or p.RETIRE_DATE > @proj_date)
 		)
 
 -- This will find all work for participants who are retired into a participant that is blocked
@@ -275,6 +275,7 @@ update	#audit
 		where PROJECT_ID = ${1}
 			and e.DATE = @proj_date
 			and e.ID = p.RETIRE_TO
+			and p.RETIRE_DATE <= @proj_date
 			and spb.ID = p.ID
 		)
 
