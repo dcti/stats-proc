@@ -1,8 +1,8 @@
--- $Id: donestubs.sql,v 1.3 2003/01/01 17:01:05 joel Exp $ --
+-- $Id: donestubs.sql,v 1.4 2003/01/08 02:22:29 joel Exp $ --
 
-DROP TABLE donestubs:projnum ;
+DROP TABLE donestubs;
 
-CREATE TABLE donestubs:projnum (
+CREATE TABLE donestubs (
 stub_id INT,
 nodecount BIGINT,
 participants SMALLINT);
