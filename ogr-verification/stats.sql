@@ -1,6 +1,13 @@
--- $Id: stats.sql,v 1.2 2003/03/27 22:41:59 nerf Exp $
+-- $Id: stats.sql,v 1.3 2003/04/07 01:12:31 nerf Exp $
 
 select now();
+
+CREATE TEMP TABLE ogr_stats (
+  table_name varchar(22), 
+  function varchar(12), 
+  result int8, 
+  project_id int2
+) WITHOUT OIDS;
 
 CREATE TABLE public.ogr_complete (
   rundate date DEFAULT ('now'::text)::date NOT NULL, 
@@ -13,17 +20,16 @@ CREATE TABLE public.ogr_complete (
 
 BEGIN;
 
---delete from ogr_stats
---where  table_name = 'ogr_stubs'
---and function = 'count';
---
---insert into ogr_stats (table_name,function,result,project_id)
---select 'ogr_stubs','count',count(*),project_id
---from ogr_stubs
---group by project_id;
---
---select now();
+delete from ogr_stats
+where  table_name = 'ogr_stubs'
+and function = 'count';
 
+insert into ogr_stats (table_name,function,result,project_id)
+select 'ogr_stubs','count',count(*),project_id
+from ogr_stubs
+group by project_id;
+
+select now();
 
 delete from ogr_stats
 where function = 'pass1';
