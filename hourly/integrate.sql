@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.20 2003/04/28 20:30:34 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.21 2003/04/28 20:48:07 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -332,16 +332,9 @@ insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
     from TEMP_Projects
 ;
 
-\echo Clearing import table
-
-/*
- By doing the delete this way, we ensure that we'll throw an error if there are any rows in
- import_bcp from projects we didn't know about
-*/
-
-delete from import_bcp
-    where project_id IN (SELECT project_id
-                            FROM TEMP_Projects p
-                        )
-;
 commit;
+TRUNCATE import_bcp;
+
+-- Finally, report how many rows we handled
+\t
+SELECT 'Total rows: ' || total_rows FROM TEMP_Projects;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.17 2003/04/24 05:24:06 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.18 2003/04/28 20:48:07 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -169,7 +169,6 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       my $bufstorage = "";
       my $psqlsuccess = 0;
-      my $rowsnext = 0;
       my $sqlrows = 0;
       if(!open SQL, "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |") {
         stats::log($project,139,"Error launching psql, aborting hourly run.");
@@ -179,24 +178,10 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
         my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
         print "$ts $_";
         $bufstorage = "$bufstorage$ts $_";
-        if ( $rowsnext == 1 ) {
-          if ( $_ =~ /DELETE (\d+)/ ) {
-            $sqlrows = $1;
-            $rowsnext = 2;
-          } else {
-            stats::log($project,131,"SQL format error, rowcount isn't where it should be.");
-            $psqlsuccess = 1;
-          }
-        }
         if( $_ =~ /^Msg/ ) {
           $psqlsuccess = 1;
-        } elsif ( $_ =~ /^Clearing import table/ ) {
-          if ( $rowsnext == 0 ) {
-            $rowsnext = 1;
-          } else {
-            stats::log($project,131,"SQL format error, rowcount appearing twice.");
-            $psqlsuccess = 1;
-          }
+        } elsif ( $_ =~ /^Total rows: *(\d+)/ ) {
+          $sqlrows = $1;
         }
       }
       close SQL;
