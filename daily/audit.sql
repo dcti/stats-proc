@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.22 2002/03/28 03:01:48 decibel Exp $
+# $Id: audit.sql,v 1.23 2002/04/07 21:31:32 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -178,10 +178,19 @@ go -f -h
 print "Total work units, ignored work, team work in Email_Contrib"
 go -f -h
 
+-- Build a summary table, which dramatically cuts down the time needed for this
 select id, team_id, sum(work_units) as work_units into #EmailContribSummary
 	from email_contrib
 	where project_id=${1}
 	group by id, team_id
+go
+
+-- Handle retire-to's
+update #EmailContribSummary
+	set id = sp.retire_to
+	from STATS_Participant sp
+	where sp.id = #EmailContribSummary.id
+		and sp.retire_to > 0
 go
 
 declare @ECsum numeric (20)
