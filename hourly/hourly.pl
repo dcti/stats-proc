@@ -128,12 +128,25 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         die;
       }
 
+      my $bufstorage = "";
+      my $sqshsuccess = 0;
       open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
       while (<SQL>) {
-	printf("[%02s:%02s:%02s] ",(localtime)[2],(localtime)[1],(localtime)[0]);
-        print $_;
+	my $ts = sprintf("[%02s:%02s:%02s]",(localtime)[2],(localtime)[1],(localtime)[0]);
+        print "$ts $_";
+        $bufstorage = "$bufstorage$ts $_";
+        if( $_ =~ /^Msg/ ) {
+          $sqshsuccess = 1;
+        }
       }
       close SQL;
+      if( $sqshsuccess > 0) {
+        stats::log($project,131,"integrate.sql failed on $basefn - aborting.  Details are in $workdir\sqsh_errors");
+        open SQERR, ">$workdir\sqsh_errors";
+        print SQERR "$bufstorage";
+        close SQERR;
+        die;
+      }
 
       # perform sanity checking here
       stats::log($project,1,"$basefn successfully processed.");
