@@ -52,6 +52,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
   my $qualcount = 0;
 
   while (<LS>) {
+    print $_;
     if( $_ =~ /.*\/$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
       my $lastdate = $1;
 
@@ -135,6 +136,9 @@ for (my $i = 0; $i < @projectlist; $i++) {
       #}
 
       # perform sanity checking here
+
+      # If hour = 23 or day > lastlog(day)
+      # queue daily processing for this project
 
       lastlog($project,$logtoload);
     }
