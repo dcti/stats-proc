@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.22 2002/04/11 06:17:22 decibel Exp $
+# $Id: retire.sql,v 1.23 2002/04/11 06:20:09 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -236,7 +236,7 @@ set flushmessage off
 print "Remove hidden participants"
 go
 print "Select IDs to remove"
-select distinct sp.ID
+select distinct spb.ID
 	into #BadIDs
 	from Team_Members tm, STATS_Participant_Blocked spb
 	where tm.ID = spb.ID
