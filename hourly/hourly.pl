@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.94 2002/02/24 06:20:26 decibel Exp $
+# $Id: hourly.pl,v 1.95 2002/03/28 08:36:52 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -133,7 +133,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
         stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
         $finalfn = $rawfn;
       } else {
-	`$prefilter $rawfn > $finalfn 2>> ./filter_$project.err`;
+	`cat $rawfn | $prefilter > $finalfn 2>> ./filter_$project.err`;
         stats::log($project,1,"$basefn successfully filtered through $prefilter.");
       }
 
