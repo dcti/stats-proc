@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_dailyblocks.sql,v 1.11 2002/04/10 16:49:05 decibel Exp $
+# $Id: dy_dailyblocks.sql,v 1.12 2002/04/20 01:54:36 decibel Exp $
 #
 # Inserts the daily totals
 #
@@ -29,7 +29,7 @@ select @work = sum(WORK_UNITS)
 	from Email_Contrib_Today
 	where PROJECT_ID = ${1}
 update Daily_Summary
-	set WORK_UNITS = @work
+	set WORK_UNITS = isnull(@work, 0)
 	where Daily_Summary.date = @stats_date
 		and Daily_Summary.PROJECT_ID = ${1}
 
