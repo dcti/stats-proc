@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.3 2000/06/27 06:23:47 decibel Exp $
+# $Id: audit.sql,v 1.4 2000/06/28 11:00:53 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -152,7 +152,7 @@ update	#audit
 	set ECblcksumtdy = (select sum(e.WORK_UNITS)
 		from Email_Contrib e, STATS_Participant p
 		where PROJECT_ID = ${1}
-			and e.LAST_DATE = @proj_date
+			and e.DATE = @proj_date
 			and e.ID = p.ID
 			and p.LISTMODE >= 10)
 select ECblcksumtdy from #audit
