@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.110 2003/12/15 22:21:42 decibel Exp $
+# $Id: hourly.pl,v 1.111 2004/02/19 21:31:17 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -34,6 +34,7 @@ while ($respawn == 1 and not -e 'stop') {
   $respawn = 0;
   RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     my $project = $statsconf::projects[$i];
+    stats::debug (1,"project: $project\n");
     
     # Check to see if we're locked, but don't set it until it's time to actually do some work
     #
@@ -45,14 +46,27 @@ while ($respawn == 1 and not -e 'stop') {
       #next RUNPROJECTS;
       die;
     }
-    my $sourcelist = $statsconf::logsource{$project};
+
     my $prefilter = $statsconf::prefilter{$project};
     my $outbuf = "";
+
+    my $logprefix = $project;
+    if(defined($statsconf::logprefix{$project})) {
+      $logprefix = $statsconf::logprefix{$project};
+      stats::debug (2, "custom log prefix '$logprefix' used for project $project\n");
+    }
+
+    my $sourcelist = $statsconf::logsource{$project};
+    stats::debug(2,"sourcelist: $sourcelist\n");
     my @server = split /:/, $sourcelist;
+    if(!defined($server[1])) {
+      $server[1] = $server[0];
+      undef $server[0];
+    }
     $server[1] .= "/";
 
     # Check to see if workdir is empty
-    opendir WD, "$workdir" or die;
+    opendir WD, "$workdir" or die "Unable to open working directory $workdir";
     my @wdcontents = grep !/^(CVS|\.\.?)$/, readdir WD;
     closedir WD;
 
@@ -61,10 +75,14 @@ while ($respawn == 1 and not -e 'stop') {
       die;
     }
 
-    my ($logtoload,$logext,$qualcount) = findlog($project);
+    my ($logtoload,$logext,$qualcount) = findlog($project, $logprefix);
+    stats::debug(4, "findlog returned logtoload: '$logtoload' logext: '$logext' qualcount: $qualcount\n");
 
     if( $qualcount > 0 ) {
       my ($yyyymmdd, $hh) = split /-/, $logtoload;
+      if (! defined($hh) ) {
+        $hh = '23';
+      }
 
       my $lastday = stats::lastday($project);
       chomp $lastday;
@@ -86,8 +104,8 @@ while ($respawn == 1 and not -e 'stop') {
          $respawn = 1;
       }
 
-      my $fullfn = "$server[1]$project$logtoload$logext";
-      my $basefn = "$project$logtoload$logext";
+      my $fullfn = "$server[1]$logprefix$logtoload$logext";
+      my $basefn = "$logprefix$logtoload$logext";
 
       # Go ahead and set the lock now
       if($_ = stats::semflag('hourly',"hourly.pl") ne "OK") {
@@ -96,8 +114,13 @@ while ($respawn == 1 and not -e 'stop') {
       }
 
       $outbuf = "";
-      open SCP, "scp -Bv $server[0]:$fullfn $workdir 2> /dev/stdout |";
+      if (defined($server[0])) {
+        open SCP, "scp -Bv $server[0]:$fullfn $workdir 2> /dev/stdout |";
+      } else {
+        open SCP, "scp -Bv $fullfn $workdir 2> /dev/stdout |";
+      }
       while (<SCP>) {
+        stats::debug(5, "SCP output: $_");
         if ($_ =~ /Transferred: stdin (\d+), stdout (\d+), stderr (\d+) bytes in (\d+.\d) seconds/) {
           my $rate = rate_calc($2,$4);
           my $size = num_format($2);
@@ -114,27 +137,30 @@ while ($respawn == 1 and not -e 'stop') {
 
       my $rawfn = "";
       if ( $logext =~ /.gz$/ ) {
-    open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
-    while (<GZIP>) {
-      if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
-        $rawfn = $2;
-        $rawfn =~ s/$workdir//;
-        stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
-      }
-    }
-      } elsif ( $logext =~ /.bz2$/ ) {
-    my $orgsize=(stat "$workdir$basefn")[7];
-    system("bzip2 -d $workdir$basefn");
-    if ($? == 0) {
-        $rawfn = $basefn;
-        $rawfn =~ s/.bz2//i;
-        my $newsize=(stat "$workdir$rawfn")[7];
-        if ( $newsize == 0 ) {
-          stats::log($project,1,"$basefn successfully decompressed, and the file is empty.");
-        } else {
-          stats::log($project,1,"$basefn successfully decompressed (" . int((1-$orgsize/$newsize)*100) . "% compression)");
+        my $command = "gzip -dv $workdir$basefn 2> /dev/stdout |";
+        stats::debug(5, "GZIP command: $command\n");
+        open GZIP, $command;
+        while (<GZIP>) {
+          stats::debug(5, "GZIP output: $_");
+          if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
+            $rawfn = $2;
+            $rawfn =~ s/$workdir//;
+            stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
+          }
         }
-    }
+      } elsif ( $logext =~ /.bz2$/ ) {
+        my $orgsize=(stat "$workdir$basefn")[7];
+        system("bzip2 -d $workdir$basefn");
+        if ($? == 0) {
+          $rawfn = $basefn;
+          $rawfn =~ s/.bz2//i;
+          my $newsize=(stat "$workdir$rawfn")[7];
+          if ( $newsize == 0 ) {
+            stats::log($project,1,"$basefn successfully decompressed, and the file is empty.");
+          } else {
+            stats::log($project,1,"$basefn successfully decompressed (" . int((1-$orgsize/$newsize)*100) . "% compression)");
+          }
+        }
       }
       if( $rawfn eq "" ) {
         stats::log($project,130,"$basefn failed decompression!");
@@ -195,8 +221,8 @@ while ($respawn == 1 and not -e 'stop') {
         }
         close SQL;
         if( $psqlsuccess > 0) {
-          stats::log($project,139,"integrate.sql failed on $basefn - aborting.  Details are in $workdir\psql_errors");
-          open SQERR, ">$workdir\psql_errors";
+          stats::log($project,139,"integrate.sql failed on $basefn - aborting.  Details are in $workdir/psql_errors");
+          open SQERR, ">$workdir/psql_errors";
           print SQERR "$bufstorage";
           close SQERR;
           die;
@@ -246,18 +272,17 @@ sub spawn_daily {
 
 }
 
-sub findlog {
+sub findlog (??) {
+  my ($project, $logprefix) = @_;
   # Get list of logs that are on the master
   # Accepts:
-  #    $project
+  #   $project
+  #   $logprefix
   #
   # Returns
   #    log to work with, or empty string if none.
   #    trailing end of logfile (everything after the timestamp)
   #    number of logs left to process
-
-  scalar(@_) == 1 or die "Improper number of arguments (" . scalar(@_) . ") passed to findlog";
-  my ($project) = @_;
 
   my @server = split /:/, $statsconf::logsource{$project};
 
@@ -279,18 +304,36 @@ sub findlog {
     $lastlog='';
   }
 
-  # fscking linux.  There's a damn good reason why bash isn't a
-  # suitable replacement for sh and here's an example.
-  if( !open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1] | grep $project\"'|" ) {
-    stats::log($project,131,"Unable to contact log source!");
-    return "",0;
-  } 
+  if (defined($server[1])) {
+    # fscking linux.  There's a damn good reason why bash isn't a
+    # suitable replacement for sh and here's an example.
+    if( !open LS, "tcsh -c 'ssh $server[0] \"ls -l $server[1] | grep $logprefix\"'|" ) {
+      stats::log($project,131,"Unable to contact log source!");
+      return "",0;
+    } 
+  } else {
+    if( !open LS, "ls -l $server[0] | grep $logprefix |" ) {
+      stats::log($project,131,"Unable to contact log source!");
+      return "",0;
+    } 
+  }
 
   my $linecount = 0;
   my $qualcount = 0;
 
+  my $logfilter;
+  # The - is to ensure we ignore directories. We also test for permissions
+  if($statsconf::dailyonly) {
+    $logfilter = "-(...)(...)(...).*$logprefix(\\d\\d\\d\\d\\d\\d\\d\\d)(.*)";
+  } else {
+    $logfilter = "-(...)(...)(...).*$logprefix(\\d\\d\\d\\d\\d\\d\\d\\d-\\d\\d)(.*)";
+  }
+  stats::debug (5,"log filter: $logfilter\n");
+
   while (<LS>) {
-    if( $_ =~ /-(...)(...)(...).*$project(\d\d\d\d\d\d\d\d-\d\d)(.*)/ ) {
+    stats::debug (8,"log directory entry: $_");
+    if( $_ =~ /$logfilter/ ) {
+      stats::debug (9,"logfile match 1: $1 2: $2 3: $3 4: $4 5: $5\n");
       my $lastdate = $4;
       my $lastext = $5;
 
@@ -315,10 +358,10 @@ sub findlog {
           print $_;
           if(! ($_ =~ /(gz|bz2)$/) ) {
             stats::log($project,131,"The master failed to compress the $lastdate logfile.  Skipping to next project.");
-	    return "",0;
+            return "",0;
           }
           $logtoload = $lastdate;
-	  $logext = $lastext;
+          $logext = $lastext;
         }
       }
     }
