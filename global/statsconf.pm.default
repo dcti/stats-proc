@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.13.2.2 2003/04/04 00:55:57 decibel Exp $
+# $Id: statsconf.pm.default,v 1.13.2.3 2003/04/04 00:57:53 decibel Exp $
 #
 # Stats global configuration
 #
@@ -10,7 +10,7 @@ $homedir = @{[getpwuid $<]}[7];
 $logtag = "statsbox-iii";
 @projects = ("r72", "ogr");
 %prids = (
-        "rc5"   => "5",
+        "r72"   => "8",
         "ogr"   => "24:25",
 );
 $lockfile = "$homedir/log/statsrun.lck";
