@@ -1,4 +1,4 @@
--- $Id: id_lookup.sql,v 1.6 2003/09/07 05:27:37 nerf Exp $
+-- $Id: id_lookup.sql,v 1.7 2003/09/09 20:16:03 nerf Exp $
 \set ON_ERROR_STOP 1
 
 \connect stats
@@ -14,7 +14,6 @@ OR created = :RUNDATE ::DATE;
 
 \connect ogr
 
-
 CREATE TEMP TABLE import_id (
 email VARCHAR (64),
 id INTEGER,
@@ -24,6 +23,8 @@ created         date
 );
 
 \copy import_id FROM '/tmp/id_import.out'
+
+ANALYZE import_id;
 
 BEGIN;
 
@@ -39,7 +40,6 @@ UPDATE OGR_idlookup
 	WHERE import_id.retire_date IS NOT NULL
 	AND OGR_idlookup.id = import_id.id;
 
---ROLLBACK;
 COMMIT;
 
---ANALYZE OGR_idlookup;
+ANALYZE OGR_idlookup;
