@@ -1,51 +1,27 @@
+#!/usr/bin/sqsh -i
 /*
-# $Id: tm_rank.sql,v 1.17 2000/09/22 02:41:37 decibel Exp $
-
-Rank the teams
-
-Parameters
-	Project_ID
-
-Flow: (M=members, T=teams)
-
-M Build temp table of all contrib of all members of all teams (for this project)
-M Remove members with listmode >= 10
-M Clear yesterday member info
-M Populate today contrib for existing members
-M Flag existing members (in temp table)
-M Insert nonflagged members and their contrib for today
-
-T Build temp table of all contrib of each team (from member temp table)
-T Remove (hide) teams with listmode >= 10
-T Flag existing teams (in temp table)
-T Insert nonflagged teams
-T Clear yesterday team info
-T Populate today info for existing teams
-
-M TODO: Rank members within each team (cursor required)
-
-T Populate team summary info (lifetime members, active members, listed members)
-T Rank all teams
-
-Notes:
-	Do teams get credit for members with listmode >= 10?  Hopefully not.
-	All members use retire_to if present
-	Is Email_Contrib_Today.TEAM_ID useful in any other context?  It is superfluous here.
-		Every reference to Email_Contrib_Today.TEAM_ID also requires a join
-		to STATS_Participant, which is where Email_Contrib_Today got it from.
-		OTOH, this may be necessary if/when team join is logged and date-driven
-	It may be more efficient to rank members in all teams, even if the team didn't
-		contribute today, because the work to detect non-contributing teams and
-		avoid clearing the participant info may exceed the work to re-rank the team
-
-
+#
+# $Id: tm_rank.sql,v 1.18 2000/10/04 22:10:26 decibel Exp $
+#
+# Does the participant ranking (overall)
+#
+# Arguments:
+#       Project_id
 */
 
-print '!! Begin team ranking'
+use stats
+set rowcount 0
+set flushmessage on
 go
-print ' Rank all, today'
+print '!! Begin e-mail ranking'
+print ' Drop indexes on Team_Rank'
 go
+--drop index Team_Rank.iDAY_RANK
+--drop index Team_Rank.iOVERALL_RANK
+--go
 
+print ' Create rank table for today'
+go
 create table #rank_assign
 (
 	IDENT numeric(10, 0) identity,
@@ -58,36 +34,25 @@ insert #rank_assign (TEAM_ID, WORK_UNITS)
 	from Team_Rank
 	where PROJECT_ID = ${1}
 	order by WORK_TODAY desc, TEAM_ID desc
+go
 
-create clustered index iWORK_UNITS on #rank_assign(WORK_UNITS)
-
-create table #rank_tie
+create table #rank_tie_today
 (
 	WORK_UNITS numeric(20, 0),
-	RANK int
+	rank int
 )
 go
-insert #rank_tie
+insert #rank_tie_today
 	select WORK_UNITS, min(IDENT)
 	from #rank_assign
 	group by WORK_UNITS
-
-update Team_Rank
-	set DAY_RANK = #rank_tie.rank
-	from #rank_tie, #rank_assign
-	where #rank_tie.WORK_UNITS = #rank_assign.WORK_UNITS
-		and Team_Rank.TEAM_ID = #rank_assign.TEAM_ID
-		and Team_Rank.PROJECT_ID = ${1}
-
 go
+
 drop table #rank_assign
-drop table #rank_tie
+create clustered index iWORK_UNITS on #rank_tie_today(WORK_UNITS)
 go
 
-
-print ' Rank all, overall'
-go
-
+print ' Create rank table for overall'
 create table #rank_assign
 (
 	IDENT numeric(10, 0) identity,
@@ -101,32 +66,32 @@ insert #rank_assign (TEAM_ID, WORK_UNITS)
 	where PROJECT_ID = ${1}
 	order by WORK_TOTAL desc, TEAM_ID desc
 
-create clustered index iWORK_UNITS on #rank_assign(WORK_UNITS)
-
-create table #rank_tie
+create table #rank_tie_overall
 (
 	WORK_UNITS numeric(20, 0),
-	RANK int
+	rank int
 )
 go
-insert #rank_tie
+insert #rank_tie_overall
 	select WORK_UNITS, min(IDENT)
 	from #rank_assign
 	group by WORK_UNITS
-
-update Team_Rank
-	set OVERALL_RANK = #rank_tie.rank
-	from #rank_tie, #rank_assign
-	where #rank_tie.WORK_UNITS = #rank_assign.WORK_UNITS
-		and Team_Rank.TEAM_ID = #rank_assign.TEAM_ID
-		and Team_Rank.PROJECT_ID = ${1}
-
 go
+
 drop table #rank_assign
-drop table #rank_tie
+create clustered index iWORK_UNITS on #rank_tie_overall(WORK_UNITS)
 go
 
-print ' set previous rank = current rank for new teams'
+print ' Update Team_Rank with new rankings'
+update Team_Rank
+	set OVERALL_RANK = o.rank, DAY_RANK = isnull(d.rank, Team_Rank.DAY_RANK)
+	from #rank_tie_overall o, #rank_tie_today d
+	where Team_Rank.WORK_TODAY *= d.WORK_UNITS
+		and Team_Rank.WORK_TOTAL = o.WORK_UNITS
+		and Team_Rank.PROJECT_ID = ${1}
+go
+
+print ' set previous rank = current rank for new participants'
 go
 declare @stats_date smalldatetime
 select @stats_date = LAST_STATS_DATE
@@ -139,3 +104,12 @@ update	Team_Rank
 	where PROJECT_ID = ${1}
 		and FIRST_DATE = @stats_date
 go
+
+--print ' update statistics'
+--go
+--update statistics Team_Rank
+--go
+--print ' Rebuild indexes on Team_Rank'
+--create index iDAY_RANK on Team_Rank(PROJECT_ID, DAY_RANK)
+--create index iOVERALL_RANK on Team_Rank(PROJECT_ID, OVERALL_RANK)
+--go
