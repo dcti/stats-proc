@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.23 2002/04/07 21:31:32 decibel Exp $
+# $Id: audit.sql,v 1.24 2002/04/08 08:05:20 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -210,6 +210,9 @@ update	#audit
 select ECsum, ECblcksum, ECteamsum from #audit
 go -f -h
 
+drop table #EmailContribSummary
+go
+
 
 -- **************************
 --   ECsumtoday
@@ -251,6 +254,14 @@ update	#audit
 		where PROJECT_ID = ${1}
 			and e.DATE = @proj_date
 			and e.ID = p.ID
+			and p.RETIRE_TO = 0
+			and p.LISTMODE >= 10)
+update	#audit
+	set ECblcksumtdy = ECblcksumtdy + (select isnull(sum(e.WORK_UNITS), 0)
+		from Email_Contrib e, STATS_Participant p
+		where PROJECT_ID = ${1}
+			and e.DATE = @proj_date
+			and e.ID = p.RETIRE_TO
 			and p.LISTMODE >= 10)
 select ECblcksumtdy from #audit
 go -f -h
