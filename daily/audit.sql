@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.36 2004/11/04 16:26:13 decibel Exp $
+-- $Id: audit.sql,v 1.37 2004/11/08 04:41:33 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -198,18 +198,23 @@ UPDATE email_contrib_summary
 ;
 
 UPDATE audit
-    SET ECsum = sum(work_units)
-            , ECblcksum = sum(CASE WHEN spb.id IS NOT NULL THEN work_units END)
-            , ECteamsum = sum(CASE WHEN ws.team_id >= 1
-                                        AND spb.id IS NULL
-                                        AND stb.team_id IS NULL
-                                    THEN ws.work_units
-                                END)
-    FROM email_contrib_summary ws
-        LEFT JOIN stats_participant_blocked spb ON ws.id = spb.id
-        LEFT JOIN stats_team_blocked stb ON ws.team_id = stb.team_id
-    WHERE spb.block_date <= audit.date
-        AND stb.block_date <= audit.date
+    SET ECsum = sum_workunits)
+            , ECblcksum = sum_blocked
+            , ECteamsum = sum_team
+    FROM (
+            SELECT sum(work_units) AS sum_workunits
+                    , sum(CASE WHEN spb.id IS NOT NULL THEN work_units END) AS sum_blocked
+                    ,  sum(CASE WHEN ws.team_id >= 1
+                                                AND spb.id IS NULL
+                                                AND stb.team_id IS NULL
+                                            THEN ws.work_units
+                                        END) AS sum_team
+            FROM email_contrib_summary ws
+                LEFT JOIN stats_participant_blocked spb ON ws.id = spb.id
+                LEFT JOIN stats_team_blocked stb ON ws.team_id = stb.team_id
+            WHERE spb.block_date <= audit.date
+                AND stb.block_date <= audit.date
+        ) a
 ;
 SELECT ECsum, ECblcksum, ECteamsum FROM audit
 ;
