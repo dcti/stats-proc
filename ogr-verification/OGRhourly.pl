@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I../global
 #
-# $Id: OGRhourly.pl,v 1.11 2003/04/25 21:08:29 nerf Exp $
+# $Id: OGRhourly.pl,v 1.12 2003/04/29 04:57:39 nerf Exp $
 #
 # This is a straight ripoff of ../hourly/hourly.pl
 # Once we move stats to pgsql, thetwo hourly processing files should be merged
@@ -151,11 +151,11 @@ if( $qualcount > 0 ) {
       if($hh == 23) {
           # Note -- CWD is not clean after calling spawn_daily.  Always use absolute
           # Paths after calling this.  (yeah, I know that's ugly)
-	  #if ($respawn < 24) {
-	     # If we're more than a day behind, no need to run it for
-	     # each day
-             spawn_daily($project,$yyyymmdd);
-	  #}
+          spawn_daily($project,$yyyymmdd);
+
+          #stop after each day.  If we're more than a day behind,
+          #we'll do the next day when we get called next hour
+          $respawn = 0;
       }
     }
     close GZIP;
