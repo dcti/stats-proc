@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_rank.sql,v 1.8 2000/08/04 14:55:31 decibel Exp $
+# $Id: em_rank.sql,v 1.9 2000/09/13 20:00:41 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -15,9 +15,9 @@ go
 print '!! Begin e-mail ranking'
 print ' Drop indexes on Email_Rank'
 go
-drop index Email_Rank.iDAY_RANK
-drop index Email_Rank.iOVERALL_RANK
-go
+--drop index Email_Rank.iDAY_RANK
+--drop index Email_Rank.iOVERALL_RANK
+--go
 
 print ' Remove or move "today" info '
 declare @max_rank int
@@ -184,11 +184,11 @@ update	Email_Rank
 		and FIRST_DATE = @stats_date
 go
 
-print ' update statistics'
-go
-update statistics Email_Rank
-go
-print ' Rebuild indexes on Email_Rank'
-create index iDAY_RANK on Email_Rank(PROJECT_ID, DAY_RANK)
-create index iOVERALL_RANK on Email_Rank(PROJECT_ID, OVERALL_RANK)
-go
+--print ' update statistics'
+--go
+--update statistics Email_Rank
+--go
+--print ' Rebuild indexes on Email_Rank'
+--create index iDAY_RANK on Email_Rank(PROJECT_ID, DAY_RANK)
+--create index iOVERALL_RANK on Email_Rank(PROJECT_ID, OVERALL_RANK)
+--go

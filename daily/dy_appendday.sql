@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.10 2000/07/14 23:37:58 decibel Exp $
+# $Id: dy_appendday.sql,v 1.11 2000/09/13 20:00:41 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -31,9 +31,9 @@ update Email_Contrib_Today
 	from STATS_Participant sp
 	where sp.ID = Email_Contrib_Today.CREDIT_ID
 		and PROJECT_ID = ${1}
-create unique clustered index iID on Email_Contrib_Today(PROJECT_ID,ID)
-create index iTEAM_ID on Email_Contrib_Today(PROJECT_ID,TEAM_ID)
-go
+--create unique clustered index iID on Email_Contrib_Today(PROJECT_ID,ID)
+--create index iTEAM_ID on Email_Contrib_Today(PROJECT_ID,TEAM_ID)
+--go
 
 print "::  Appending into Email_Contrib"
 go
