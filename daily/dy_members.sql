@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_members.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: dy_members.sql,v 1.2 2000/02/21 03:47:06 bwilson Exp $
 #
 # Create the team membership tables
 #

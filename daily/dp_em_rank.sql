@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dp_em_rank.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: dp_em_rank.sql,v 1.2 2000/02/21 03:47:06 bwilson Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -23,12 +23,13 @@ begin
 end
 go
 create table PREBUILT_${1}_CACHE_em_RANK
-(       idx numeric (10,0) IDENTITY NOT NULL,
-        id numeric (10,0) NULL ,
+(
+	idx numeric (10,0) IDENTITY NOT NULL,
+        id int NULL ,
 	email varchar (64) NULL ,
 	first smalldatetime NULL ,
 	last smalldatetime NULL ,
-	blocks numeric (10,0) NULL ,
+	blocks numeric (20,0) NULL ,
 	days_working int NULL ,
 	overall_rate numeric (14,4) NULL ,
 	rank int NULL,
@@ -66,7 +67,7 @@ insert into PREBUILT_${1}_CACHE_em_RANK
 	where r.id = p.id
 		and listmode < 10
 	group by p.id
-	order by sum(r.blocks) desc, p.id
+	order by sum(r.blocks) desc, p.id desc
 go
 
 print "::  Calculating rank for participants"

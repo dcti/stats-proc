@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_newemails.sql,v 1.2 2000/02/10 15:13:54 bwilson Exp $
+# $Id: dy_newemails.sql,v 1.3 2000/02/21 03:47:06 bwilson Exp $
 #
 # Adds new participants to stats_participant
 #
@@ -11,7 +11,7 @@ print "!! Adding new emails to stats_participant"
 go
 print "::  Creating temp table with identity"
 go
-create table #${1}_dayemails
+create table #dayemails
 (
 	id		numeric(10, 0)	identity,
 	email		varchar(64)	not NULL
@@ -21,27 +21,28 @@ go
 print "::  Inserting all new emails from daytable"
 go
 select distinct email
-	into #${1}_allemails
+	into #allemails
 	from ${1}_daytable_master
 	where email <> 'rc5@distributed.net'
+		and email <> 'rc5-bad@distributed.net'
 	order by email
 /*
-**	Eliminate all the rc5@distributed.net rows on the first pass
+**	Eliminate all the rc5@d.net and rc5-bad@d.net rows on the first pass
 **	We know this id exists, so don't clutter up the temp tables
 **	grouping them together.
 */
-
-create unique index iemail on #${1}_allemails(email)
+go
+create unique clustered index iemail on #allemails(email) with sorted_data
 go
 
-delete #${1}_allemails
+delete #allemails
 	from STATS_Participant
-	where #${1}_allemails.email = STATS_Participant.email
+	where #allemails.email = STATS_Participant.email
 go
 
-insert into #${1}_dayemails (email)
+insert into #dayemails (email)
 	select email
-	from #${1}_allemails
+	from #allemails
 go
 
 print "::  Adding new participants to stats_participant"
@@ -57,6 +58,8 @@ select @idoffset = max(id)
 --	from id + @idoffset, email, id + @idoffset
 insert into STATS_participant (id, email)
 	select id + @idoffset, email
-	from #${1}_dayemails
+	from #dayemails
 go
-
+drop table #dayemails
+drop table #allemails
+go

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dp_tm_rank.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: dp_tm_rank.sql,v 1.2 2000/02/21 03:47:06 bwilson Exp $
 #
 # Ranks the teams (overall)
 #
@@ -26,7 +26,7 @@ go
 
 print "::  Creating ${1}_CACHE_tm_RANK table"
 go
-create table ${1}_CACHE_tm_RANK 
+create table ${1}_CACHE_tm_RANK
 (       Idx numeric (10,0) IDENTITY NOT NULL,
         Team numeric (10,0) NULL ,
 	Name varchar (64) NULL ,
@@ -66,15 +66,15 @@ select @gdva = DateAdd(hh,8,@gdv)
 select C.team, S.name, C.first, C.last, C.blocks,
   datediff(dd,C.first,@gdv)+1 as Days_working,
   0 as rank, 0 as change,
-  S.listmode 
+  S.listmode
 into #TRANKb
 from #TRANKa C, STATS_team S
 where C.team = S.team
-go 
+go
 
 print "::  Populating ${1}_CACHE_tm_RANK live table"
 go
-insert into ${1}_CACHE_tm_RANK 
+insert into ${1}_CACHE_tm_RANK
   (team,name,first,last,blocks,days_working,rank,change,listmode)
 select distinct team, max(name),min(first),max(last),sum(blocks),max(days_working),min(rank),min(change),max(listmode)
 from #TRANKb
@@ -86,7 +86,7 @@ go
 print "::  Setting # of Current members"
 go
 
-select distinct team, count(*) as members 
+select distinct team, count(*) as members
 into #curmema
 from STATS_participant
 where retire_to = 0 or retire_to = NULL

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dp_em_yrank.sql,v 1.1 2000/02/09 16:13:57 nugget Exp $
+# $Id: dp_em_yrank.sql,v 1.2 2000/02/21 03:47:06 bwilson Exp $
 #
 # Rank the participants (yesterday)
 #
@@ -22,7 +22,7 @@ begin
 	drop table PREBUILT_${1}_CACHE_em_RANK
 end
 go
-create table PREBUILT_${1}_CACHE_em_YRANK 
+create table PREBUILT_${1}_CACHE_em_YRANK
 (       idx numeric (10,0) IDENTITY NOT NULL,
         id numeric (10,0) NULL ,
 	email varchar (64) NULL ,
@@ -59,11 +59,11 @@ print "::  Linking to participant data into cache table b (listmode,retire_to)"
 go
 
 select C.id, S.email, C.first, C.last, C.blocks,
-  S.listmode, S.retire_to 
+  S.listmode, S.retire_to
 into #YRANKb
 from #YRANKa C, STATS_participant S
 where C.id = S.id
-go 
+go
 
 print "::  Honoring all retire_to requests"
 go
@@ -76,7 +76,7 @@ go
 
 print "::  Populating PREBUILT_${1}_CACHE_em_YRANK table"
 go
-insert into PREBUILT_${1}_CACHE_em_YRANK 
+insert into PREBUILT_${1}_CACHE_em_YRANK
   (id,email,first,last,blocks,days_working,rank,change,listmode)
 select distinct id, max(email),min(first),max(last),sum(blocks),1 as days_working,0 as rank, 0 as change,max(listmode)
 from #YRANKb

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.2 2000/02/10 15:13:54 bwilson Exp $
+# $Id: dy_appendday.sql,v 1.3 2000/02/21 03:47:06 bwilson Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -10,11 +10,17 @@
 print "!! Appending day's activity to master tables"
 go
 
-print "::  Appending into csc_master"
+print "::  Appending into _master"
 go
-insert into ${1}_master (date, id, team, blocks)
+declare @proj_id tinyint
+select @proj_id = PROJECT_ID
+	from Projects
+	where PROJECT = \\'${1}\\'
+
+insert into ${1}_master (date, PROJECT_ID, id, team, blocks)
 select
   d.timestamp as date,
+  @proj_id,
   p.id,
   p.team,
   sum(d.size) as blocks
@@ -23,11 +29,17 @@ where p.email = d.email
 group by timestamp, id, team
 go
 
-print ":: Appending into csc_platform"
+print ":: Appending into _platform"
 go
-insert into ${1}_platform (date, cpu, os, ver, blocks)
+declare @proj_id tinyint
+select @proj_id = PROJECT_ID
+	from Projects
+	where PROJECT = \\'${1}\\'
+
+insert into ${1}_platform (date, PROJECT_ID, cpu, os, ver, blocks)
 select
   timestamp as date,
+  @proj_id,
   cpu,
   os,
   ver,

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: cleardaytable.sql,v 1.2 2000/02/10 15:13:54 bwilson Exp $
+# $Id: cleardaytable.sql,v 1.3 2000/02/21 03:47:06 bwilson Exp $
 #
 # Recreates the daytables
 #
@@ -12,8 +12,9 @@ go
 
 create table ${1}_daytable_master (
 	timestamp datetime,
+	project_id tinyint,
 	email varchar (64) NULL ,
-	size int NULL ,
+	size numeric(20, 0) NULL
 )
 go
 
@@ -22,10 +23,11 @@ go
 
 create table ${1}_daytable_platform (
 	timestamp datetime,
+	project_id tinyint,
 	cpu smallint NULL,
 	os smallint NULL,
 	ver smallint NULL,
-	size int NULL
+	size numeric(20, 0) NULL
 )
 go
 

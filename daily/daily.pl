@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: daily.pl,v 1.1 2000/02/09 16:13:56 nugget Exp $
+# $Id: daily.pl,v 1.2 2000/02/21 03:47:06 bwilson Exp $
 #
 die;
 use strict
@@ -11,7 +11,7 @@ my $sqllogin = "-Ustatproc";
 my $sqlpasswd = "-PPASSWORD";
 my $sqlserver = "-STALLY";
 
-my $project = "csc";
+my $project = "OGR";
 my $incoming = $stats::incoming{$project};
 my $projectdir = $stats::projectdir{$project};
 
@@ -23,7 +23,7 @@ my $today = sprintf("%04s%02s%02s", $yyyy, $mm, $dd);
 stats::log($project,133,"daily-$project stats run has started");
 
 my $maxdate = `sqsh -h -i dy_maxdate.sql $project`;
-stats::log($project,1,"Stats database is current through $maxdate");
+stats::log($project,1,"Last entry in stats database is for $maxdate");
 
 # Pull directory listing of the project's incoming directory.
 opendir INFILE, $incoming;
@@ -73,14 +73,14 @@ if ("$insort[0]" =~ m/^$project(\d\d\d\d\d\d\d\d)/ ) {
       if ( $retcode > 0 ) {
         $badfiles = $badfiles + 1;
         stats::log($project,1,"The file $insort[$i] is not healthy!");
-      } 
+      }
     }
     if ($badfiles > 0 ) {
       stats::log($project,139,"I can't continue until someone straghtens out these logfiles!  Aborting.");
       die;
     }
     stats::log($project,1,"All the log files look fine to me.");
-   
+
     # We don't want to import these logs if this day already exists in the database, right?
     my $dayrows = `sqsh -h -i dy_checkday.sql $project $earlyday`;
     if ($dayrows > 0) {
@@ -88,7 +88,7 @@ if ("$insort[0]" =~ m/^$project(\d\d\d\d\d\d\d\d)/ ) {
       stats::log($project,8,"Possible duplicate day load.  Aborting.");
 #      die;
     }
-    
+
     for ($i = 0; $i < $innum; $i++) {
       my $fullpath = "$incoming/$insort[$i]";
       $retcode = system "cp",$fullpath,"./stalelogs";
@@ -123,7 +123,7 @@ if ("$insort[0]" =~ m/^$project(\d\d\d\d\d\d\d\d)/ ) {
         $unzipfn = $1;
       }
       $retcode = system "sqsh -i clearimport.sql $project";
-      # bcp cimport in $1 -ebcp_errors -STALLY -Ustatproc -PPASSWORD -c -t, 
+      # bcp cimport in $1 -ebcp_errors -STALLY -Ustatproc -PPASSWORD -c -t,
       $retcode = system "bcp", "$project" . "_import", "in", $unzipfn, "-ebcp_errors", $sqlserver, $sqllogin, $sqlpasswd, "-c", "-t,";
       if ( $retcode > 0 ) {
         stats::log($project,139,"BCP Failed!");
@@ -162,7 +162,7 @@ if ("$insort[0]" =~ m/^$project(\d\d\d\d\d\d\d\d)/ ) {
     stats::log($project,5,"Teams Ranking complete (Overall)");
     $retcode = system "sqsh -i dp_tm_yrank.sql $project";
     stats::log($project,5,"Teams Ranking complete (Yesterday)");
-    
+
     $retcode = system "sqsh -i dy_dailyblocks.sql $project";
     stats::log($project,1,"CACHE_dailyblocks table built");
 
