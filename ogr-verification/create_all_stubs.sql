@@ -1,4 +1,4 @@
--- $Id: create_all_stubs.sql,v 1.9 2003/02/16 19:18:42 nerf Exp $
+-- $Id: create_all_stubs.sql,v 1.10 2003/04/25 21:08:50 nerf Exp $
 
 CREATE TEMPORARY TABLE OGR_stubs_import(
 stub_marks VARCHAR(22) not null);
@@ -28,6 +28,6 @@ INSERT INTO OGR_stubs
         SELECT stub_marks, NEXTVAL('OGR_stubs_stub_id_seq'),'25', 0, NULL, NULL
 FROM OGR_stubs_import ;
 
-CREATE UNIQUE INDEX all_marks ON OGR_stubs (stub_marks);
-CREATE UNIQUE INDEX all_stubproject_id ON OGR_stubs (stub_id,project_id);
+CREATE UNIQUE INDEX stubs_marks ON OGR_stubs (stub_marks);
+CREATE UNIQUE INDEX stubs_projstub ON OGR_stubs (project_id,stub_id);
 ALTER TABLE OGR_stubs ADD PRIMARY KEY (stub_id);
