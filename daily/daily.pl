@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.31.2.2 2003/04/27 22:38:36 decibel Exp $
+# $Id: daily.pl,v 1.31.2.3 2003/04/28 05:37:11 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -105,6 +105,6 @@ sub psql {
   }
   my $secs_finish = int `date "+%s"`;
   my $secs_run = $secs_finish - $secs_start;
-  stats::log($project,1,"$sqlfile completed successfully ($secs_run seconds)");
+  stats::log($project,1,"$sqlfile for project $project_id completed successfully ($secs_run seconds)");
 }
 
