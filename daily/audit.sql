@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.7 2000/07/18 09:48:03 decibel Exp $
+# $Id: audit.sql,v 1.8 2000/10/02 03:34:27 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -133,7 +133,7 @@ go -f -h
 print "Total work units ignored today (listmode >= 10)"
 go -f -h
 update	#audit
-	set ECTblcksum = (select sum(d.WORK_UNITS)
+	set ECTblcksum = (select isnull(sum(d.WORK_UNITS), 0)
 		from Email_Contrib_Today d, STATS_Participant p
 		where PROJECT_ID = ${1}
 			and d.CREDIT_ID = p.ID
@@ -149,7 +149,7 @@ select @proj_date = LAST_STATS_DATE
 	where PROJECT_ID = ${1}
 
 update	#audit
-	set ECblcksumtdy = (select sum(e.WORK_UNITS)
+	set ECblcksumtdy = (select isnull(sum(e.WORK_UNITS), 0)
 		from Email_Contrib e, STATS_Participant p
 		where PROJECT_ID = ${1}
 			and e.DATE = @proj_date
