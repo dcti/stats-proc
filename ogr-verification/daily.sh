@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: daily.sh,v 1.6 2002/12/31 18:11:54 joel Exp $
+# $Id: daily.sh,v 1.7 2002/12/31 18:13:49 joel Exp $
 
 # addlog.sql drops and creates the logdata table each day, and fills it with filtered(filter.pl) data.
 # id_lookup.sql creates a table containing an id and an email for each participant.
@@ -7,8 +7,8 @@
 # donestubs.sql creates the donestubs table, does not put any data in it.
 # query3.sql is the big query, fills donestubs with data.
 
-psql -d ogrstats -f addlog.sql -vprojnum=25 -vinfile=\'/home/postgres/ogr25.filt
-ered\'
+psql -d ogrstats -f addlog.sql -vprojnum=25 -vinfile=\'/home/postgres/ogr25.filtered\'
+psql -d ogrstats -f addlog.sql -vprojnum=24 -vinfile=\'/home/postgres/ogr24.filtered\'
 psql -d ogrstats -f id_lookup.sql
 psql -d ogrstats -f movedata.sql
 psql -d ogrstats -f query3.sql
