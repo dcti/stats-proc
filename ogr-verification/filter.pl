@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # 11/28/2002 - Joel Von Holdt for distributed.net
-# $Id: filter.pl,v 1.6 2002/12/27 23:33:30 joel Exp $
+# $Id: filter.pl,v 1.7 2003/01/10 01:28:29 nerf Exp $
 
 use strict;
 my ( $var, $fn, $fn24, $fn25, $reject, $numargs, $i );
@@ -12,9 +12,9 @@ $fn24 = "ogr24.filtered";
 $fn25 = "ogr25.filtered";
 $reject = "rejects.filtered";
 
-open (REJ, ">$reject") || die "Sorry, cant open reject output file. $! \n";
-open (LOG24, ">$fn24") || die "Sorry, cant open ogr-24 output file. $! \n";
-open (LOG25, ">$fn25") || die "Sorry, cant open ogr-25 output file. $! \n";
+open (REJ, ">>$reject") || die "Sorry, cant open reject output file. $! \n";
+open (LOG24, ">>$fn24") || die "Sorry, cant open ogr-24 output file. $! \n";
+open (LOG25, ">>$fn25") || die "Sorry, cant open ogr-25 output file. $! \n";
 
 $numargs = @ARGV;
 
@@ -69,5 +69,5 @@ $timedone = time();
 $tasktime = ($timedone - $timenow);
 print "$tasktime seconds to complete filtering of $numargs files.\n";
 
-print "Zipping rejects...\n";
-system "bzip2 $reject";
+#print "Zipping rejects...\n";
+#system "bzip2 $reject";
