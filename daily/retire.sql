@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.25.2.7 2003/04/27 21:26:24 decibel Exp $
+# $Id: retire.sql,v 1.25.2.8 2003/04/28 17:08:34 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -97,11 +97,12 @@ BEGIN;
     \echo 
     \echo 
     \echo Delete retires and blocked participants from Email_Rank
-    DELETE FROM Email_Rank
+    DELETE FROM email_rank
         WHERE project_id = :ProjectID
-            AND id IN  (SELECT id
+            AND EXISTS (SELECT 1
                             FROM STATS_Participant sp
-                            WHERE retire_to >= 1
+                            WHERE sp.id = email_rank.id
+                                AND retire_to >= 1
                                 AND retire_date = (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
                         )
     ;
@@ -116,9 +117,10 @@ BEGIN;
     -- this contest.
     \echo Insert remaining retires
     DELETE FROM NewRetiresER
-        WHERE retire_to IN (SELECT id
+        WHERE EXISTS (SELECT 1
                                 FROM Email_Rank er
                                 WHERE er.PROJECT_ID = :ProjectID
+                                    AND er.id = NewRetiresER.retire_to
                             )
     ;
 
