@@ -1,16 +1,19 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.43 2000/08/15 22:38:33 nugget Exp $
+# $Id: hourly.pl,v 1.44 2000/08/15 22:43:24 nugget Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
 #
-# 4 * * * * cd /usr/home/statproc/stats-proc/hourly && ./hourly.pl > /usr/home/statproc/log/lastrun.hourly 
+# 4 * * * * cd /usr/home/statproc/stats-proc/hourly && ./hourly.pl > /usr/home/statproc/log/lastrun.hourly  2> /usr/home/statproc/log/lastrun.hourly.err
 #
 # The cd is because my clever chdir code below (commented-out) isn't sufficient.
 # Our -I../global for "use stats" and "use statsconf" relies on being started from
 # the right directory.  This is inelegant and needs to be cleaned up.
 #
+# the 2> redirect of stderr seems to be necessary, although I'm not certain why.
+# Without it, the script is unable to spawn bcp or sqsh claiming the inability
+# to access /dev/stderr.  *shrug*
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
