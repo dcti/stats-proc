@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.19 2000/09/22 02:41:37 decibel Exp $
+# $Id: daily.pl,v 1.20 2000/10/02 04:14:06 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -22,7 +22,10 @@ my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 my $respawn = 0;
 
 my $workdir = "./workdir/";
-
+if(! -d $workdir) {
+  stats::log("stats",131,"Hey! Someone needs to mkdir $workdir!")
+  die;
+}
 if(!$ARGV[0]) {
   stats::log("stats",131,"Some darwin just called daily.pl without supplying a project code!");
   die;
@@ -91,7 +94,7 @@ sub sqsh {
   close SQL;
   if( $sqshsuccess > 0) {
     stats::log($project,139,"$sqlfile puked  -- aborting.  Details are in $workdir\sqsh_errors");
-    open SQERR, ">$workdir\sqsh_errors";
+    open SQERR, ">$workdir\sqsh_errors" or stats::log($project,139,"Unable to open $workdir\sqsh_errors for writing!);
     print SQERR "$bufstorage";
     close SQERR;
     die $sqshsuccess;
