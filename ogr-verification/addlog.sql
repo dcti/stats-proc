@@ -1,10 +1,10 @@
--- $Id: addlog.sql,v 1.6 2002/12/31 18:08:45 joel Exp $ --
+-- $Id: addlog.sql,v 1.7 2003/01/10 08:58:34 nerf Exp $ --
 --set projnum '24' or '25'
 --set infile '/home/joel/ogr/scripts/ogr24.filtered'
 
-DROP TABLE logdata:projnum;
+DROP TABLE logdata;
 
-CREATE TABLE logdata:projnum (
+CREATE TABLE logdata (
 email VARCHAR(64),
 stub_marks VARCHAR(22),
 nodecount BIGINT,
@@ -13,8 +13,8 @@ cpu_type SMALLINT,
 version INT);
 
 
-COPY logdata:projnum FROM :infile USING DELIMITERS ',';
+COPY logdata FROM '/home/joel/ogr/scripts/ogr24.filtered' USING DELIMITERS ',';
 
-CREATE INDEX log_email_idx:projnum ON logdata:projnum (email);
-CREATE INDEX log_nodecount_idx:projnum ON logdata:projnum (nodecount);
-CREATE INDEX log_stubmark_idx:projnum ON logdata:projnum (stub_marks);
+CREATE INDEX log_email ON logdata (email);
+CREATE INDEX log_nodecount ON logdata (nodecount);
+CREATE INDEX log_stubmark ON logdata (stub_marks);
