@@ -1,88 +1,76 @@
-#!/usr/bin/sqsh -i
-#
-# $Id: dy_appendday.sql,v 1.23 2002/12/17 00:49:35 decibel Exp $
+/*
+# $Id: dy_appendday.sql,v 1.23.2.1 2003/04/22 21:18:03 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
 # Arguments:
 #       PROJECT_ID
+*/
 
-set flushmessage on
-print "!! Appending day's activity to master tables"
-go
+\echo !! Appending day's activity to master tables
 
-print "::  Assigning CREDIT_ID and TEAM in Email_Contrib_Today"
-go
+\echo ::  Assigning CREDIT_ID and TEAM in Email_Contrib_Today
+
 /*
-** When team-joins are handled as requests instead of live updates,
-** the TEAM update will be handled from the requests table instead.
-**
 ** CREDIT_ID holds RETIRE_TO or ID.  Not unique, but guaranteed to
 ** be the ID that should get credit for this work.
 */
 
-exec p_set_lastupdate_ec ${1}, NULL
-go
+select stats_set_last_update(:ProjectID, 'ec', NULL);
 
-declare @stats_date smalldatetime
-select @stats_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
-
-update Email_Contrib_Today
-	set CREDIT_ID = sp.RETIRE_TO
-	from STATS_Participant sp
-	where sp.ID = Email_Contrib_Today.ID
-		and sp.RETIRE_TO >= 1
-		and (sp.RETIRE_DATE <= @stats_date or sp.RETIRE_DATE is NULL)
-		and not exists (select *
-					from STATS_Participant_Blocked spb
-					where spb.ID = Email_Contrib_Today.ID
-						and spb.ID = sp.ID
+UPDATE email_contrib_today
+	SET credit_id = sp.retire_to
+	FROM stats_participant sp, project_statsrun ps
+	WHERE sp.id = email_contrib_today.id
+        AND ps.project_id = email_contrib_today.project_id
+		AND sp.retire_to >= 1
+		AND (sp.retire_date <= ps.last_date or sp.retire_date is null)
+		AND NOT EXISTS (SELECT *
+					FROM stats_participant_blocked spb
+					WHERE spb.id = email_contrib_today.id
+						AND spb.id = sp.id
 				)
-		and PROJECT_ID = ${1}
+		AND email_contrib_today.project_id = :ProjectID
+;
 
-update Email_Contrib_Today
-	set TEAM_ID = tj.TEAM_ID
-	from Team_Joins tj
-	where tj.ID = Email_Contrib_Today.CREDIT_ID
-		and tj.join_date <= @stats_date
-		and (tj.last_date = null or tj.last_date >= @stats_date)
-		and PROJECT_ID = ${1}
+UPDATE email_contrib_today
+	SET team_id = tj.team_id
+	FROM team_joins tj, project_statsrun ps
+	WHERE tj.id = email_contrib_today.credit_id
+        AND ps.project_id = email_contrib_today.project_id
+        AND ps.project_id = :ProjectID
+		AND tj.join_date <= ps.last_date
+		AND (tj.last_date = NULL OR tj.last_date >= ps.last_date)
+		AND email_contrib_today.project_id = :ProjectID
+;
 --create unique clustered index iID on Email_Contrib_Today(PROJECT_ID,ID)
 --create index iTEAM_ID on Email_Contrib_Today(PROJECT_ID,TEAM_ID)
---go
+--;
 
-print "::  Appending into Email_Contrib"
-go
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
+\echo ::  Appending into Email_Contrib
 
-insert into Email_Contrib (DATE, PROJECT_ID, ID, TEAM_ID, WORK_UNITS)
-	select @proj_date, ${1}, ID, TEAM_ID, d.WORK_UNITS
-	from Email_Contrib_Today d
-	where d.PROJECT_ID = ${1}
-	/* Group by is unnecessary, data is already summarized */
+INSERT INTO email_contrib (date, project_id, id, team_id, work_units)
+	SELECT ps.last_date, d.project_id, d.id, d.team_id, d.work_units
+        FROM email_contrib_today d, project_statsrun ps
+        WHERE d.project_id = :ProjectID
+            AND d.project_id = ps.project_id
+            AND ps.project_id = :ProjectID
+        /* Group by is unnecessary, data is already summarized */
+;
 
-exec p_set_lastupdate_ec ${1}, @proj_date
-go
+SELECT stats_set_last_update(:ProjectID, 'ec', stats_get_last_update(:ProjectID, 's'));
 
-print ":: Appending into Platform_Contrib"
-go
-exec p_set_lastupdate_pc ${1}, NULL
-go
-declare @proj_date smalldatetime
-select @proj_date = LAST_HOURLY_DATE
-	from Project_statsrun
-	where PROJECT_ID = ${1}
+\echo :: Appending into Platform_Contrib
 
-insert into Platform_Contrib (DATE, PROJECT_ID, CPU, OS, VER, WORK_UNITS)
-	select @proj_date, ${1}, CPU, OS, VER, WORK_UNITS
-	from Platform_Contrib_Today
-	where PROJECT_ID = ${1}
-	/* Group by is unnecessary, data is already summarized */
+SELECT stats_set_last_update(:ProjectID, 'pc', NULL);
 
-exec p_set_lastupdate_pc ${1}, @proj_date
-go
+INSERT INTO platform_contrib (date, project_id, cpu, os, ver, work_units)
+	SELECT ps.last_date, p.project_id, p.cpu, p.os, p.ver, p.work_units
+        FROM platform_contrib_today p, project_statsrun ps
+        WHERE p.project_id = :ProjectID
+            AND p.project_id = ps.project_id
+            AND ps.project_id = :ProjectID
+        /* Group by is unnecessary, data is already summarized */
+;
+
+SELECT stats_set_last_update(:ProjectID, 'pc', stats_get_last_update(:ProjectID, 's'));
