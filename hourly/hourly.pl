@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.95 2002/03/28 08:36:52 decibel Exp $
+# $Id: hourly.pl,v 1.96 2002/04/15 16:26:19 jlawson Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -48,7 +48,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
   # This means that anything that actually modifies data should not happen until after we set
   # the lock.
   if ($_ = stats::semcheck($project)) {
-    stats::log($project,131,"Cannot obtain lock for hourly.pl!  [$_] still running!");
+    stats::log($project,129,"Cannot obtain lock for hourly.pl!  [$_] still running!");
     next RUNPROJECTS;
   }
   my $sourcelist = $statsconf::logsource{$project};
@@ -96,7 +96,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 
     # Go ahead and set the lock now
     if($_ = stats::semflag($project,"hourly.pl") ne "OK") {
-      stats::log($project,131,"Cannot obtain lock for hourly.pl!  [$_] still running!");
+      stats::log($project,129,"Cannot obtain lock for hourly.pl!  [$_] still running!");
       die;
     }
 
@@ -168,7 +168,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       $bcprows =~ s/,//g;
 
       if($bcprows == 0) {
-        stats::log($project,139,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+        stats::log($project,137,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
       }
 
       opendir WD, "$workdir" or die;
