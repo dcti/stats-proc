@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.6 2000/07/15 00:19:11 statproc Exp $
+# $Id: integrate.sql,v 1.7 2000/07/15 10:15:40 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -19,6 +19,7 @@ go
 update import_bcp
 	set EMAIL = ltrim(EMAIL)
 	where EMAIL <> ltrim(EMAIL)
+go
 
 /*
 ** TODO: Strip out any text in <brackets>, per the RFC for email addresses
@@ -35,6 +36,7 @@ update import_bcp
 		or EMAIL like '%[ <>]%'	/* Must not contain space, &gt or &lt */
 		or EMAIL like '@%'	/* Must not begin with @ */
 		or EMAIL like '%@'	/* Must not end with @ */
+go
 
 /*
 **	Only one @.  Must test after we know they have at least one @
@@ -73,7 +75,7 @@ create table #dayemails
 )
 go
 /* Put EMAIL data into temp table */
-print "Move data to temp table"
+print "Moving data to temp table"
 go
 /* First, put the latest set of logs in */
 insert #Email_Contrib_Today (EMAIL, ID, WORK_UNITS)
@@ -83,7 +85,7 @@ insert #Email_Contrib_Today (EMAIL, ID, WORK_UNITS)
 go
 
 /* Assign ID's for everyone who has an ID */
-print "Assign IDs"
+print "Assigning IDs"
 go
 -- NOTE: At some point we might want to set TEAM_ID and CREDIT_ID here as well
 update #Email_Contrib_Today
@@ -93,7 +95,7 @@ update #Email_Contrib_Today
 go
 
 /* Add new participants to STATS_Participant */
-print "Add new participants"
+print "Adding new participants"
 go
 
 /* First, copy all new participants to #dayemails to do the identity assignment */
@@ -108,7 +110,7 @@ go
 declare @idoffset int
 select @idoffset = max(id)
 	from STATS_Participant
-select @idoffset as current_max_ID
+#select @idoffset as current_max_ID
 
 -- [BW] If we switch to retire_to = id as the normal condition,
 --	this insert should insert (id, EMAIL, retire_to)
@@ -128,7 +130,7 @@ update #Email_Contrib_Today
 go
 
 /* Now, add the stuff from the previous hourly runs */
-print "Copy Email_Contrib_Today into temptable"
+print "Copying Email_Contrib_Today into temptable"
 go
 -- JCN: Removed sum() and group by.. data in Email_Contrib_Today should be summed already
 insert #Email_Contrib_Today (EMAIL, ID, WORK_UNITS)
@@ -139,6 +141,8 @@ insert #Email_Contrib_Today (EMAIL, ID, WORK_UNITS)
 /* Finally, remove the previous records from Email_Contrib_Today and insert the new
 ** data from the temp table. (It seems there should be a better way to do this...)
 */
+print "Moving data from temptable to Email_Contrib_Today"
+go
 begin transaction
 delete Email_Contrib_Today
 	where PROJECT_ID = ${1}
@@ -153,7 +157,7 @@ drop table #Email_Contrib_Today
 go
 
 /* Do the exact same stuff for Platform_Contrib_Today */
-print "Roll up platform contributions"
+print "Rolling up platform contributions"
 go
 create table #Platform_Contrib_Today
 (
@@ -173,7 +177,10 @@ insert #Platform_Contrib_Today (CPU, OS, VER, WORK_UNITS)
 	from Platform_Contrib_Today
 	where PROJECT_ID = ${1}
 	group by CPU, OS, VER
+go
 
+print "Moving data from temptable to Platform_Contrib_Today"
+go
 begin transaction
 delete Platform_Contrib_Today
 	where PROJECT_ID = ${1}
@@ -187,7 +194,7 @@ commit transaction
 drop table #Platform_Contrib_Today
 go
 
-print "Clear import_bcp"
+print "Clearing import table"
 go
 
 print "Total rows in import table:"
