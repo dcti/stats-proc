@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.28.2.5 2003/04/04 00:43:23 decibel Exp $
+# $Id: stats.pm,v 1.28.2.6 2003/04/04 00:55:00 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -49,9 +49,9 @@ sub log {
 	}
 
 	if ($dest & 64) {
-		print STDERR $ts," ",@par,"\n";
+		print STDERR $ts," $project: ",@par,"\n";
 	} else {
-		print $ts," ",@par,"\n";
+		print $ts," $project: ",@par,"\n";
 	}
 
 
