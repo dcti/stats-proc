@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.31.2.3 2003/04/28 05:37:11 decibel Exp $
+# $Id: daily.pl,v 1.31.2.4 2003/09/02 18:40:45 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -91,6 +91,9 @@ sub psql {
       $psqlsuccess = 1;
     }
     if( $_ =~ /ERROR/ ) {
+      $psqlsuccess = 1;
+    }
+    if( $_ =~ /FATAL/ ) {
       $psqlsuccess = 1;
     }
   }
