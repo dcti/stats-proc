@@ -1,7 +1,15 @@
--- $Id: stats.sql,v 1.5 2003/05/13 14:05:42 nerf Exp $
-\set ON_ERROR_STOP 1
+-- $Id: stats.sql,v 1.6 2003/07/21 00:19:44 nerf Exp $
 
-select now();
+CREATE TABLE public.ogr_complete (
+	rundate date DEFAULT ('now'::text)::date NOT NULL,
+	project_id int2 NOT NULL,
+	count int4 NOT NULL,
+	pass1 int4 NOT NULL,
+	pass2 int4 NOT NULL,
+	CONSTRAINT ogr_complete_pkey PRIMARY KEY (rundate, project_id)
+) WITHOUT OIDS;
+
+\set ON_ERROR_STOP 1
 
 CREATE TEMP TABLE ogr_stats (
   table_name varchar(22), 
@@ -10,41 +18,21 @@ CREATE TEMP TABLE ogr_stats (
   project_id int2
 ) WITHOUT OIDS;
 
-CREATE TABLE public.ogr_complete (
-  rundate date DEFAULT ('now'::text)::date NOT NULL, 
-  project_id int2 NOT NULL, 
-  count int4 NOT NULL, 
-  pass1 int4 NOT NULL, 
-  pass2 int4 NOT NULL, 
-  CONSTRAINT ogr_complete_pkey PRIMARY KEY (rundate, project_id)
-) WITHOUT OIDS;
+select now();
 
 BEGIN;
 
-delete from ogr_stats
-where  table_name = 'ogr_stubs'
-and function = 'count';
 
 insert into ogr_stats (table_name,function,result,project_id)
 select 'ogr_stubs','count',count(*),project_id
 from ogr_stubs
 group by project_id;
 
-select now();
-
-delete from ogr_stats
-where function = 'pass1';
-
 insert into ogr_stats (function,result,project_id)
 select 'pass1',count(distinct su.stub_id),project_id
 from ogr_stubs s, ogr_summary su
 where s.stub_id = su.stub_id
 group by project_id;
-
-select now();
-
-delete from ogr_stats
-where function = 'pass2';
 
 insert into ogr_stats (function,result,project_id)
 select 'pass2',count(distinct su.stub_id),project_id
@@ -67,5 +55,3 @@ AND P1.project_id = P2.project_id;
 COMMIT;
 
 select now();
-
-

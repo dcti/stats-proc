@@ -1,19 +1,17 @@
--- $Id: summarize.sql,v 1.4 2003/05/13 14:05:42 nerf Exp $
-\set ON_ERROR_STOP 1
+-- $Id: summarize.sql,v 1.5 2003/07/21 00:19:44 nerf Exp $
 
 create table OGR_summary
 (
-	stub_id int,
-	nodecount bigint,
-	participants int,
-	max_client int
+	stub_id int not null,
+	nodecount bigint not null,
+	participants int not null,
+	max_client int not null
 ) without oids;
 
-CREATE INDEX results_id_count ON ogr_results USING btree (stub_id, nodecount);
-CREATE UNIQUE INDEX results_all
-	ON ogr_results USING btree (id, stub_id, nodecount, platform_id);
-
 DROP INDEX summ_maxpart;
+
+\set ON_ERROR_STOP 1
+
 TRUNCATE OGR_summary;
 
 SELECT now();
@@ -29,4 +27,4 @@ SELECT now();
 
 CREATE INDEX summ_maxpart on OGR_summary (max_client, participants);
 
-VACUUM ANALYZE ogr_summary;
+ANALYZE ogr_summary;
