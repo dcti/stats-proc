@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: backout.sql,v 1.5 2000/08/03 03:02:56 decibel Exp $
+# $Id: backout.sql,v 1.6 2000/10/30 00:38:55 decibel Exp $
 #
 # This script will back out all stats data to a given date
 #
@@ -8,27 +8,34 @@
 #	Project ID
 #	The date to back out *to*. The date specified will *remain* in the database.
 
+set flushmessage on
 use stats
 go
 
 begin transaction
 print "Deleting from Email_Contrib where DATE > '%1!'", "${2}"
 delete from Email_Contrib where PROJECT_ID = ${1} and DATE > "${2}"
+print ""
 
 print "Deleting from Platform_Contrib where DATE > '%1!'", "${2}"
 delete from Platform_Contrib where PROJECT_ID = ${1} and DATE > "${2}"
+print ""
 
 print "Deleting from Daily_Summary where DATE > '%1!'", "${2}"
 delete Daily_Summary where PROJECT_ID = ${1} and DATE > "${2}"
+print ""
 
 print "Deleting from Email_Rank"
 delete from Email_Rank where PROJECT_ID = ${1}
+print ""
 
 print "Deleting from Team_Rank"
 delete from Team_Rank where PROJECT_ID = ${1}
+print ""
 
 print "Deleting from Team_Members"
 delete from Team_Members where PROJECT_ID = ${1}
+print ""
 
 print "Inserting into Email_Rank"
 insert into Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
@@ -38,6 +45,7 @@ insert into Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_
 	from statproc.Email_Rank_Backup
 	where PROJECT_ID = ${1}
 		and BACKUP_DATE = "${2}"
+print ""
 
 print "Inserting into Team_Rank"
 insert into Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
@@ -49,6 +57,7 @@ insert into Team_Rank (PROJECT_ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, W
 	from statproc.Team_Rank_Backup
 	where PROJECT_ID = ${1}
 		and BACKUP_DATE = "${2}"
+print ""
 
 print "Inserting into Team_Members"
 insert into Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL,
@@ -58,5 +67,6 @@ insert into Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_T
 	from statproc.Team_Members_Backup
 	where PROJECT_ID = ${1}
 		and BACKUP_DATE = "${2}"
+print ""
 commit transaction
 go
