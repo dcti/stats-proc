@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.14 2000/10/29 10:04:42 decibel Exp $
+# $Id: integrate.sql,v 1.15 2000/10/29 10:16:17 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -15,6 +15,7 @@ go
 **	importing any data, which could be useful if we can get data in
 **	Email_Contrib_Today format but not import_bcp format.
 */
+print "Updating LAST_STATS_DATE for all projects"
 select PROJECT_ID,  max(TIME_STAMP) as STATS_DATE
 	into #Projects
 	from import_bcp
@@ -52,7 +53,7 @@ go
 /*
 **	Make sure they don't have any leading spaces
 */
-update import
+update #import
 	set EMAIL = ltrim(EMAIL)
 	where EMAIL <> ltrim(EMAIL)
 /*
@@ -64,7 +65,7 @@ update import
 **	It's going to table-scan anyway, so we might as well
 **	do all the tests we can
 */
-update import
+update #import
 	set EMAIL = 'rc5-bad@distributed.net'
 	where EMAIL not like '%@%'	/* Must have @ */
 		or EMAIL like '%[ <>]%'	/* Must not contain space, &gt or &lt */
@@ -73,7 +74,7 @@ update import
 /*
 **	Only one @.  Must test after we know they have at least one @
 */
-update import
+update #import
 	set EMAIL = 'rc5-bad@distributed.net'
 	where substring(EMAIL, charindex('@', EMAIL) + 1, 64) like '%@%'
 go
@@ -111,7 +112,7 @@ print "Final roll-up by email"
 /* First, put the latest set of logs in */
 insert #Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 	select PROJECT_ID, EMAIL, 0, sum(WORK_UNITS)
-	from import
+	from #import
 	group by PROJECT_ID, EMAIL
 go
 
