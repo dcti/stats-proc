@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.8 2000/07/15 10:46:09 decibel Exp $
+# $Id: integrate.sql,v 1.9 2000/07/19 15:04:53 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -46,13 +46,19 @@ update import_bcp
 	where substring(EMAIL, charindex('@', EMAIL) + 1, 64) like '%@%'
 go
 
+/* Create a temp table that lets us know what project(s) we're working on here */
+select PROJECT_ID,  max(TIME_STAMP) as STATS_DATE
+	into #Projects
+	from import_bcp
+	group by PROJECT_ID
+go
+
 /* Store the stats date here, instead of in every row of Email_Contrib_Today and Platform_Contrib_Today */
 declare @stats_date smalldatetime
-select @stats_date = max(TIME_STAMP)
-	from import_bcp
 update Projects
-	set LAST_STATS_DATE = @stats_date
-	where PROJECT_ID = ${1}
+	set LAST_STATS_DATE = p.STATS_DATE
+	from #Projects p
+	where Projects.PROJECT_ID = p.PROJECT_ID
 go
 
 /*
@@ -64,6 +70,7 @@ password assign automatic
 */
 create table #Email_Contrib_Today
 (
+	PROJECT_ID	tinyint		not NULL,
 	EMAIL		varchar (64)	not NULL,
 	ID		int		not NULL,
 	WORK_UNITS	numeric(20, 0)	not NULL
@@ -78,10 +85,10 @@ go
 print "Moving data to temp table"
 go
 /* First, put the latest set of logs in */
-insert #Email_Contrib_Today (EMAIL, ID, WORK_UNITS)
-	select EMAIL, 0, sum(WORK_UNITS)
+insert #Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
+	select PROJECT_ID, EMAIL, 0, sum(WORK_UNITS)
 	from import_bcp
-	group by EMAIL
+	group by PROJECT_ID, EMAIL
 go
 
 /* Assign ID's for everyone who has an ID */
@@ -132,11 +139,12 @@ go
 /* Now, add the stuff from the previous hourly runs */
 print "Copying Email_Contrib_Today into temptable"
 go
+
 -- JCN: Removed sum() and group by.. data in Email_Contrib_Today should be summed already
-insert #Email_Contrib_Today (EMAIL, ID, WORK_UNITS)
-	select "", ID, WORK_UNITS
-	from Email_Contrib_Today
-	where PROJECT_ID = ${1}
+insert #Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
+	select ect.PROJECT_ID, "", ect.ID, ect.WORK_UNITS
+	from Email_Contrib_Today ect, #Projects p
+	where ect.PROJECT_ID = p.PROJECT_ID 
 
 /* Finally, remove the previous records from Email_Contrib_Today and insert the new
 ** data from the temp table. (It seems there should be a better way to do this...)
@@ -145,10 +153,11 @@ print "Moving data from temptable to Email_Contrib_Today"
 go
 begin transaction
 delete Email_Contrib_Today
-	where PROJECT_ID = ${1}
+	from #Projects p
+	where Email_Contrib_Today.PROJECT_ID = p.PROJECT_ID 
 
 insert into Email_Contrib_Today (PROJECT_ID, WORK_UNITS, ID, TEAM_ID, CREDIT_ID)
-	select ${1}, sum(WORK_UNITS), ID, 0, 0
+	select PROJECT_ID, sum(WORK_UNITS), ID, 0, 0
 	from #Email_Contrib_Today
 	group by ID
 commit transaction
@@ -161,34 +170,35 @@ print "Rolling up platform contributions"
 go
 create table #Platform_Contrib_Today
 (
-	CPU smallint not NULL,
-	OS smallint not NULL,
-	VER smallint not NULL,
-	WORK_UNITS numeric(20, 0) not NULL
+	PROJECT_ID	tinyint		not NULL,
+	CPU		smallint	not NULL,
+	OS		smallint	not NULL,
+	VER		smallint	not NULL,
+	WORK_UNITS	numeric(20, 0)	not NULL
 )
 go
-insert #Platform_Contrib_Today (CPU, OS, VER, WORK_UNITS)
-	select CPU, OS, VER, sum(WORK_UNITS)
+insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
+	select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
 	from import_bcp
-	group by CPU, OS, VER
+	group by PROJECT_ID, CPU, OS, VER
 
-insert #Platform_Contrib_Today (CPU, OS, VER, WORK_UNITS)
-	select CPU, OS, VER, sum(WORK_UNITS)
+insert #Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
+	select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
 	from Platform_Contrib_Today
-	where PROJECT_ID = ${1}
-	group by CPU, OS, VER
+	group by PROJECT_ID, CPU, OS, VER
 go
 
 print "Moving data from temptable to Platform_Contrib_Today"
 go
 begin transaction
 delete Platform_Contrib_Today
-	where PROJECT_ID = ${1}
+	from #Projects p
+	where Platform_Contrib_Today.PROJECT_ID = p.PROJECT_ID 
 
 insert Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
-	select ${1}, CPU, OS, VER, sum(WORK_UNITS)
+	select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
 	from #Platform_Contrib_Today
-	group by CPU, OS, VER
+	group by PROJECT_ID, CPU, OS, VER
 commit transaction
 
 drop table #Platform_Contrib_Today

@@ -130,7 +130,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
 
       my $bufstorage = "";
       my $sqshsuccess = 0;
-      open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 24 2> /dev/stderr |";
+      open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i integrate.sql 2> /dev/stderr |";
       while (<SQL>) {
 	my $ts = sprintf("[%02s:%02s:%02s]",(localtime)[2],(localtime)[1],(localtime)[0]);
         print "$ts $_";
