@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.11 2002/06/11 05:08:01 decibel Exp $
+# $Id: statsconf.pm.default,v 1.12 2002/06/11 05:22:13 decibel Exp $
 #
 # Stats global configuration
 #
@@ -8,7 +8,7 @@ package statsconf;
 
 $homedir = @{[getpwuid $<]}[7];
 $logtag = "statsbox-iii";
-@projects = ("ogr:rc5");
+@projects = ("ogr","rc5");
 %prids = (
         "rc5"   => "5",
         "ogr"   => "24:25",
