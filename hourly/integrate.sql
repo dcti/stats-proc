@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 # vi: tw=100
-# $Id: integrate.sql,v 1.32 2003/07/31 20:41:48 decibel Exp $
+# $Id: integrate.sql,v 1.33 2003/07/31 22:00:14 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -64,14 +64,14 @@ go
 /* Store the stats date here, instead of in every row of Email_Contrib_Today and Platform_Contrib_Today */
 declare @stats_date smalldatetime
 update Project_statsrun
-	set LAST_HOURLY_DATE = isnull(p.STATS_DATE, LAST_HOURLY_DATE),
+	set LAST_HOURLY_DATE = isnull(i.STATS_DATE, LAST_HOURLY_DATE),
 		LOGS_FOR_DAY = LOGS_FOR_DAY + 1,
 		WORK_FOR_DAY = WORK_FOR_DAY + p.TOTAL_WORK * (select WORK_UNIT_IMPORT_MULTIPLIER
 								from Projects p
 								where p.PROJECT_ID = i.PROJECT_ID
 								)
-	from #Projects p
-	where Project_statsrun.PROJECT_ID = p.PROJECT_ID
+	from #Projects i
+	where Project_statsrun.PROJECT_ID = i.PROJECT_ID
 go
 
 print "Rolling up data from import_bcp"
