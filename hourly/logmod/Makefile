@@ -2,4 +2,4 @@
 all: logmod
 
 logmod: logmod.cpp
-	gcc -o logmod logmod.cpp
+	gcc -O2 -o logmod logmod.cpp
