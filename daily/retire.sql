@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.14 2000/10/29 09:35:46 decibel Exp $
+# $Id: retire.sql,v 1.15 2000/10/30 13:32:28 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -53,6 +53,7 @@ update Email_Rank
 		and Email_Rank.LAST_DATE < nr.LAST_DATE
 		and Email_Rank.PROJECT_ID = ${1}
 
+print ""
 print ""
 print "Delete retires from Email_Rank"
 delete Email_Rank
@@ -135,6 +136,7 @@ delete Team_Members
 		and Team_Members.PROJECT_ID = ${1}
 
 -- This code *must* stay in order to handle retiring participants old team affiliations
+print ""
 print ""
 print "Insert remaining retires"
 delete #NewRetiresTM
