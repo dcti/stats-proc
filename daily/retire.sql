@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.21 2002/04/11 06:14:53 decibel Exp $
+# $Id: retire.sql,v 1.22 2002/04/11 06:17:22 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -32,7 +32,7 @@ insert into STATS_Participant_Blocked(ID)
 	where not exists (select *
 				from STATS_Participant_Blocked spb
 				where spb.ID = b.ID)
-delete from STATS_Participant_Blocked spb
+delete from STATS_Participant_Blocked
 	where ID not in (select ID from #Blocked)
 go
 
