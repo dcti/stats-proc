@@ -1,18 +1,18 @@
-#!/bin/sh
+#!/bin/sh -e
 
 if [ x$1 = x ]; then
 	echo "I need to know what project to work on!!"
 	exit 1
 fi
 
-psql -d stats -v ProjectID=$1 -f retire.sql && \
-psql -d stats -v ProjectID=$1 -f newjoin.sql && \
-psql -d stats -v ProjectID=$1 -f dy_appendday.sql && \
-psql -d stats -v ProjectID=$1 -f em_update.sql && \
-psql -d stats -v ProjectID=$1 -f em_rank.sql && \
-psql -d stats -v ProjectID=$1 -f tm_update.sql && \
-psql -d stats -v ProjectID=$1 -f tm_rank.sql && \
-psql -d stats -v ProjectID=$1 -f platform.sql && \
-psql -d stats -v ProjectID=$1 -f dy_dailyblocks.sql && \
-sudo pcpages $1 && \
+psql -d stats -v ProjectID=$1 -f retire.sql
+psql -d stats -v ProjectID=$1 -f newjoin.sql
+psql -d stats -v ProjectID=$1 -f dy_appendday.sql
+psql -d stats -v ProjectID=$1 -f em_update.sql
+psql -d stats -v ProjectID=$1 -f em_rank.sql
+psql -d stats -v ProjectID=$1 -f tm_update.sql
+psql -d stats -v ProjectID=$1 -f tm_rank.sql
+psql -d stats -v ProjectID=$1 -f platform.sql
+psql -d stats -v ProjectID=$1 -f dy_dailyblocks.sql
+sudo pcpages $1
 psql -d stats -v ProjectID=$1 -f audit.sql
