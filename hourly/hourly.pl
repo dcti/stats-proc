@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.106.2.10 2003/04/04 06:11:21 decibel Exp $
+# $Id: hourly.pl,v 1.106.2.11 2003/04/04 06:22:17 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -126,7 +126,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 	    $rawfn = $basefn;
 	    $rawfn =~ s/.bz2//i;
 	    my $newsize=(stat "$workdir$rawfn")[7];
-	    stats::log($project,1,"$basefn successfully decompressed (" . int($newsize/$orgsize*100) . "% compression)");
+	    stats::log($project,1,"$basefn successfully decompressed (" . int($orgsize/$newsize*100) . "% compression)");
 	}
     }
     if( $rawfn eq "" ) {
@@ -147,15 +147,17 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       }
 
       my $bcprows = `cat $workdir$finalfn | wc -l`;
+      $bcprows =~ s/ +//g;
 
       my $bcp = `time ./bcp.sh $statsconf::database $workdir$finalfn 2>&1`;
       if($? != 0) {
+        print "bcp error: $bcp\n";
         stats::log($project,131,"Error launching BCP, aborting hourly run.");
         die;
       }
 
       $bcp =~ /([0123456789.]+)/;
-      my $rate = $bcprows / $1;
+      my $rate = int($bcprows / $1);
 
 	  stats::log($project,1,"$finalfn successfully BCP'd; $bcprows rows at $rate rows/second.");
 
@@ -383,3 +385,5 @@ sub rate_calc {
 
   return $f_outstr;
 }
+
+# vi: sw=2 ts=2
