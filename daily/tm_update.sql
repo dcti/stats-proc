@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.25 2002/04/11 06:29:07 decibel Exp $
+# $Id: tm_update.sql,v 1.26 2002/04/11 06:31:02 decibel Exp $
 
 TM_RANK
 
@@ -49,7 +49,7 @@ go
 
 select ect.CREDIT_ID, ect.TEAM_ID, ect.WORK_UNITS
 	into #TeamMembers
-	from Email_Contrib_Today ect, STATS_Participant sp, STATS_Team st
+	from Email_Contrib_Today ect
 	where ect.TEAM_ID >= 1
 		and not exists (select *
 					from STATS_Participant_Blocked spb
