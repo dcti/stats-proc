@@ -6,6 +6,7 @@ if [ x$1 = x ]; then
 fi
 
 sqsh -i retire.sql $1
+sqsh -i newjoin.sql $1
 sqsh -i dy_appendday.sql $1
 sqsh -i em_update.sql $1
 sqsh -i em_rank.sql $1
