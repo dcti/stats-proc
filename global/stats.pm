@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.27 2002/06/11 05:10:37 decibel Exp $
+# $Id: stats.pm,v 1.28 2002/10/23 02:23:03 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -71,9 +71,9 @@ sub log {
 	if ($dest & 8) {
                 #pagers
 
-		#open PAGER, "|mail \"-s$statsconf::logtag/$project\" nugget-pager\@slacker.com";
-		#print PAGER "@par\n";
-                #close PAGER;
+		open PAGER, "|mail \"-s$statsconf::logtag/$project\" decibel-pager\@decibel.org";
+		print PAGER "@par\n";
+                close PAGER;
 
 	}
 }
