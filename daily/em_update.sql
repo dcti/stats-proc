@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: em_update.sql,v 1.4 2002/04/10 16:49:05 decibel Exp $
+# $Id: em_update.sql,v 1.5 2002/12/10 23:13:34 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -20,20 +20,7 @@ go
 --drop index Email_Rank.iOVERALL_RANK
 --go
 
-print ' Remove or move "today" info '
-declare @max_rank int
-select @max_rank = count(*)+1 from STATS_Participant
-select @max_rank as max_rank into #maxrank
-update Email_Rank
-	set DAY_RANK_PREVIOUS = DAY_RANK,
-		DAY_RANK = @max_rank,
-		OVERALL_RANK_PREVIOUS = OVERALL_RANK,
-		OVERALL_RANK = @max_rank,
-		WORK_TODAY = 0
-	where Email_Rank.PROJECT_ID = ${1}
-go
-
-print ' Now insert new participants'
+print ' Insert new participants'
 go
 
 declare @stats_date smalldatetime
@@ -64,7 +51,7 @@ insert Email_Rank (PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL
 */
 
 go
-print 'Populate work'
+print 'Build temporary table'
 go
 create table #retired_work
 (
@@ -82,7 +69,23 @@ insert #retired_work
 	from Email_Contrib_Today ect
 	where ect.PROJECT_ID = ${1}
 	group by ect.CREDIT_ID
+go
 
+print ' Remove or move "today" info '
+declare @max_rank int
+select @max_rank = count(*)+1 from STATS_Participant
+select @max_rank as max_rank into #maxrank
+update Email_Rank
+	set DAY_RANK_PREVIOUS = DAY_RANK,
+		DAY_RANK = @max_rank,
+		OVERALL_RANK_PREVIOUS = OVERALL_RANK,
+		OVERALL_RANK = @max_rank,
+		WORK_TODAY = 0
+	where Email_Rank.PROJECT_ID = ${1}
+
+print
+print
+print ' Update with new info'
 update Email_Rank
 	set WORK_TODAY = rw.WORK_TODAY,
 		WORK_TOTAL = WORK_TOTAL + rw.WORK_TODAY,
