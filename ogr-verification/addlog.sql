@@ -1,4 +1,4 @@
--- $Id: addlog.sql,v 1.8 2003/01/22 01:34:50 nerf Exp $ --
+-- $Id: addlog.sql,v 1.9 2003/02/03 05:32:21 nerf Exp $ --
 
 DROP TABLE logdata;
 
@@ -6,8 +6,8 @@ CREATE TABLE logdata (
 email VARCHAR(64),
 stub_marks VARCHAR(22),
 nodecount BIGINT,
-os_type SMALLINT,
-cpu_type SMALLINT,
+os_type INT,
+cpu_type INT,
 version INT)
 WITHOUT OIDS;
 
