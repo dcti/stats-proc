@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: logmod_ogr.pl,v 1.8 2000/07/19 16:03:55 decibel Exp $
+# $Id: logmod_ogr.pl,v 1.9 2000/08/16 19:15:08 nugget Exp $
 #
 #
 # ogr logfile sample:
@@ -94,10 +94,7 @@ while(<>) {
   if ($status == -1 || $status == 1) {
     print STDERR "$buf\n";
     next;
-  } elsif ($status == 2) {
-    print STDERR "$buf\n";
-    #print BADCOUNT $head . "$email,$blockid,$tail\n";
-  } elsif ($status == 0) {
+  } elsif ($status == 0 || $status == 2) {
   # We remove a few fields prior to import, in order to keep the size of the
   # import table as small as possible.  ip and workunit id are unnecessary
   # for stats, so they are eliminated.
