@@ -1,4 +1,7 @@
+-- $Id: incr.sql,v 1.3 2003/08/01 15:50:53 nerf Exp $ --
 ----------------
+-- day_results and retire_today will probably be handled somewhere else
+-- in the future, but it's here for not to facilitate testing
 select now();
 
 CREATE TEMP TABLE day_results (
@@ -43,9 +46,9 @@ select now();
 ----------------
 
 CREATE TEMP TABLE retire_today (
-email VARCHAR (64) not null,
-id INTEGER not null,
-stats_id INTEGER not null
+email VARCHAR (64) NOT NULL,
+id INTEGER NOT NULL,
+stats_id INTEGER NOT NULL
 ) WITHOUT OIDS;
 
 INSERT INTO retire_today
@@ -101,6 +104,9 @@ analyze retired_stub_id;
 
 select now();
 
+-- reduce the number of participants for a given stub, but only if what
+-- we previous thought was two different people are now (because of retires)
+-- seen as a single person
 explain UPDATE ogr_summary
 SET participants = participants - duplicated_ids
 FROM (SELECT stub_id, nodecount, count(*) AS duplicated_ids
@@ -108,10 +114,10 @@ FROM (SELECT stub_id, nodecount, count(*) AS duplicated_ids
 WHERE ogr_summary.stub_id = dw.stub_id
 AND ogr_summary.nodecount = dw.nodecount;
 
-create temp table retired_new_info (
-stub_id integer not null,
-nodecount bigint not null,
-ids integer not null
+CREATE TEMP TABLE retired_new_info (
+stub_id integer NOT NULL,
+nodecount bigint NOT NULL,
+ids integer NOT NULL
 );
 
 explain analyze INSERT INTO retired_new_info
@@ -149,11 +155,11 @@ analyze day_results;
 select now();
 
 create temp table day_summary (
- stub_id       integer  not null,
- nodecount     bigint   not null,
- ids  integer  not null,
- max_version    integer  not null,
- in_ogr_summary boolean not null default false
+ stub_id       integer  NOT NULL,
+ nodecount     bigint   NOT NULL,
+ ids  integer  NOT NULL,
+ max_version    integer  NOT NULL,
+ in_ogr_summary boolean NOT NULL DEFAULT FALSE
 ) WITHOUT OIDS;
 
 explain analyze INSERT INTO day_summary (stub_id,nodecount,ids,max_version)
@@ -171,6 +177,10 @@ create index day_stubnode on day_summary (stub_id,nodecount);
 analyze day_summary;
 select now();
 
+-- Mark all the records that are currently in ogr_summary
+-- Since we're going to update the ones that are there, then insert the
+-- ones that are not, this saves us having to do the same EXISTS
+-- statement twice
 explain analyze UPDATE day_summary
 SET in_ogr_summary = true
 WHERE exists
@@ -178,6 +188,7 @@ WHERE exists
         AND OGR_summary.nodecount = day_summary.nodecount
         );
 
+-- If it's threre already, update it
 explain UPDATE OGR_summary
     SET participants = participants + ids
         , max_client = max(max_client, max_version)
@@ -187,28 +198,12 @@ explain UPDATE OGR_summary
     AND ds.nodecount = OGR_summary.nodecount
 ;
 
+-- If it's not there, add it
+-- Note that most of the stubs will fall under this category
 explain INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
     SELECT stub_id, nodecount, ids, max_version
     FROM day_summary ds
     WHERE NOT ds.in_ogr_summary
-;
-
-explain UPDATE OGR_summary
-    SET participants = participants + ids
-        , max_client = max(max_client, max_version)
-    FROM day_summary ds
-    WHERE OGR_summary.stub_id = ds.stub_id
-        AND OGR_summary.nodecount = ds.nodecount
-;
-
-explain INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
-    SELECT stub_id, nodecount, ids, max_version
-    FROM day_summary ds
-    WHERE NOT EXISTS (SELECT 1
-                            FROM OGR_summary
-                            WHERE OGR_summary.stub_id = ds.stub_id
-                                AND OGR_summary.nodecount = ds.nodecount
-                        )
 ;
 
 select now();
