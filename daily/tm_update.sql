@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.24 2002/04/11 06:25:25 decibel Exp $
+# $Id: tm_update.sql,v 1.25 2002/04/11 06:29:07 decibel Exp $
 
 TM_RANK
 
@@ -55,11 +55,12 @@ select ect.CREDIT_ID, ect.TEAM_ID, ect.WORK_UNITS
 					from STATS_Participant_Blocked spb
 					where spb.ID = ect.CREDIT_ID
 				)
-		and not exists (select *
-					from STATS_Team_Blocked stb
-					where stb.TEAM_ID = ect.TEAM_ID
-				)
 		and ect.PROJECT_ID = ${1}
+go
+delete from #TeamMembers
+	where TEAM_ID in (select TEAM_ID
+				from STATS_Participant_Blocked
+			)
 go
 
 create table #TeamMemberWork
