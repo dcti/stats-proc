@@ -1,6 +1,6 @@
-#!/usr/bin/sqsh -i
+#!/usr/local/bin/sqsh -i
 #
-# $Id: backout.sql,v 1.7 2000/10/31 12:02:39 decibel Exp $
+# $Id: backout.sql,v 1.8 2001/12/29 08:50:50 decibel Exp $
 #
 # This script will back out all stats data to a given date
 #

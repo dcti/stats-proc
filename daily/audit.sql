@@ -1,6 +1,6 @@
-#!/usr/bin/sqsh -i
+#!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.16 2000/11/01 04:59:12 decibel Exp $
+# $Id: audit.sql,v 1.17 2001/12/29 08:50:50 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),

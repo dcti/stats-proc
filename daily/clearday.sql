@@ -1,5 +1,5 @@
-#!/usr/bin/sqsh -i
--- $Id: clearday.sql,v 1.3 2000/10/30 13:30:42 decibel Exp $
+#!/usr/local/bin/sqsh -i
+-- $Id: clearday.sql,v 1.4 2001/12/29 08:50:50 decibel Exp $
 
 print "Dropping indexes"
 go
