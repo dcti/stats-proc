@@ -1,6 +1,6 @@
 #!/usr/local/bin/sqsh -i
 #
-# $Id: audit.sql,v 1.30 2002/04/12 22:39:38 decibel Exp $
+# $Id: audit.sql,v 1.31 2002/04/20 01:59:04 decibel Exp $
 
 create table #audit (
 	ECTsum		numeric(20),
@@ -35,7 +35,7 @@ go -f -h
 print "Sum of work in Email_Contrib_Today for project id %1!", ${1}
 go -f -h
 update	#audit
-	set ECTsum = (select sum(WORK_UNITS)
+	set ECTsum = (select isnull(sum(WORK_UNITS), 0)
 		from Email_Contrib_Today
 		where PROJECT_ID = ${1})
 select ECTsum from #audit
@@ -90,7 +90,7 @@ go -f -h
 print "Sum of work in Platform_Contrib_Today for project id %1!", ${1}
 go -f -h
 update	#audit
-	set PCTsum = (select sum(WORK_UNITS)
+	set PCTsum = (select isnull(sum(WORK_UNITS), 0)
 		from Platform_Contrib_Today
 		where PROJECT_ID = ${1})
 select PCTsum from #audit
@@ -113,7 +113,7 @@ select @proj_date = LAST_HOURLY_DATE
 	where PROJECT_ID = ${1}
 
 update	#audit
-	set PCsumtoday = (select sum(WORK_UNITS)
+	set PCsumtoday = (select isnull(sum(WORK_UNITS), 0)
 		from Platform_Contrib
 		where PROJECT_ID = ${1}
 			and DATE = @proj_date)
@@ -236,7 +236,7 @@ select @proj_date = LAST_HOURLY_DATE
 	where PROJECT_ID = ${1}
 
 update	#audit
-	set ECsumtoday = (select sum(WORK_UNITS)
+	set ECsumtoday = (select isnull(sum(WORK_UNITS), 0)
 		from Email_Contrib
 		where PROJECT_ID = ${1}
 			and DATE = @proj_date)
