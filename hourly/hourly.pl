@@ -53,7 +53,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
     stats::log($project,131,"Unable to contact log source!");
   }
 
-  if( $logtoload lt $datestr ) {
+  if( $logtoload le $datestr ) {
     stats::log($project,1,"There are $linecount logs on the master, $qualcount are new to me.  I think I'll start with $logtoload.");
     my $fullfn = "$server[1]$project$logtoload.log.gz";
     my $basefn = "$project$logtoload.log.gz";
