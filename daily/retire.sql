@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.27 2004/04/14 23:07:42 decibel Exp $
+# $Id: retire.sql,v 1.28 2004/08/24 05:22:47 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -49,8 +49,9 @@ insert into STATS_Team_Blocked(TEAM_ID)
 ;
 delete from STATS_Team_Blocked
     where not exists (select *
-                from STATS_Team
-                where LISTMODE >= 10
+                from STATS_Team st
+                where STATS_Team_Blocked.TEAM_ID = st.TEAM
+                    AND LISTMODE >= 10
             )
 ;
 
@@ -256,3 +257,5 @@ BEGIN;
             AND id IN (SELECT id FROM BadIDs)
     ;
 COMMIT;
+
+-- vi: expandtab ts=4 sw=4
