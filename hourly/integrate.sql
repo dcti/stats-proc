@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: integrate.sql,v 1.16 2000/11/24 23:25:17 decibel Exp $
+# $Id: integrate.sql,v 1.17 2000/11/24 23:50:22 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -43,7 +43,7 @@ insert #import (PROJECT_ID, EMAIL, WORK_UNITS)
 	from import_bcp i, Projects p
 	where i.PROJECT_ID = p.PROJECT_ID
 		and i.TIME_STAMP = p.LAST_STATS_DATE
-	group by PROJECT_ID, EMAIL
+	group by i.PROJECT_ID, i.EMAIL
 go
 
 /*
@@ -227,7 +227,7 @@ delete Platform_Contrib_Today
 insert Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	select PROJECT_ID, CPU, OS, VER, sum(WORK_UNITS)
 	from #Platform_Contrib_Today
-	group by PROJECT_ID, CPU, OS, VER
+	group by i.PROJECT_ID, i.CPU, i.OS, i.VER
 commit transaction
 
 drop table #Platform_Contrib_Today
