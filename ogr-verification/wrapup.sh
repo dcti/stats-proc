@@ -1,4 +1,9 @@
 #! /bin/sh
+# $Id: wrapup.sh,v 1.2 2004/05/03 15:52:01 nerf Exp $
+
+# Generate a stublist for each project.  These will be sent off to be
+# processed on another machine, eventually creating a new list for
+# master.
 
 WORKDIR=$1
 
@@ -23,5 +28,3 @@ EOF
 gzip -9 $OUTFILE &
 COPYFILES="$COPYFILES $OUTFILE.gz"
 done
-
-#scp $COPYFILES remotemachine:/tmp
