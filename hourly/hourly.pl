@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.105 2002/08/11 22:32:29 decibel Exp $
+# $Id: hourly.pl,v 1.106 2002/08/11 23:36:38 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -115,11 +115,12 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
 	while (<GZIP>) {
 	  if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
 	    $rawfn = $2;
+	    $rawfn =~ s/$workdir//;
 	    stats::log($project,1,"$basefn successfully decompressed ($1% compression)");
 	  }
 	}
     } elsif ( $logext =~ /.bz2$/ ) {
-	my $orgsize=(stat $workdir$basefn)[7];
+	my $orgsize=(stat "$workdir$basefn")[7];
 	system("bzip2 -d $workdir$basefn");
 	if ($? == 0) {
 	    $rawfn = $basefn;
@@ -136,11 +137,16 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
         stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
         $finalfn = $rawfn;
       } else {
-	`cat $rawfn | $prefilter > $finalfn 2>> ./filter_$project.err`;
-        stats::log($project,1,"$basefn successfully filtered through $prefilter.");
+	`cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> ./filter_$project.err`;
+	if ($? == 0) {
+	    stats::log($project,1,"$rawfn successfully filtered through $prefilter.");
+	} else {
+	    stats::log($project,131,"unable to filter $rawfn through $prefilter!");
+	    die;
+	}
       }
 
-      open BCP, "bcp import_bcp in $finalfn -e$workdir\\bcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, |";
+      open BCP, "bcp import_bcp in $workdir$finalfn -e$workdir\\bcp_errors -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -c -t, |";
       if(!<BCP>) {
         stats::log($project,131,"Error launching BCP, aborting hourly run.");
         die;
@@ -232,7 +238,7 @@ RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
       stats::log($project,1,"$basefn successfully processed.");
 
       # It's always good to clean up after ourselves for the next run.
-      unlink $finalfn, $rawfn;
+      unlink "$workdir$finalfn", "$workdir$rawfn";
 
       stats::lastlog($project,$logtoload);
 
@@ -334,7 +340,7 @@ sub findlog {
             die;
           }
           print $_;
-          if(! ($_ =~ /gz$/) ) {
+          if(! ($_ =~ /(gz|bz2)$/) ) {
             stats::log($project,131,"The master failed to compress the $lastdate logfile.  Skipping to next project.");
 	    return "",0;
           }
