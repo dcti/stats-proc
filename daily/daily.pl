@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: daily.pl,v 1.2 2000/02/21 03:47:06 bwilson Exp $
+# $Id: daily.pl,v 1.3 2000/04/13 14:58:16 bwilson Exp $
 #
 die;
 use strict
@@ -141,9 +141,9 @@ if ("$insort[0]" =~ m/^$project(\d\d\d\d\d\d\d\d)/ ) {
     stats::log($project,1,"All logfiles have been added to the daytables.  $recsday rows total.");
 
     $retcode = system "sqsh -i dy_fixemails.sql $project";
-    stats::log($project,1,"Cleaned all the bad emails");
+    stats::log($project,1,"Cleaned all the bad EMAILs");
     $retcode = system "sqsh -i dy_newemails.sql $project";
-    stats::log($project,1,"Added new emails to STATS_participant");
+    stats::log($project,1,"Added new EMAILs to STATS_participant");
     $retcode = system "sqsh -i dy_appendday.sql $project";
     stats::log($project,1,"Appened day's activity to master table");
 

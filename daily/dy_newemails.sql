@@ -1,49 +1,57 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_newemails.sql,v 1.4 2000/04/11 14:25:02 bwilson Exp $
+# $Id: dy_newemails.sql,v 1.5 2000/04/13 14:58:16 bwilson Exp $
 #
 # Adds new participants to stats_participant
 #
 # Arguments:
 #       Project
 
-print "!! Adding new emails to stats_participant"
-go
-print "::  Creating temp table with identity"
+print "!! Adding new EMAILs to stats_participant"
 go
 create table #dayemails
 (
-	id		numeric(10, 0)	identity,
-	email		varchar(64)	not NULL
+	ID		numeric(10, 0)	identity,
+	EMAIL		varchar(64)	not NULL
 )
 go
 
-print "::  Inserting all new emails from daytable"
+print "::  Assigning ID and TEAM in Email_Contrib_Day"
 go
-select distinct email
-	into #allemails
-	from ${1}_Day_Master
-	where email <> 'rc5@distributed.net'
-		and email <> 'rc5-bad@distributed.net'
-		and PROJECT_ID = "${1}"
-	order by email
 /*
-**	Eliminate all the rc5@d.net and rc5-bad@d.net rows on the first pass
-**	We know this id exists, so don't clutter up the temp tables
-**	grouping them together.
+** When team-joins are handled as requests instead of live updates,
+** the TEAM update will be handled from the requests table instead.
 */
-go
-create unique clustered index iemail on #allemails(email) with sorted_data
+
+update Email_Contrib_Day
+	set ID = sp.ID,
+		TEAM = sp.TEAM
+	from STATS_Participant sp
+	where sp.EMAIL = Email_Contrib_Day.EMAIL
+
+create unique clustered index iID on Email_Contrib_Day(ID)
+create index iTEAM on Email_Contrib_Day(TEAM)
 go
 
-delete #allemails
-	from STATS_Participant
-	where #allemails.email = STATS_Participant.email
+print "::  Inserting all new EMAILs from daytable"
 go
 
-insert into #dayemails (email)
-	select email
-	from #allemails
+/*
+** TODO: This might be faster without the Project information,
+** but could induce blocking.  Need to test to be sure.
+*/
+
+declare @proj_id tinyint
+select @proj_id = PROJECT_ID
+	from Projects
+	where NAME = "${1}"
+
+insert #dayemails (EMAIL)
+	select distinct EMAIL
+	from Email_Contrib_Day
+	where PROJECT_ID = @proj_id
+		and ID = 0
+	order by EMAIL
 go
 
 print "::  Adding new participants to stats_participant"
@@ -55,10 +63,10 @@ select @idoffset = max(id)
 	where id < 5000000
 
 -- [BW] If we switch to retire_to = id as the normal condition,
---	this insert should insert (id, email, retire_to)
---	from id + @idoffset, email, id + @idoffset
-insert into STATS_participant (id, email)
-	select id + @idoffset, email
+--	this insert should insert (id, EMAIL, retire_to)
+--	from id + @idoffset, EMAIL, id + @idoffset
+insert into STATS_participant (ID, EMAIL)
+	select ID + @idoffset, EMAIL
 	from #dayemails
 go
 drop table #dayemails

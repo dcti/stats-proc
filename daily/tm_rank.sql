@@ -20,7 +20,7 @@ Populate day's work for team
 	Must populate member work before this step
 
 Rank teams
-	Same as email ranking script
+	Same as EMAIL ranking script
 Rank people within teams (cursor?)
 Recalculate active members
 	Work submitted today
@@ -69,7 +69,7 @@ select @stats_date = LAST_STATS_DATE
 insert ${1}_Team_Rank (TEAM, FIRST_DATE, LAST_DATE, WORK_TODAY, WORK_TOTAL, DAY_RANK, DAY_RANK_PREVIOUS,
 		OVERALL_RANK, OVERALL_RANK_PREVIOUS, MEMBERS_TODAY, MEMBERS_OVERALL, MEMBERS_LISTED)
 	select dm.TEAM, @stats_date, @stats_date, 0, 0, 1000000, 1000000, 1000000, 1000000, 0, 0, 0
-	from ${1}_Day_Master dm, Stats_Team st
+	from ${1}_Email_Contrib_Day dm, Stats_Team st
 	where dm.TEAM = st.TEAM
 		and dm.TEAM not in (select TEAM from ${1}_Team_Rank)
 		and dm.LISTMODE < 10
@@ -101,7 +101,7 @@ create table #TeamWork
 go
 insert #TeamWork (TEAM, WORK_UNITS)
 	select TEAM, sum(WORK_UNITS)
-	from ${1}_Day_Master
+	from ${1}_Email_Contrib_Day
 	group by TEAM
 go
 declare @stats_date smalldatetime

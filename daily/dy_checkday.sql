@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_checkday.sql,v 1.3 2000/03/29 18:22:10 bwilson Exp $
+# $Id: dy_checkday.sql,v 1.4 2000/04/13 14:58:16 bwilson Exp $
 #
 # Indicates if rows are in the master table for a given date
 #
@@ -11,7 +11,7 @@
 # Returns:
 #	zero/non-zero to indicate if data exists
 
-if exists (select * from ${1}_master where date = '${2}')
+if exists (select * from ${1}_master where date = "${2}")
 begin
 	select 1
 end

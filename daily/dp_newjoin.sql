@@ -1,16 +1,16 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dp_newjoin.sql,v 1.3 2000/02/29 16:22:27 bwilson Exp $
+# $Id: dp_newjoin.sql,v 1.4 2000/04/13 14:58:16 bwilson Exp $
 #
 # Does team joins for past blocks
 #
 # Arguments:
 #       Project
 
-update ${1}_master
-	set team = STATS_Participant.team
-	from STATS_Participant
-	where STATS_Participant.id = ${1}_master.id
-		and ${1}_master.team = 0 and
-      		STATS_participant.team > 0
+update Email_Contrib
+	set TEAM_ID = sp.TEAM
+	from STATS_Participant sp
+	where sp.ID = Email_Contrib.ID
+		and Email_Contrib.TEAM_ID = 0
+		and sp.TEAM >= 1
 go
