@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_members.sql,v 1.3 2000/03/29 18:22:10 bwilson Exp $
+# $Id: dy_members.sql,v 1.4 2000/04/11 14:25:02 bwilson Exp $
 #
 # Create the team membership tables
 #
@@ -14,69 +14,71 @@ use stats
 set rowcount 0
 go
 
-print "::  Creating PREBUILD_${1}_tm_MEMBERS table"
+print "::  Removing members who have been retired or hidden"
 go
-
-create table PREBUILD_${1}_tm_MEMBERS
-(	id numeric (10,0),
-	team int,
-	first smalldatetime,
-	last smalldatetime,
-	blocks numeric (10,0)
+delete OGR_Team_Members
+	from STATS_Participant sp
+	where sp.ID = OGR_Team_Members.ID
+		and (sp.RETIRE_TO >= 1 or sp.listmode >= 10)
+go
+create table #team_member_work1
+(
+	SEQN		numeric(10, 0) identity,
+	ID		int,
+	TEAM_ID		int,
+	WORK_UNITS	numeric(20, 0)
 )
 go
 
-print "::  Filling cache table with data (id,team,first,last,blocks)"
-go
-select distinct
-  id,
-  team,
-  min(date) as first,
-  max(date) as last,
-  sum(blocks) as blocks
-into #RANKa
-from ${1}_master
-where team <> 0 and team <> NULL
-group by id,team
+create table #team_member_work2
+(
+	ID		int,
+	TEAM_ID		int,
+	WORK_UNITS	numeric(20, 0)
+)
 go
 
-print ":: Linking to participant data in cache_table b (retire_to)"
+print "::  Inserting new members, and adding work for existing members"
 go
+insert #team_member_work1 (ID, TEAM_ID, WORK_UNITS)
+	select odm.ID, odm.TEAM_ID, sum(odm.WORK_UNITS)
+	from OGR_Day_Master odm, STATS_Participant sp
+	where odm.ID = sp.ID
+		and odm.TEAM_ID > 0
+		and odm.RETIRE_TO = 0
+		and sp.LISTMODE <= 9
+	group by odm.ID, odm.TEAM_ID
+insert #team_member_work1 (ID, TEAM_ID, WORK_UNITS)
+	select odm.RETIRE_TO, odm.TEAM_ID, sum(odm.WORK_UNITS)
+	from OGR_Day_Master odm, STATS_Participant sp
+	where odm.ID = sp.ID
+		and odm.TEAM_ID >= 1
+		and odm.RETIRE_TO >= 1
+		and sp.LISTMODE <= 9
+	group by odm.RETIRE_TO, odm.TEAM_ID
+go
+insert #team_member_work2 (ID, TEAM_ID, WORK_UNITS)
+	select ID, TEAM_ID, sum(WORK_UNITS)
+	from #team_member_work1
+	group by ID, TEAM_ID
 
-select C.id, C.team, C.first, C.last, C.blocks, S.retire_to
-into #RANKb
-from #RANKa C, STATS_participant S
-where C.id = S.id
+drop table #team_member_work1
 go
+update OGR_Team_Members
+	set LAST_DATE = getdate(),
+		WORK_UNITS = OGR_Team_Members.WORK_UNITS + tmw.WORK_UNITS
+	from #team_member_work2 tmw
+	where tmw.ID = OGR_Team_Members.ID
+		and tmw.TEAM_ID = OGR_Team_Members.TEAM_ID
 
-print "::  Honoring all retire_to requests"
-go
-update #RANKb
-  set id = retire_to
-where retire_to <> id and retire_to <> NULL and retire_to <> 0
-go
+delete #team_member_work2
+	from OGR_Team_Members otm
+	where otm.ID = #team_member_work2.ID
+		and otm.TEAM_ID = #team_member_work2.TEAM_ID
 
-print ":: Populating PREBUILD_${1}_tm_MEMBERS table"
-go
-insert into PREBUILD_${1}_tm_MEMBERS
-  (id,team,first,last,blocks)
-select id, team, min(first), max(last), sum(blocks)
-from #RANKb
-group by id, team
-go
+insert OGR_Team_Members (ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_UNITS)
+	select ID, TEAM_ID, getdate(), getdate(), WORK_UNITS
+	from #team_member_work2
 
-create index main on PREBUILD_${1}_tm_MEMBERS(team,blocks)
+drop table #team_member_work2
 go
-
-grant select on PREBUILD_${1}_tm_MEMBERS to public
-go
-
-drop table ${1}_CACHE_tm_MEMBERS_old
-go
-
-sp_rename ${1}_CACHE_tm_MEMBERS, ${1}_CACHE_tm_MEMBERS_old
-go
-
-sp_rename PREBUILD_${1}_tm_MEMBERS, ${1}_CACHE_tm_MEMBERS
-go
-

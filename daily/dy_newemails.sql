@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_newemails.sql,v 1.3 2000/02/21 03:47:06 bwilson Exp $
+# $Id: dy_newemails.sql,v 1.4 2000/04/11 14:25:02 bwilson Exp $
 #
 # Adds new participants to stats_participant
 #
@@ -22,9 +22,10 @@ print "::  Inserting all new emails from daytable"
 go
 select distinct email
 	into #allemails
-	from ${1}_daytable_master
+	from ${1}_Day_Master
 	where email <> 'rc5@distributed.net'
 		and email <> 'rc5-bad@distributed.net'
+		and PROJECT_ID = "${1}"
 	order by email
 /*
 **	Eliminate all the rc5@d.net and rc5-bad@d.net rows on the first pass

@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_integrate.sql,v 1.5 2000/03/29 18:22:10 bwilson Exp $
+# $Id: dy_integrate.sql,v 1.6 2000/04/11 14:25:02 bwilson Exp $
 #
 # Move data from the import table to the daytables
 #
@@ -16,7 +16,7 @@
 */
 update ${1}_import
 	set email = ltrim(email)
-	where email like ' %'
+	where email <> ltrim(email)
 
 /*
 **	Correct some common garbage combinations

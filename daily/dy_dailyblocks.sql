@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_dailyblocks.sql,v 1.3 2000/03/29 18:22:10 bwilson Exp $
+# $Id: dy_dailyblocks.sql,v 1.4 2000/04/11 14:25:02 bwilson Exp $
 #
 # Inserts the daily totals
 #
@@ -9,49 +9,69 @@
 
 declare @stats_date smalldatetime
 declare @proj_id tinyint
+declare @count int,
+	@work numeric(20, 0)
 
 select @stats_date = LAST_STATS_DATE,
 		@proj_id = PROJECT_ID
 	from Projects
 	where NAME = '${1}'
 
-insert ${1}_dailies (date, WORK_UNITS,
+insert Daily_Summary (date, PROJECT_ID, WORK_UNITS,
 		participants, TOP_oparticipant, TOP_OPWORK, TOP_YPARTICIPANT, TOP_YPWORK,
 		teams, TOP_OTEAM, TOP_OTWORK, TOP_yteam, TOP_YTWORK)
-	values (@stats_date, 0,
+	values (@stats_date, "${1}", 0,
 		0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0)
 
-update ${1}_dailies
-	set WORK_UNITS = sum(m.WORK_UNITS),
-		PARTICIPANTS = count(*)
-	from ${1}_master m
-	where ${1}_dailies.date = @stats_date
-		and m.date = @stats_date
+select @work = sum(WORK_UNITS) 'WORK_UNITS',
+		@count = count(*) 'PARTICIPANTS'
+	from ${1}_Day_Master
 
-update ${1}_dailies
+update Daily_Summary
+	set WORK_UNITS = @work,
+		PARTICIPANTS = @count
+	where Daily_Summary.date = @stats_date
+		and Daily_Summary.PROJECT_ID = "${1}"
+
+select @count = count(distinct team)
+	from ${1}_Day_Table
+	where TEAM > 0
+
+update Daily_Summary
+	set teams = @count
+	where Daily_Summary.date = @stats_date
+		and Daily_Summary.PROJECT_ID = "${1}"
+
+update Daily_Summary
 	set TOP_OPARTICIPANT = r.ID,
-		TOP_OPWORK = r.WORK_UNITS
-	from ${1}_Rank r
-	where ${1}_dailies.date = @stats_date
-		and r.RANK = 1
+		TOP_OPWORK = r.WORK_TOTAL
+	from ${1}_Email_Rank r
+	where Daily_Summary.date = @stats_date
+		and r.OVERALL_RANK = 1
+		and Daily_Summary.PROJECT_ID = "${1}"
 
+update Daily_Summary
+	set TOP_YPARTICIPANT = r.ID,
+		TOP_YPWORK = r.WORK_TODAY
+	from ${1}_Email_Rank r
+	where Daily_Summary.date = @stats_date
+		and r.DAY_RANK = 1
+		and Daily_Summary.PROJECT_ID = "${1}"
 
+update Daily_Summary
+	set TOP_OTEAM = r.TEAM,
+		TOP_OTEAMRANK = r.WORK_TOTAL
+	from ${1}_Team_Rank r
+	where Daily_Summary.date = @stats_date
+		and r.OVERALL_RANK = 1
+		and Daily_Summary.PROJECT_ID = "${1}"
 
-insert into ${1}_dailies (date, blocks,
-                           participants, TOP_oparticipant, TOP_OPWORK, TOP_YPARTICIPANT, TOP_YPWORK,
-                           teams, TOP_OTEAM, TOP_OTWORK, TOP_yteam, TOP_YTWORK)
-select
-  (select max(date) from ${1}_master) as date,
-  (select sum(blocks) from ${1}_master where date = (select max(date) from ${1}_master)) as blocks,
-  (select count(*) from ${1}_master where date = (select max(date) from ${1}_master)) as participants,
-  (select id from stats.statproc.${1}_CACHE_em_RANK where Rank = 1) as TOP_oparticpant,
-  (select blocks from stats.statproc.${1}_CACHE_em_RANK where Rank = 1) as TOP_OPWORK,
-  (select id from stats.statproc.${1}_CACHE_em_YRANK where Rank = 1) as TOP_yparticpant,
-  (select blocks from stats.statproc.${1}_CACHE_em_YRANK where Rank = 1) as TOP_YPWORK,
-  (select count(team) from stats.statproc.${1}_CACHE_tm_YRANK) as teams,
-  (select team from stats.statproc.${1}_CACHE_tm_RANK where Rank = 1) as TOP_OTEAM,
-  (select blocks from stats.statproc.${1}_CACHE_tm_RANK where Rank = 1) as TOP_OTWORK,
-  (select team from stats.statproc.${1}_CACHE_tm_YRANK where Rank = 1) as TOP_yteam,
-  (select blocks from stats.statproc.${1}_CACHE_tm_YRANK where Rank = 1) as TOP_YTWORK
+update Daily_Summary
+	set TOP_YTEAM = r.TEAM,
+		TOP_YTEAMRANK = r.WORK_TODAY
+	from ${1}_Team_Rank r
+	where Daily_Summary.date = @stats_date
+		and r.DAY_RANK = 1
+		and Daily_Summary.PROJECT_ID = "${1}"
 go
