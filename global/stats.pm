@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.13 2000/09/13 07:33:22 decibel Exp $
+# $Id: stats.pm,v 1.14 2000/09/13 07:39:10 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -39,9 +39,10 @@ sub log {
 
 	my $ts = sprintf("[%d-%s-%d %02s:%02s:%02s]",$dd,$mm,$yy,$hh,$mi,$sc);
 
-	open LOGFILE, ">>$logdir$project.log";
-	print LOGFILE $ts," ",@par,"\n";
-	close LOGFILE;
+	open LOGFILE, ">>$logdir$project.log" and {
+		print LOGFILE $ts," ",@par,"\n";
+		close LOGFILE;
+	}
 
 	if ($dest & 64) {
 		print STDERR $ts," ",@par,"\n";
