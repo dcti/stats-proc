@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.2 2003/09/08 20:29:13 nerf Exp $
+-- $Id: daily_update.sql,v 1.3 2003/09/10 18:47:48 nerf Exp $
 
 select now();
 
@@ -9,7 +9,10 @@ select now();
 \connect stats
 
 CREATE TEMP TABLE id_export AS
-SELECT email, id, max(id,retire_to) AS stats_id,
+SELECT email, id, CASE 
+                   WHEN retire_to = 0 THEN id
+                   ELSE retire_to
+                END AS stats_id,
 	retire_date,created
 FROM STATS_participant
 WHERE retire_date = :RUNDATE ::DATE
