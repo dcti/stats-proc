@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.7 2003/09/28 16:53:24 nerf Exp $
+-- $Id: daily_update.sql,v 1.8 2003/09/29 01:48:16 nerf Exp $
 
 select now();
 
@@ -206,8 +206,6 @@ analyze retired_stub_id;
 
 select now();
 
-BEGIN;
-
 -- reduce the number of participants for a given stub, but only if what
 -- we previous thought was two different people are now (because of retires)
 -- seen as a single person
@@ -281,6 +279,8 @@ INSERT INTO OGR_summary(stub_id, nodecount, participants, max_client)
   FROM day_summary ds
   WHERE NOT ds.in_OGR_summary
 ;
+
+TRUNCATE logdata;
 
 COMMIT;
 select now();
