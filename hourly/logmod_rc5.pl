@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: logmod_rc5.pl,v 1.1 2000/06/20 16:45:07 nugget Exp $
+# $Id: logmod_rc5.pl,v 1.2 2000/06/20 18:23:30 nugget Exp $
 #
 #
 # rc5 logfile sample:
@@ -22,7 +22,14 @@ while(<>) {
   # making all blocks done between 23:59:31 and 23:59:59 erroneously
   # rounded up to the next day.  Stripping off the timestamp sidesteps
   # this issue.
-  $buf =~ s/ \d\d:\d\d:\d\d//;
+  $buf =~ s/(\d\d)\/(\d\d)\/(\d\d) \d\d:\d\d:\d\d/$3$1$2/;
+
+  # Silly two-digit years
+  if( int substr($buf,0,2) < 97 ) {
+    $buf = "20$buf";
+  } else {
+    $buf = "19$buf";
+  }
 
   # Split the comma-delimited line into component fields
   my ($timestamp, $ip, $email, $project, $size, $os, $cpu, $version) = split(/,/, $buf);
