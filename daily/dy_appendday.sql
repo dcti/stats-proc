@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: dy_appendday.sql,v 1.20 2002/10/06 23:00:34 decibel Exp $
+# $Id: dy_appendday.sql,v 1.21 2002/10/07 15:12:05 decibel Exp $
 #
 # Appends the data from the daytables into the main tables
 #
@@ -80,4 +80,8 @@ insert into Platform_Contrib (DATE, PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 	from Platform_Contrib_Today
 	where PROJECT_ID = ${1}
 	/* Group by is unnecessary, data is already summarized */
+
+update Platform_Contrib_Last_Update
+	set LAST_DATE = @proj_date
+	where PROJECT_ID = ${1}
 go

@@ -1,5 +1,5 @@
 /*
-# $Id: tm_update.sql,v 1.29 2002/04/18 04:04:53 decibel Exp $
+# $Id: tm_update.sql,v 1.30 2002/10/07 15:12:05 decibel Exp $
 
 TM_RANK
 
@@ -186,6 +186,11 @@ insert Team_Members (PROJECT_ID, ID, TEAM_ID, FIRST_DATE, LAST_DATE, WORK_TODAY,
 		and tmw.ID = ws.ID
 		and tmw.TEAM_ID = ws.TEAM_ID
 	group by ws.ID, ws.TEAM_ID
+
+update Team_Members_Last_Update
+	set LAST_DATE = @stats_date
+	where PROJECT_ID = ${1}
+
 go
 
 /*
