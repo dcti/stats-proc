@@ -1,4 +1,14 @@
--- $Id: movedata.sql,v 1.24 2003/03/20 18:39:04 nerf Exp $
+-- $Id: movedata.sql,v 1.25 2003/04/07 01:11:37 nerf Exp $
+
+select now();
+
+INSERT INTO ogr_stubs (stub_marks,project_id)
+SELECT DISTINCT L.stub_marks, 0
+FROM logdata L
+WHERE NOT EXISTS (SELECT * FROM ogr_stubs WHERE
+			L.stub_marks = ogr_stubs.stub_marks);
+
+select now();
 
 INSERT INTO platform (os_type,cpu_type,"version")
 SELECT DISTINCT L.os_type, L.cpu_type, L.version 
