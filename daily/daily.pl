@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.20 2000/10/02 04:14:06 decibel Exp $
+# $Id: daily.pl,v 1.21 2000/10/04 15:46:08 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -94,7 +94,7 @@ sub sqsh {
   close SQL;
   if( $sqshsuccess > 0) {
     stats::log($project,139,"$sqlfile puked  -- aborting.  Details are in $workdir\sqsh_errors");
-    open SQERR, ">$workdir\sqsh_errors" or stats::log($project,139,"Unable to open $workdir\sqsh_errors for writing!);
+    open SQERR, ">$workdir\sqsh_errors" or stats::log($project,139,"Unable to open $workdir\sqsh_errors for writing!");
     print SQERR "$bufstorage";
     close SQERR;
     die $sqshsuccess;
