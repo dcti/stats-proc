@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.39 2000/08/14 21:13:02 nugget Exp $
+# $Id: hourly.pl,v 1.40 2000/08/14 22:06:08 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -81,8 +81,9 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
     my ($yyyymmdd, $hh) = split /-/, $logtoload;
 
     my $lastday = lastday($project,"get");
+    chomp $lastday;
     if( $lastday ne ($yyyymmdd - 1)) {
-      stats::log($project,131,"I'm supposed to load a log from $yyyymmdd, but I haven't done a daily update since $lastday!");
+      stats::log($project,131,"Aborting: I'm supposed to load a log from $yyyymmdd, but I haven't done a daily update since $lastday!");
       die;
     }
 
