@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.34 2003/09/03 23:02:58 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.35 2003/09/05 19:31:45 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -172,7 +172,7 @@ insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 update TEMP_Email_Contrib_Today
     set ID = sp.ID
     from STATS_Participant sp
-    where sp.EMAIL = TEMP_Email_Contrib_Today.EMAIL
+    where lower(sp.EMAIL) = lower(TEMP_Email_Contrib_Today.EMAIL)
 ;
 
 /* Add new participants to STATS_Participant */
@@ -201,9 +201,9 @@ insert into STATS_participant (ID, EMAIL)
 update TEMP_Email_Contrib_Today
     set ID = sp.ID
     from STATS_Participant sp, TEMP_dayemails de
-    where sp.EMAIL = TEMP_Email_Contrib_Today.EMAIL
-        and sp.EMAIL = de.EMAIL
-        and de.EMAIL = TEMP_Email_Contrib_Today.EMAIL
+    where lower(sp.EMAIL) = lower(TEMP_Email_Contrib_Today.EMAIL)
+        and lower(sp.EMAIL) = lower(de.EMAIL)
+        and lower(de.EMAIL) = lower(TEMP_Email_Contrib_Today.EMAIL)
 ;
 
 /* Now, add the stuff from the previous hourly runs */
