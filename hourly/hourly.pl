@@ -21,7 +21,6 @@ my @prefilter   = ("./logmod_ogr.pl",
 for (my $i = 0; $i < @projectlist; $i++) {
   my $project = $projectlist[$i];
   my $lastlog = `cat ~/var/lastlog.$project`;
-  my $fullfn = "";
   my $logtoload = "29991231-23";
   my @server = split /:/, $sourcelist[$i];
   chomp($lastlog);
@@ -35,8 +34,7 @@ for (my $i = 0; $i < @projectlist; $i++) {
   while (<LS>) {
     if( $_ =~ /.*\/$project(\d\d\d\d\d\d\d\d-\d\d)/ ) {
       my $lastdate = $1;
-      $fullfn = $_;
-      chomp $fullfn;
+
       if($lastdate gt $lastlog) {
         $qualcount++;
         if($lastdate lt $logtoload) {
@@ -48,13 +46,18 @@ for (my $i = 0; $i < @projectlist; $i++) {
   }
   if( $logtoload lt $datestr ) {
     print "Of $linecount logs available, $qualcount need to be loaded.  Next up is $logtoload.\n";
-    print "Retrieving $fullfn:\n";
+    my $fullfn = "$server[1]$project$logtoload.log.gz";
+    my $basefn = "$project$logtoload.log.gz";
+
+    print "Retrieving $fullfn: ";
     open SCP, "scp -Bv $server[0]:$fullfn $workdir 2> /dev/stdout |";
     while (<SCP>) {
       if ($_ =~ /Transferred: stdin (\d+), stdout (\d+), stderr (\d+) bytes in (\d+.\d) seconds/) {
         print "Received $2 bytes in $4 seconds\n";
       }
     }
-    # system "scp", "$server[0]:$fullfn", $workdir;
+    close SCP;
+
+    print "Decompressing $fullfn: \n";
   }
 }
