@@ -1,4 +1,4 @@
--- $Id: daily_update.sql,v 1.1 2003/09/08 03:18:31 nerf Exp $
+-- $Id: daily_update.sql,v 1.2 2003/09/08 20:29:13 nerf Exp $
 
 select now();
 
@@ -35,6 +35,8 @@ ANALYZE import_id;
 
 BEGIN;
 
+-- We're being optimistic here and assuming that previously created/retired
+-- people were handled in previous runs
 INSERT INTO OGR_idlookup
 	SELECT email, id, stats_id,
 		retire_date,created
@@ -60,12 +62,13 @@ id INTEGER NOT NULL,
 stats_id INTEGER NOT NULL
 ) WITHOUT OIDS;
 
+-- We're again being optimistic and assuming that the data was exported
+-- correctly (that we only have data for the RUNDATE)
 INSERT INTO retire_today(email,id,stats_id)
 	SELECT email, id, stats_id
 	FROM import_id
 	WHERE retire_date IS NOT NULL;
 
--- $Id: daily_update.sql,v 1.1 2003/09/08 03:18:31 nerf Exp $ --
 ----------------
 
 CREATE TEMP TABLE day_results (
@@ -227,18 +230,6 @@ explain analyze INSERT INTO OGR_summary(stub_id, nodecount, participants, max_cl
 
 COMMIT;
 
-CREATE TABLE public.ogr_complete (
-	rundate date DEFAULT ('now'::text)::date NOT NULL,
-	project_id int2 NOT NULL,
-	count int4 NOT NULL,
-	pass1 int4 NOT NULL,
-	pass2 int4 NOT NULL,
-	stubs_returned int4 NOT NULL,
-	CONSTRAINT ogr_complete_pkey PRIMARY KEY (rundate, project_id)
-) WITHOUT OIDS;
-
-\set ON_ERROR_STOP 1
-
 CREATE TEMP TABLE ogr_stats (
   table_name varchar(22), 
   function varchar(22), 
@@ -248,7 +239,6 @@ CREATE TEMP TABLE ogr_stats (
 
 
 BEGIN;
-
 
 insert into ogr_stats (table_name,function,result,project_id)
 select 'ogr_stubs','count',count(*),project_id
@@ -271,8 +261,8 @@ group by project_id;
 
 insert into ogr_stats (function,result,project_id)
 select 'stubs_returned',count(*),project_id
-from logdata_yesterday ly, ogr_stubs s
-where ly.stub_marks = s.stub_marks
+from logdata ld, ogr_stubs s
+where ld.stub_marks = s.stub_marks
 group by project_id;
 
 analyze ogr_stats;
@@ -292,5 +282,7 @@ AND P1.project_id = P2.project_id
 AND P2.project_id = P3.project_id;
 
 COMMIT;
+
+truncate logdata;
 
 select now();
