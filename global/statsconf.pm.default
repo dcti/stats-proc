@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.9 2000/10/04 06:43:44 decibel Exp $
+# $Id: statsconf.pm.default,v 1.10 2001/12/29 07:31:31 decibel Exp $
 #
 # Stats global configuration
 #
@@ -12,6 +12,9 @@ $logtag = "statsbox-ii";
         "rc5"   => "5",
         "ogr"   => "24:25",
 );
+
+# NOTE! This is where logs from the run go, it is not the source for
+# project logfiles!
 %logdir = (
 	"stats"	=> "/var/log/",
 	"rc5"	=> "/usr/home/statproc/log/",
@@ -19,6 +22,13 @@ $logtag = "statsbox-ii";
 	"ogr"	=> "/usr/home/statproc/log/",
 	"csc"	=> "/usr/home/statproc/log/",
 );
+%logsource = (
+	"rc5"	=> "keymaster.distributed.net:/home/master/logs/",
+	"des"	=> "keymaster.distributed.net:/home/master/logs/",
+	"ogr"	=> "keymaster.distributed.net:/home/master/logs/",
+	"csc"	=> "keymaster.distributed.net:/home/master/logs/",
+);
+
 %htdocs = (
 	"stats"	=> "/htdocs/",
 	"rc5"	=> "/htdocs/rc5/",
@@ -39,13 +49,6 @@ $logtag = "statsbox-ii";
 	"des"	=> "/usr/home/statproc/stats-des",
 	"ogr"	=> "/usr/home/statproc/stats-ogr",
 	"csc"	=> "/usr/home/statproc/stats-csc",
-);
-
-%logsource = (
-	"rc5"	=> "keymaster.distributed.net:/home/master/logs/",
-	"des"	=> "keymaster.distributed.net:/home/master/logs/",
-	"ogr"	=> "keymaster.distributed.net:/home/master/logs/",
-	"csc"	=> "keymaster.distributed.net:/home/master/logs/",
 );
 
 %prefilter = (
