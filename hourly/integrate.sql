@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.28.2.21 2003/04/28 20:48:07 decibel Exp $
+# $Id: integrate.sql,v 1.28.2.22 2003/04/28 20:54:10 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -26,41 +26,11 @@ select p.PROJECT_ID, min(TIME_STAMP) as STATS_DATE
         and p.STATUS = 'O'
     group by p.PROJECT_ID
 ;
---go
 
 update TEMP_Projects
     set STATS_DATE = (select min(STATS_DATE) from TEMP_Projects)
     where STATS_DATE is null
 ;
---go
-
-/*
- Make sure we have rows in Project_statsrun for each project_id
- JCN: I'm not sure why we're doing this as a cursor... I'm guessing it's because of locking concerns
-
-declare CSRprojects cursor for 
-    select PROJECT_ID
-    from #Projects
---go
-
-declare @project_id tinyint
-open CSRprojects
-
-fetch CSRprojects into @project_id
-while (@@sqlstatus = 0)
-begin
-    if not exists (select * from Project_statsrun where PROJECT_ID = @project_id)
-    begin
-        insert into Project_statsrun (PROJECT_ID) select @project_id
-    end
-
-    fetch CSRprojects into @project_id
-end
---go
-
-deallocate cursor CSRprojects
---go
-*/
 
 insert into Project_statsrun (PROJECT_ID)
     select PROJECT_ID
@@ -76,7 +46,6 @@ update Project_statsrun
     from TEMP_Projects p
     where Project_statsrun.PROJECT_ID = p.PROJECT_ID
 ;
---go
 
 \echo Rolling up data from import_bcp
 create TEMP table TEMP_import
@@ -85,7 +54,7 @@ create TEMP table TEMP_import
     EMAIL        varchar (64)    not NULL,
     WORK_UNITS    numeric(20, 0)    not NULL
 );
---go
+
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
    want to try and multiply outside the sum, it won't do what we want at all. */
 insert into TEMP_import (PROJECT_ID, EMAIL, WORK_UNITS)
@@ -98,13 +67,11 @@ insert into TEMP_import (PROJECT_ID, EMAIL, WORK_UNITS)
         and i.TIME_STAMP = ps.LAST_DATE
     group by i.PROJECT_ID, i.EMAIL
 ;
---go
 
 /*
 **    Moved e-mail cleanup here, to aggregate the data more quickly
 */
 \echo Checking for bad emails
---go
 
 /*
 **    Make sure they don't have any leading spaces
@@ -119,7 +86,7 @@ update TEMP_import
 
 /*
 **    Correct some common garbage combinations
-**    It's --going to table-scan anyway, so we might as well
+**    It's going to table-scan anyway, so we might as well
 **    do all the tests we can
 */
 update TEMP_import
@@ -136,7 +103,6 @@ update TEMP_import
     set EMAIL = 'rc5-bad@distributed.net'
     where EMAIL like '%@%@%'
 ;
---go
 /* [BW] Processing all projects at once is a Bad Thing (TM) because we may not have
 **    the same number of logs for all projects, and even if that doesn't cause a
 **    problem, it would make it harder to run hourly for one the same time as
@@ -168,7 +134,6 @@ create TEMP table TEMP_dayemails
     EMAIL        varchar(64)    not NULL
 )
 ;
---go
 /* Put EMAIL data into temp table */
 \echo Final roll-up by email
 /* First, put the latest set of logs in */
@@ -177,7 +142,6 @@ insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
     from TEMP_import
     group by PROJECT_ID, EMAIL
 ;
---go
 
 /* Assign ID's for everyone who has an ID */
 \echo Assigning IDs
@@ -190,7 +154,6 @@ update TEMP_Email_Contrib_Today
     from STATS_Participant sp
     where sp.EMAIL = TEMP_Email_Contrib_Today.EMAIL
 ;
---go
 
 /* Add new participants to STATS_Participant */
 \echo Adding new participants
@@ -202,7 +165,6 @@ insert into TEMP_dayemails (EMAIL)
     where ID = 0
     order by EMAIL
 ;
---go
 
 /* Figure out where to start assigning at */
 
@@ -233,13 +195,10 @@ insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
     from Email_Contrib_Today ect, TEMP_Projects p
     where ect.PROJECT_ID = p.PROJECT_ID
 ;
---go
 
---go
 
 /* Do the exact same stuff for Platform_Contrib_Today */
 \echo Rolling up platform contributions
---go
 
 /* First, make sure we don't have any crap in the logs */
 update import_bcp set CPU = 0
@@ -248,7 +207,6 @@ update import_bcp set CPU = 0
 update import_bcp set OS = 0
     where OS > (select max(OS)+20 from STATS_os)
 ;
---go
 
 create TEMP table TEMP_Platform_Contrib_Today
 (
@@ -259,7 +217,6 @@ create TEMP table TEMP_Platform_Contrib_Today
     WORK_UNITS    numeric(20, 0)    not NULL
 )
 ;
---go
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
    want to try and multiply outside the sum, it won't do what we want at all. */
 insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
@@ -281,7 +238,6 @@ insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 -- Removed by JN: the data in PCT should already be summed.
 --    group by PROJECT_ID, CPU, OS, VER
 ;
---go
 
 \echo Moving data from temptable to Platform_Contrib_Today
 delete from Platform_Contrib_Today
@@ -298,7 +254,6 @@ insert into Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 
 drop table TEMP_Platform_Contrib_Today
 ;
---go
 
 /* Finally, remove the previous records from Email_Contrib_Today and insert the new
 ** data from the temp table. (It seems there should be a better way to do this...)
