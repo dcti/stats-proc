@@ -18,6 +18,8 @@ my @sourcelist  = ("LOGS-SOURCE-FQDN:/home/master/logs/",
 my @prefilter   = ("./logmod_ogr.pl",
                    "");
 
+# Insert code here to look for droppings in $workdir
+
 for (my $i = 0; $i < @projectlist; $i++) {
   my $project = $projectlist[$i];
   my $lastlog = `cat ~/var/lastlog.$project`;
@@ -58,6 +60,14 @@ for (my $i = 0; $i < @projectlist; $i++) {
     }
     close SCP;
 
-    print "Decompressing $fullfn: \n";
+    print "Decompressing $basefn: ";
+    open GZIP, "gzip -dv $workdir$basefn 2> /dev/stdout |";
+    while (<GZIP>) {
+      if ($_ =~ /$basefn:[ \s]+(\d+.\d)% -- replaced with (.*)$/) {
+        print " ** $1% efficieny, now in file: $2\n";
+      }
+    }
+    close GZIP;
+    print "\n";
   }
 }
