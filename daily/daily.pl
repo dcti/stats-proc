@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.7 2000/08/16 17:46:31 nugget Exp $
+# $Id: daily.pl,v 1.8 2000/08/16 18:24:35 nugget Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/opt/sybase/bin';
@@ -45,6 +45,7 @@ for (my $i = 0; $i < @pridlist; $i++) {
   sqsh("clearday.sql $project_id");
   system "sudo pcpages_$project $project_id";
   sqsh("backup.sql $project_id");
+   
 }
 
 sub sqsh {
@@ -53,7 +54,8 @@ sub sqsh {
   my $bufstorage = "";
   my $sqshsuccess = 0;
   my $starttime = (gmtime);
-  open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -i $sqlfile |";
+  my $secs_start = int `date "+%s"`;
+  open SQL, "sqsh -S$statsconf::sqlserver -U$statsconf::sqllogin -P$statsconf::sqlpasswd -w999 -i $sqlfile |";
 
   if(!<SQL>) {
     stats::log($project,131,"Failed to launch $sqlfile -- aborting.");
@@ -61,7 +63,9 @@ sub sqsh {
   }
   while (<SQL>) {
     my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
-    print "$ts $_";
+    my $buf = $_;
+    chomp $buf;
+    stats::log($project,0,$buf);
     $bufstorage = "$bufstorage$ts $_";
     if( $_ =~ /^Msg/ ) {
       $sqshsuccess = 1;
@@ -78,5 +82,8 @@ sub sqsh {
     close SQERR;
     die;
   }
+  my $secs_finish = int `date "+%s"`;
+  my $secs_run = $secs_finish - $secs_start;
+  stats::log($project,1,"$sqlfile completed successfully ($secs_run seconds)");
 }
 
