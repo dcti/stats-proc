@@ -1,6 +1,6 @@
 #!/usr/bin/sqsh -i
 #
-# $Id: retire.sql,v 1.11 2000/09/19 22:00:52 decibel Exp $
+# $Id: retire.sql,v 1.12 2000/09/19 22:39:46 decibel Exp $
 #
 # Handles all pending retire_to's and black-balls
 #
@@ -68,7 +68,7 @@ insert into Email_Rank(PROJECT_ID, ID, FIRST_DATE, LAST_DATE, WORK_TOTAL)
 	select ${1}, RETIRE_TO, FIRST_DATE, LAST_DATE, WORK_TOTAL
 	from #NewRetiresER
 
-select * from ##NewRetiresER
+select * from #NewRetiresER
 
 commit transaction
 go
