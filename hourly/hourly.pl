@@ -92,7 +92,7 @@ for (my $i = 0; $i < @statsconf::projects; $i++) {
         stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
         $finalfn = $rawfn;
       } else {
-	`$prefilter $rawfn > $finalfn`;
+	`$prefilter $rawfn > $finalfn 2>> ./filter_$project.err`;
         stats::log($project,1,"$basefn successfully filtered through $prefilter.");
       }
 
