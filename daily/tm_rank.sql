@@ -1,7 +1,7 @@
 #!/usr/bin/sqsh -i
 /*
 #
-# $Id: tm_rank.sql,v 1.18 2000/10/04 22:10:26 decibel Exp $
+# $Id: tm_rank.sql,v 1.19 2000/10/30 14:08:08 decibel Exp $
 #
 # Does the participant ranking (overall)
 #
@@ -13,7 +13,7 @@ use stats
 set rowcount 0
 set flushmessage on
 go
-print '!! Begin e-mail ranking'
+print '!! Begin team ranking'
 print ' Drop indexes on Team_Rank'
 go
 --drop index Team_Rank.iDAY_RANK
