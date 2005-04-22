@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.14 2004/06/23 22:18:51 decibel Exp $
+ * $Id: logmod.cpp,v 1.15 2005/04/22 07:24:46 jlawson Exp $
  */
 
 #include <assert.h>
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
                 os        = fields[2];
                 cpu       = fields[3];
                 version   = fields[4];
-                status    = "0";      // coreid is ignored
+                status    = (trailing == 9 ? fields[8] : (char*)"0");
                 break;
             case OGR:
                 projectid = fields[0];
@@ -293,9 +293,22 @@ int main(int argc, char *argv[])
         }
 
         int nstatus = atoi(status);
-        if ( !(nstatus >= -5 && nstatus <= 5) ) {
-            error(line, "status not between -5 and 5", buf, len);
-            goto next;
+        switch (project) {
+        case OGR:
+            if ( !(nstatus >= -5 && nstatus <= 5) ) {
+                error(line, "status not between -5 and 5", buf, len);
+                goto next;
+            }
+            break;
+        case RC572:
+            if (nstatus != 0 && nstatus != 1) {
+                error(line, "cmcstatus not 0 or 1", buf, len);
+                goto next;
+            }
+            break;
+        case RC564:
+        default:
+            break;
         }
 
         // convert version to exclude buildfrac if it had it.
