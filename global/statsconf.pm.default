@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.18 2005/04/25 01:01:28 decibel Exp $
+# $Id: statsconf.pm.default,v 1.19 2005/04/25 06:05:35 decibel Exp $
 #
 # Stats global configuration
 #
@@ -7,7 +7,7 @@
 package statsconf;
 
 $debug = 0;
-$logdb = "false";
+$logdb = "0";
 
 $homedir = @{[getpwuid $<]}[7];
 $logtag = "statsbox-iii";
