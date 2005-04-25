@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.34 2004/11/05 05:17:55 decibel Exp $
+# $Id: stats.pm,v 1.35 2005/04/25 01:01:28 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -16,15 +16,27 @@ use DBI;
 #use Data::Dumper;
 
 BEGIN {
-    # Connect to sybase
+    # Connect to database(s)
     if (not ($dbh = DBI->connect("DBI:Pg:dbname=$statsconf::database", $statsconf::sqllogin)) ) {
         stats::log($project,131,"Unable to connect to database '$statsconf::database' using login '$statsconf::sqllogin'!");
         die;
     }
 
     $dbh->{HandleError} = sub {
-        stats::log($project,131,"Database error: $_[0], $_[1]");
+        stats::log($project,131,"Database error connecting to $statsconf::logdatabase: $_[0], $_[1]");
         die;
+    }
+
+    if ($logdb = "true") {
+        if (not ($dbh = DBI->connect("DBI:Pg:dbname=$statsconf::logdatabase", $statsconf::sqllogin)) ) {
+            stats::log($project,131,"Unable to connect to database '$statsconf::logdatabase' using login '$statsconf::sqllogin'!");
+            die;
+        }
+
+        $dbh->{HandleError} = sub {
+            stats::log($project,131,"Database error connecting to $statsconf::logdatabase: $_[0], $_[1]");
+            die;
+        }
     }
 }
 
