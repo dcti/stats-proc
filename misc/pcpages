@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: pcpages,v 1.2 2003/07/10 19:21:08 decibel Exp $
+# $Id: pcpages,v 1.3 2005/04/26 22:40:03 decibel Exp $
 #
 # Update static pages. Accepts a list of projects to update
 
@@ -10,6 +10,10 @@ cd /htdocs
 
 do_wget ( ) {
     if wget -O${2}.new "http://localhost/${1}"; then
+        if grep 'DB Query Failed' ${2}.new; then
+            echo "Database error in ${1}"
+            exit 3
+        fi
         chmod 644 ${2}.new
         chown nugget:www ${2}.new
         mv ${2} ${2}.old
@@ -17,7 +21,7 @@ do_wget ( ) {
         return
     else
         echo "Error fetching ${1}"
-        return 1
+        exit 2
     fi
 }
 
