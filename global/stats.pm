@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.35 2005/04/25 01:01:28 decibel Exp $
+# $Id: stats.pm,v 1.36 2005/04/28 19:58:16 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -25,9 +25,9 @@ BEGIN {
     $dbh->{HandleError} = sub {
         stats::log($project,131,"Database error connecting to $statsconf::logdatabase: $_[0], $_[1]");
         die;
-    }
+    };
 
-    if ($logdb = "true") {
+    if ($logdb eq "true") {
         if (not ($dbh = DBI->connect("DBI:Pg:dbname=$statsconf::logdatabase", $statsconf::sqllogin)) ) {
             stats::log($project,131,"Unable to connect to database '$statsconf::logdatabase' using login '$statsconf::sqllogin'!");
             die;
@@ -36,7 +36,7 @@ BEGIN {
         $dbh->{HandleError} = sub {
             stats::log($project,131,"Database error connecting to $statsconf::logdatabase: $_[0], $_[1]");
             die;
-        }
+        };
     }
 }
 
