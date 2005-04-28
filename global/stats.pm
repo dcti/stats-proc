@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.36 2005/04/28 19:58:16 decibel Exp $
+# $Id: stats.pm,v 1.37 2005/04/28 20:01:03 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -17,6 +17,8 @@ use DBI;
 
 BEGIN {
     # Connect to database(s)
+    # Note we can't call debug in BEGIN
+    print "stats::BEGIN connect to stats database $statsconf::database\n" if ($statsconf::debug >= 7); 
     if (not ($dbh = DBI->connect("DBI:Pg:dbname=$statsconf::database", $statsconf::sqllogin)) ) {
         stats::log($project,131,"Unable to connect to database '$statsconf::database' using login '$statsconf::sqllogin'!");
         die;
@@ -27,13 +29,14 @@ BEGIN {
         die;
     };
 
-    if ($logdb eq "true") {
-        if (not ($dbh = DBI->connect("DBI:Pg:dbname=$statsconf::logdatabase", $statsconf::sqllogin)) ) {
+    if ($statsconf::logdb) {
+        print "stats::BEGIN connect to log database $statsconf::logdatabase\n" if ($statsconf::debug >= 7); 
+        if (not ($logdbh = DBI->connect("DBI:Pg:dbname=$statsconf::logdatabase", $statsconf::sqllogin)) ) {
             stats::log($project,131,"Unable to connect to database '$statsconf::logdatabase' using login '$statsconf::sqllogin'!");
             die;
         }
 
-        $dbh->{HandleError} = sub {
+        $logdbh->{HandleError} = sub {
             stats::log($project,131,"Database error connecting to $statsconf::logdatabase: $_[0], $_[1]");
             die;
         };
