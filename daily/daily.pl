@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.37 2004/09/23 00:35:37 decibel Exp $
+# $Id: daily.pl,v 1.38 2005/04/29 21:08:06 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -105,8 +105,8 @@ sub psql {
 
   close SQL;
   if( $psqlsuccess > 0) {
-    stats::log($project,128+16+8+2+1,"$sqlfile puked  -- aborting.  Details are in $workdir\psql_errors");
-    open SQERR, ">$workdir\psql_errors" or stats::log($project,139,"Unable to open $workdir\psql_errors for writing!");
+    stats::log($project,128+16+8+2+1,"$sqlfile puked  -- aborting.  Details are in $workdir/psql_errors");
+    open SQERR, ">$workdir/psql_errors" or stats::log($project,139,"Unable to open $workdir/psql_errors for writing!");
     print SQERR "$bufstorage";
     close SQERR;
     die $psqlsuccess;
