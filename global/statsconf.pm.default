@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.19 2005/04/25 06:05:35 decibel Exp $
+# $Id: statsconf.pm.default,v 1.20 2005/04/29 20:50:32 decibel Exp $
 #
 # Stats global configuration
 #
@@ -7,7 +7,7 @@
 package statsconf;
 
 $debug = 0;
-$logdb = "0";
+$logdb = 0;
 
 $homedir = @{[getpwuid $<]}[7];
 $logtag = "statsbox-iii";
@@ -58,6 +58,10 @@ $dctievent = "FQDN";
 #        "2:#dcti:998:PASS1:PASS2",
 #        "4:#distributed:998:PASS1:PASS2",
 );
+
+# If $pagers is not empty then an email will be sent to those addresses
+# when certain errors occur. Email's should be space-seperated.
+$pagers = '';
 
 $database = "stats";
 $logdatabase = "logdb";
