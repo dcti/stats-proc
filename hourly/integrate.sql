@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.46 2004/11/03 21:41:59 decibel Exp $
+# $Id: integrate.sql,v 1.47 2005/04/29 21:15:08 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -202,7 +202,7 @@ insert into TEMP_dayemails (EMAIL)
 --    this insert should insert (id, EMAIL, retire_to)
 --    from ID + @idoffset, EMAIL, ID + @idoffset
 insert into STATS_participant (ID, EMAIL)
-    select ID + (select max(id) from STATS_Participant WHERE id < 1000000), EMAIL
+    select ID + coalesce((select max(id) from STATS_Participant WHERE id < 1000000), 0), EMAIL
     from TEMP_dayemails
 ;
 
