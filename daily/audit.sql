@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.41 2004/11/09 08:09:11 decibel Exp $
+-- $Id: audit.sql,v 1.42 2005/04/29 21:14:30 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -247,10 +247,11 @@ SELECT ECblcksumtdy FROM audit
 -- **************************
 \echo Total work reported in Email_Rank for Today, Overall
 UPDATE audit
-    SET ERsumtoday = sum(WORK_TODAY)
-        , ERsum = sum(WORK_TOTAL)
-    FROM email_rank
-    WHERE project_id = :ProjectID
+    SET ERsumtoday = e.sumtoday, ERsum = e.sum
+    FROM (SELECT sum(WORK_TODAY) AS sumtoday, sum(WORK_TOTAL) AS sum
+                FROM email_rank
+                WHERE project_id = :ProjectID
+            ) e
 ;
 SELECT ERsumtoday, ERsum FROM audit
 ;
@@ -262,10 +263,12 @@ SELECT ERsumtoday, ERsum FROM audit
 -- **************************
 \echo Total work reported in Team_Members for Today, Overall
 UPDATE audit
-    SET TMsumtoday = coalesce(sum(WORK_TODAY), 0)
-        , TMsum = coalesce(sum(WORK_TOTAL), 0)
-    FROM team_members
-    WHERE project_id = :ProjectID
+    SET TMsumtoday = t.sumtoday
+        , TMsum = t.sum
+    FROM (SELECT coalesce(sum(WORK_TODAY), 0) AS sumtoday, coalesce(sum(WORK_TOTAL), 0) AS sum
+                FROM team_members
+                WHERE project_id = :ProjectID
+            ) t
 ;
 SELECT TMsumtoday, TMsum FROM audit
 ;
@@ -276,10 +279,12 @@ SELECT TMsumtoday, TMsum FROM audit
 -- **************************
 \echo Total work reported in Team_Rank for Today, Overall
 UPDATE audit
-    SET TRsumtoday = coalesce(sum(WORK_TODAY), 0)
-        , TRsum = coalesce(sum(WORK_TOTAL), 0)
-    FROM Team_Rank
-    WHERE project_id = :ProjectID
+    SET TRsumtoday = t.sumtoday
+        , TRsum = t.sum
+    FROM (SELECT coalesce(sum(WORK_TODAY), 0) AS sumtoday, coalesce(sum(WORK_TOTAL), 0) AS sum
+                FROM team_rank
+                WHERE project_id = :ProjectID
+            ) t
 ;
 SELECT TRsumtoday, TRsum FROM audit
 ;
