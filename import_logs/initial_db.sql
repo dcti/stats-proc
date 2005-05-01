@@ -1,4 +1,4 @@
--- $Id: initial_db.sql,v 1.4 2005/04/29 20:15:58 nerf Exp $
+-- $Id: initial_db.sql,v 1.5 2005/05/01 19:10:36 nerf Exp $
 
 CREATE TABLE email (
 	email_id	serial 		PRIMARY KEY
@@ -23,12 +23,12 @@ CREATE TABLE log_8 (
 	, ip_address		inet NOT NULL
 	, email_id		integer NOT NULL REFERENCES email
 	, platform_id		integer NOT NULL REFERENCES platform
-	, iter			integer
-	, cmc_count		integer
-	, cmc_ok		smallint
-	, core			smallint
-	, key_block		charactervarying(20)
-	, cmc_last		charactervarying(20)
+	, iter			integer NOT NULL
+	, cmc_count		integer NOT NULL
+	, cmc_ok		smallint NOT NULL
+	, core			smallint NOT NULL
+	, key_block		charactervarying(20) NOT NULL
+	, cmc_last		charactervarying(20) NOT NULL
 ) WITHOUT OIDs;
 
 CREATE TABLE log_24 (
@@ -37,8 +37,8 @@ CREATE TABLE log_24 (
 	, email_id		integer NOT NULL REFERENCES email
 	, platform_id		integer NOT NULL REFERENCES platform
 	, ogr_stub_id		integer NOT NULL REFERENCES ogr_stubs
-	, nodecount		bigint
-	, status		smallint
+	, nodecount		bigint NOT NULL
+	, status		smallint NOT NULL
 ) WITHOUT OIDs;
 
 CREATE TABLE log_25 (
@@ -47,8 +47,8 @@ CREATE TABLE log_25 (
 	, email_id		integer NOT NULL REFERENCES email
 	, platform_id		integer NOT NULL REFERENCES platform
 	, ogr_stub_id		integer NOT NULL REFERENCES ogr_stubs
-	, nodecount		bigint
-	, status		smallint
+	, nodecount		bigint NOT NULL
+	, status		smallint NOT NULL
 ) WITHOUT OIDs;
 
 CREATE TABLE import_r72 (
