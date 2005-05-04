@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.16 2005/05/04 22:18:24 decibel Exp $
+ * $Id: logmod.cpp,v 1.17 2005/05/04 23:09:38 gregh Exp $
  */
 
 #include <assert.h>
@@ -90,6 +90,10 @@ int main(int argc, char *argv[])
     while (fgets(buf, sizeof(buf), stdin) != NULL) {
         {
         int len = strlen(buf);
+        if (buf[len-1] == '\n') {
+            buf[len-1] = 0;
+            len--;
+        }
         char *p = buf;
         // first field is date/time stamp
         char *date = p;
@@ -198,7 +202,6 @@ int main(int argc, char *argv[])
                 os        = fields[2];
                 cpu       = fields[3];
                 version   = fields[4];
-                status    = fields[5];
                 status    = (trailing == 6 ? fields[5] : (char*)"-32767");
                 break;
             default:
@@ -255,7 +258,9 @@ int main(int argc, char *argv[])
                 }
             }
             if (endfields != wantedfields) {
-                error(line, "wrong number of required numeric fields at end", buf, len);
+                char text[80];
+                snprintf(text, sizeof(text), "wrong number of required numeric fields at end (expected %d but found %d)", wantedfields, endfields);
+                error(line, text, buf, len);
                 goto next;
             }
             switch (project) {
