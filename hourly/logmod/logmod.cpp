@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.15 2005/04/22 07:24:46 jlawson Exp $
+ * $Id: logmod.cpp,v 1.16 2005/05/04 22:18:24 decibel Exp $
  */
 
 #include <assert.h>
@@ -15,10 +15,11 @@ enum Project {
     OGR,
     RC572
 };
+bool pproxy;
 
 void usage()
 {
-    fprintf(stderr, "Usage: logmod [-rc5 | -ogr | -rc572]\n");
+    fprintf(stderr, "Usage: logmod [-rc5 | -ogr | -rc572] [-pproxy]\n");
     exit(1);
 }
 
@@ -72,6 +73,16 @@ int main(int argc, char *argv[])
         project = RC572;
     } else {
         usage();
+    }
+
+    if (argc > 2) {
+        if (strcmp(argv[2], "-pproxy") == 0) {
+            pproxy = true;
+        } else {
+            usage();
+        }
+    } else {
+        pproxy = false;
     }
 
     char buf[256];
@@ -136,7 +147,11 @@ int main(int argc, char *argv[])
             sane = (trailing == 6 || trailing == 9);
             break;
         case OGR:
-            sane = (trailing == 6);
+            if (pproxy) {
+                sane = (trailing == 5);
+            } else {
+                sane = (trailing == 6);
+            }
             break;
         default:
             error(line, "unexpected project", buf, len);
@@ -184,6 +199,7 @@ int main(int argc, char *argv[])
                 cpu       = fields[3];
                 version   = fields[4];
                 status    = fields[5];
+                status    = (trailing == 6 ? fields[5] : (char*)"-32767");
                 break;
             default:
                 error(line, "unexpected project", buf, len);
@@ -214,7 +230,11 @@ int main(int argc, char *argv[])
               wantedfields = 5;  // size,cpu,os,version,coreid
               break;
             case OGR:
-              wantedfields = 5;  // size,cpu,os,version,status
+              if (pproxy) {
+                  wantedfields = 4;  // size,cpu,os,version
+              } else {
+                  wantedfields = 5;  // size,cpu,os,version,status
+              }
               break;
             default:
               error(line, "unexpected project", buf, len);
@@ -254,11 +274,19 @@ int main(int argc, char *argv[])
                 status  = "0";      // coreid is ignored
                 break;
             case OGR:
-                size    = endfieldptrs[4];
-                os      = endfieldptrs[3];
-                cpu     = endfieldptrs[2];
-                version = endfieldptrs[1];
-                status  = endfieldptrs[0];
+                if (pproxy) {
+                    size    = endfieldptrs[3];
+                    os      = endfieldptrs[2];
+                    cpu     = endfieldptrs[1];
+                    version = endfieldptrs[0];
+                    status  = "-32767";
+                } else {
+                    size    = endfieldptrs[4];
+                    os      = endfieldptrs[3];
+                    cpu     = endfieldptrs[2];
+                    version = endfieldptrs[1];
+                    status  = endfieldptrs[0];
+                }
                 break;
             default:
                 error(line, "unexpected project", buf, len);
@@ -295,7 +323,7 @@ int main(int argc, char *argv[])
         int nstatus = atoi(status);
         switch (project) {
         case OGR:
-            if ( !(nstatus >= -5 && nstatus <= 5) ) {
+            if ( !pproxy && !(nstatus >= -5 && nstatus <= 5) ) {
                 error(line, "status not between -5 and 5", buf, len);
                 goto next;
             }
