@@ -1,6 +1,7 @@
-BADLOG: line 5: (status not between -5 and 5) 08/25/03 04:16:44,127.0.0.1,bad.status@distributed.net,25,31-3-11-6-9-7,16025832509,4,1,90050483,10
+BADLOG: line 6: (status not between -5 and 5) 08/25/03 04:16:44,127.0.0.1,bad.status@distributed.net,25,31-3-11-6-9-7,16025832509,4,1,90050483,10
 20030825,moo@cow.com,25,258879543675,1,1,8015
 20080325,moo@cow.com,25,258879543675,1,1,8015
+20080325,comma.moo@cow.com,25,258879543675,1,1,8015
 20030825,moo@prodigy.net,25,6817385039,7,3,8019
 20030825,moo.M.cow@intel.com,25,16025832509,4,1,9005
 20030825,-email@with.leading.dash.com,25,16025832509,4,1,9005
