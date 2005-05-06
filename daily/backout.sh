@@ -11,3 +11,4 @@ if [ x$2 = x ]; then
 fi
 
 psql -f backout.sql -v ProjectID=$1 -v "KeepDate='$2'" stats
+psql -d stats -f clearday.sql -v ProjectID=$1
