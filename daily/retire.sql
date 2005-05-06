@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.30 2004/11/08 05:26:38 decibel Exp $
+# $Id: retire.sql,v 1.31 2005/05/06 15:35:43 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -10,6 +10,7 @@
 set sort_mem=128000;
 
 \echo Build a list of blocked participants
+BEGIN;
 SELECT id
     INTO TEMP blocked
     FROM stats_participant
@@ -22,6 +23,7 @@ INSERT INTO blocked(id)
     WHERE sp.retire_to > 0
         AND sp.retire_to = b.id
 ;
+COMMIT;
 
 \echo Update stats_participant_blocked
 
@@ -39,6 +41,7 @@ DELETE FROM stats_participant_blocked
 
 
 \echo Update STATS_Team_Blocked
+BEGIN;
 insert into STATS_Team_Blocked(TEAM_ID, block_date)
     select TEAM
             , (SELECT last_date FROM project_statsrun WHERE project_id = :ProjectID)
@@ -56,6 +59,7 @@ delete from STATS_Team_Blocked
                     AND LISTMODE >= 10
             )
 ;
+COMMIT;
 
 BEGIN;
     --SET LOCAL enable_seqscan = off;
