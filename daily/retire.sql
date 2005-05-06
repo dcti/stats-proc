@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.32 2005/05/06 17:25:59 decibel Exp $
+# $Id: retire.sql,v 1.33 2005/05/06 19:59:46 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -11,12 +11,14 @@ set sort_mem=128000;
 
 \echo Build a list of blocked participants
 BEGIN;
+-- Participants who are directly blocked
 SELECT id
     INTO TEMP blocked
     FROM stats_participant
     WHERE listmode >= 10
 ;
 
+-- Participants retired to blocked participants
 INSERT INTO blocked(id)
     SELECT sp.id
     FROM stats_participant sp, blocked b
@@ -24,6 +26,14 @@ INSERT INTO blocked(id)
         AND sp.retire_to = b.id
         AND sp.retire_date <= (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
 ;
+
+-- Participants with blacked participants retired to them
+INSERT INTO blocked(id)
+    SELECT sp.retire_to
+    FROM stats_participant sp, blocked b
+    WHERE sp.id = b.id
+        AND sp.retire_to > 0
+        AND sp.retire_date <= (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
 COMMIT;
 
 \echo Update stats_participant_blocked
