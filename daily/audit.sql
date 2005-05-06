@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.42 2005/04/29 21:14:30 decibel Exp $
+-- $Id: audit.sql,v 1.43 2005/05/06 20:01:19 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -172,6 +172,21 @@ SELECT DSunits, DSusers FROM audit
 -- **************************
 -- Build a summary table, which dramatically cuts down the time needed for this
 \echo Total work units, ignored work, team work in Email_Contrib
+BEGIN;
+CREATE TEMP TABLE effective_id (
+    id              int NOT NULL
+    , effective_id  int NOT NULL
+) WITHOUT OIDs;
+INSERT INTO effective_id
+    SELECT sp.id, CASE
+                    WHEN sp.retire_date <= a.date THEN RETIRE_TO
+                    ELSE sp.id
+                END AS effective_id
+        FROM stats_participant sp, audit a
+;
+ANALYZE effective_id;
+
+SET LOCAL enable_seqscan=false;
 UPDATE audit
     SET ECsum = sum_workunits
             , ECblcksum = sum_blocked
@@ -182,19 +197,23 @@ UPDATE audit
                                         AND spb.block_date <= a.date
                                 THEN work_units
                             END) AS sum_blocked
-                    ,  sum(CASE WHEN ws.team_id >= 1
+                    ,  sum(CASE WHEN ec.team_id >= 1
                                     AND spb.id IS NULL
                                     AND stb.team_id IS NULL
                                     AND stb.block_date <= a.date
-                                THEN ws.work_units
+                                THEN ec.work_units
                             END) AS sum_team
             FROM audit a
-                , email_contrib ws
-                LEFT JOIN stats_participant_blocked spb ON (ws.id = spb.id)
-                LEFT JOIN stats_team_blocked stb ON (ws.team_id = stb.team_id)
-            WHERE ws.project_id = :ProjectID
+                CROSS JOIN email_contrib ec
+                JOIN effective_id eid ON (eid.id = ec.id)
+                LEFT JOIN stats_participant_blocked spb
+                    ON (eid.id = spb.id AND spb.block_date <= a.date)
+                LEFT JOIN stats_team_blocked stb
+                    ON (ec.team_id = stb.team_id AND stb.block_date <= a.date)
+            WHERE ec.project_id = :ProjectID
         ) b
 ;
+COMMIT;
 
 SELECT ECsum, ECblcksum, ECteamsum FROM audit
 ;
