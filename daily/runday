@@ -5,14 +5,14 @@ if [ x$1 = x ]; then
 	exit 1
 fi
 
-psql -d stats -f retire.sql -v ProjectID=$1
-psql -d stats -f newjoin.sql -v ProjectID=$1
-psql -d stats -f dy_appendday.sql -v ProjectID=$1
-psql -d stats -f em_update.sql -v ProjectID=$1
-psql -d stats -f em_rank.sql -v ProjectID=$1
-psql -d stats -f tm_update.sql -v ProjectID=$1
-psql -d stats -f tm_rank.sql -v ProjectID=$1
-psql -d stats -f platform.sql -v ProjectID=$1
-psql -d stats -f dy_dailyblocks.sql -v ProjectID=$1
-sudo ../misc/pcpages $1
-psql -d stats -f audit.sql -v ProjectID=$1
+psql -d stats -f retire.sql -v ProjectID=$1 || exit 2
+psql -d stats -f newjoin.sql -v ProjectID=$1 || exit 2
+psql -d stats -f dy_appendday.sql -v ProjectID=$1 || exit 2
+psql -d stats -f em_update.sql -v ProjectID=$1 || exit 2
+psql -d stats -f em_rank.sql -v ProjectID=$1 || exit 2
+psql -d stats -f tm_update.sql -v ProjectID=$1 || exit 2
+psql -d stats -f tm_rank.sql -v ProjectID=$1 || exit 2
+psql -d stats -f platform.sql -v ProjectID=$1 || exit 2
+psql -d stats -f dy_dailyblocks.sql -v ProjectID=$1 || exit 2
+sudo ../misc/pcpages $1 || exit 2
+psql -d stats -f audit.sql -v ProjectID=$1 || exit 2
