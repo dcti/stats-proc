@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.33 2005/05/06 19:59:46 decibel Exp $
+# $Id: retire.sql,v 1.34 2005/05/06 22:12:55 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -34,6 +34,17 @@ INSERT INTO blocked(id)
     WHERE sp.id = b.id
         AND sp.retire_to > 0
         AND sp.retire_date <= (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
+;
+
+-- One final pass at participants retired to blocked participants
+-- This is in case we picked up participants with blocked participants retired to them
+INSERT INTO blocked(id)
+    SELECT sp.id
+    FROM stats_participant sp, blocked b
+    WHERE sp.retire_to > 0
+        AND sp.retire_to = b.id
+        AND sp.retire_date <= (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
+;
 COMMIT;
 
 \echo Update stats_participant_blocked
