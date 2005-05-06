@@ -1,5 +1,5 @@
 /*
-# $Id: retire.sql,v 1.31 2005/05/06 15:35:43 decibel Exp $
+# $Id: retire.sql,v 1.32 2005/05/06 17:25:59 decibel Exp $
 #
 # Handles all pending retire_tos and black-balls
 #
@@ -22,6 +22,7 @@ INSERT INTO blocked(id)
     FROM stats_participant sp, blocked b
     WHERE sp.retire_to > 0
         AND sp.retire_to = b.id
+        AND sp.retire_date <= (SELECT last_date FROM Project_statsrun WHERE project_id = :ProjectID)
 ;
 COMMIT;
 
