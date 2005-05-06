@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_rank.sql,v 1.24 2004/04/17 04:54:20 decibel Exp $
+# $Id: em_rank.sql,v 1.25 2005/05/06 19:46:43 decibel Exp $
 #
 # Does the participant ranking
 #
@@ -57,8 +57,7 @@ DROP TABLE Trank_work_today;
 \echo    Index on work_units
 CREATE UNIQUE INDEX work_units_today ON rank_tie_today(work_units)
 ;
-ANALYZE work_units_overall;
-ANALYZE work_units_today;
+ANALYZE rank_tie_today;
 
 \echo  Update email_rank with new rankings
 BEGIN;
