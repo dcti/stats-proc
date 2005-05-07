@@ -1,4 +1,4 @@
--- $Id: audit.sql,v 1.43 2005/05/06 20:01:19 decibel Exp $
+-- $Id: audit.sql,v 1.44 2005/05/07 07:10:19 decibel Exp $
 \set ON_ERROR_STOP 1
 set sort_mem=1000000;
 \t
@@ -179,7 +179,8 @@ CREATE TEMP TABLE effective_id (
 ) WITHOUT OIDs;
 INSERT INTO effective_id
     SELECT sp.id, CASE
-                    WHEN sp.retire_date <= a.date THEN RETIRE_TO
+                    WHEN sp.retire_date <= a.date THEN retire_to
+                    WHEN sp.retire_to > 0 AND sp.retire_date IS NULL THEN retire_to
                     ELSE sp.id
                 END AS effective_id
         FROM stats_participant sp, audit a
@@ -207,7 +208,7 @@ UPDATE audit
                 CROSS JOIN email_contrib ec
                 JOIN effective_id eid ON (eid.id = ec.id)
                 LEFT JOIN stats_participant_blocked spb
-                    ON (eid.id = spb.id AND spb.block_date <= a.date)
+                    ON (eid.effective_id = spb.id AND spb.block_date <= a.date)
                 LEFT JOIN stats_team_blocked stb
                     ON (ec.team_id = stb.team_id AND stb.block_date <= a.date)
             WHERE ec.project_id = :ProjectID
