@@ -1,5 +1,5 @@
 #!/bin/sh
 #
-# $Id: hourly.sh,v 1.1 2004/04/20 19:44:21 decibel Exp $
+# $Id: hourly.sh,v 1.2 2005/05/10 23:12:56 decibel Exp $
 
-cd /home/statproc/stats-proc/hourly && ./hourly.pl /home/statproc/workdir > /home/statproc/log/hourly.log  2> /home/statproc/log/hourly.err
+cd ~/stats-proc/hourly && ./hourly.pl ~/workdir > ~/log/hourly.log  2> ~/log/hourly.err
