@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.120 2005/04/29 21:15:26 decibel Exp $
+# $Id: hourly.pl,v 1.121 2005/05/10 23:11:13 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -497,7 +497,7 @@ while ($respawn == 1 and not -e 'stop') {
         unlink "$workdir$finalfn", "$workdir$rawfn";
 
         if($hh == 23) {
-          if(stats::lastday($project) < $yyyymmdd) {
+          if(stats::lastday($project) lt $yyyymmdd) {
             # Note -- CWD is not clean after calling spawn_daily.  Always use absolute
             # Paths after calling this.  (yeah, I know that's ugly)
             spawn_daily($project);
