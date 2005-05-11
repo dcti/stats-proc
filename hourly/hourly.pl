@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.121 2005/05/10 23:11:13 decibel Exp $
+# $Id: hourly.pl,v 1.122 2005/05/11 17:59:40 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -300,7 +300,10 @@ sub process ($$$$$) {
   my $psqlsuccess = 0;
   my $sqlrows = 0;
   my $skippedrows = 0;
-  if(!open SQL, "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |") {
+  my $cmd = "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |";
+
+  stats::debug (5,"process: command: $cmd\n");
+  if(!open SQL, $cmd) {
     stats::log($project,139,"Error launching psql, aborting hourly run.");
     die;
   }
