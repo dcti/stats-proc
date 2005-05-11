@@ -1,5 +1,5 @@
 /*
-# $Id: dy_dailyblocks.sql,v 1.13 2003/09/11 01:41:02 decibel Exp $
+# $Id: dy_dailyblocks.sql,v 1.14 2005/05/11 18:13:27 decibel Exp $
 #
 # Inserts the daily totals
 #
@@ -7,7 +7,6 @@
 #       Project
 */
 \set ON_ERROR_STOP 1
-set sort_mem=128000;
 
 INSERT INTO daily_summary (date, project_id, work_units
         , participants

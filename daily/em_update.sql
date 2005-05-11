@@ -1,6 +1,6 @@
 /*
 #
-# $Id: em_update.sql,v 1.11 2004/11/04 16:26:13 decibel Exp $
+# $Id: em_update.sql,v 1.12 2005/05/11 18:13:27 decibel Exp $
 #
 # Updates the info in the Email_Rank table
 #
@@ -8,7 +8,6 @@
 #       ProjectID
 */
 \set ON_ERROR_STOP 1
-set sort_mem=128000;
 
 \echo !! Begin e-mail ranking
 \echo  Drop indexes on Email_Rank

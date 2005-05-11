@@ -1,5 +1,5 @@
 /*
- $Id: tm_update.sql,v 1.36 2004/11/08 05:26:38 decibel Exp $
+ $Id: tm_update.sql,v 1.37 2005/05/11 18:13:27 decibel Exp $
 
 TM_RANK
 
@@ -8,7 +8,6 @@ Parameters
 
 */
 \set ON_ERROR_STOP 1
-set sort_mem=128000;
 
 \echo !! Begin team update
 

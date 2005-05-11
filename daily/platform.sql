@@ -1,6 +1,5 @@
--- $Id: platform.sql,v 1.3 2003/09/11 01:41:02 decibel Exp $
+-- $Id: platform.sql,v 1.4 2005/05/11 18:13:27 decibel Exp $
 \set ON_ERROR_STOP 1
-set sort_mem=128000;
 
 BEGIN;
     DELETE FROM platform_summary WHERE project_id = :ProjectID ;

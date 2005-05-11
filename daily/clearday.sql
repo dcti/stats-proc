@@ -1,6 +1,5 @@
--- $Id: clearday.sql,v 1.6 2003/09/11 01:41:02 decibel Exp $
+-- $Id: clearday.sql,v 1.7 2005/05/11 18:13:27 decibel Exp $
 \set ON_ERROR_STOP 1
-set sort_mem=128000;
 
 \echo Dropping indexes
 --drop index email_contrib_today.iid
