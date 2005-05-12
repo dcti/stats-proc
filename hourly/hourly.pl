@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.122 2005/05/11 17:59:40 decibel Exp $
+# $Id: hourly.pl,v 1.123 2005/05/12 22:54:35 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -387,6 +387,9 @@ sub rate_calc ($$) {
 }
 
 my $respawn = 1;
+if ( undef $statsconf::allow_missing_logs ) {
+  $statsconf::allow_missing_logs = 0;
+}
 
 ($ENV{'HOME'} . '/workdir/hourly/') =~ /([A-Za-z0-9_\-\/]+)/;
 my $workdir = $1;
@@ -457,10 +460,11 @@ while ($respawn == 1 and not -e 'stop') {
         my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
         my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
     
-        if ( $lasttime != ($logtime - 86400)) {
+        if ( !$statsconf::allow_missing_logs && $lasttime != ($logtime - 86400)) {
           stats::log($project,139,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
           die;
-        }
+        } else {
+          stats::log($project,139,"I'm supposed to load a log from $yyyymmdd, but the last daily processing run was for $lastday. Just thought you'd like to know!");
       }
 
       if($qualcount > 1) {

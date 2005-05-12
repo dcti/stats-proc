@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.20 2005/04/29 20:50:32 decibel Exp $
+# $Id: statsconf.pm.default,v 1.21 2005/05/12 22:54:35 decibel Exp $
 #
 # Stats global configuration
 #
@@ -9,13 +9,16 @@ package statsconf;
 $debug = 0;
 $logdb = 0;
 
-$homedir = @{[getpwuid $<]}[7];
 $logtag = "statsbox-iii";
+$dailyonly = "true";
+$pcpages_pre = 'no';
+$allow_missing_logs = 1;
 @projects = ("r72", "ogr");
 %prids = (
         "r72"   => "8",
         "ogr"   => "24:25",
 );
+$homedir = @{[getpwuid $<]}[7];
 $lockfile = "$homedir/log/statsrun.lck";
 
 # NOTE! This is where logs from the run go, it is not the source for
