@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.123 2005/05/12 22:54:35 decibel Exp $
+# $Id: hourly.pl,v 1.124 2005/05/12 22:55:58 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -465,6 +465,7 @@ while ($respawn == 1 and not -e 'stop') {
           die;
         } else {
           stats::log($project,139,"I'm supposed to load a log from $yyyymmdd, but the last daily processing run was for $lastday. Just thought you'd like to know!");
+        }
       }
 
       if($qualcount > 1) {
