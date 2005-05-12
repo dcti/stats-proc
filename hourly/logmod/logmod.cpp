@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.17 2005/05/04 23:09:38 gregh Exp $
+ * $Id: logmod.cpp,v 1.18 2005/05/12 05:09:28 decibel Exp $
  */
 
 #include <assert.h>
@@ -13,13 +13,15 @@
 enum Project {
     RC564,
     OGR,
+    OGRP2,
     RC572
 };
 bool pproxy;
+bool logdb;
 
 void usage()
 {
-    fprintf(stderr, "Usage: logmod [-rc5 | -ogr | -rc572] [-pproxy]\n");
+    fprintf(stderr, "Usage: logmod [-rc5 | -ogr | -ogrp2 | -rc572] [-pproxy] [-logdb] \n");
     exit(1);
 }
 
@@ -69,6 +71,8 @@ int main(int argc, char *argv[])
         project = RC564;
     } else if (strcmp(argv[1], "-ogr") == 0) {
         project = OGR;
+    } else if (strcmp(argv[1], "-ogrp2") == 0) {
+        project = OGRP2;
     } else if (strcmp(argv[1], "-rc572") == 0) {
         project = RC572;
     } else {
@@ -79,10 +83,24 @@ int main(int argc, char *argv[])
         if (strcmp(argv[2], "-pproxy") == 0) {
             pproxy = true;
         } else {
-            usage();
+            if (argc = 3 && strcmp(argv[2], "-logdb") == 0) {
+                logdb = true;
+            } else {
+                usage();
+            }
         }
     } else {
         pproxy = false;
+    }
+
+    if (argc > 3) {
+        if (strcmp(argv[2], "-logdb") == 0) {
+            logdb = true;
+        } else {
+            usage();
+        }
+    } else {
+        logdb = false;
     }
 
     char buf[256];
@@ -123,6 +141,7 @@ int main(int argc, char *argv[])
         p++;
         // next field is ip address which we don't care about
         p = charfwd(p, ',');
+        char *ip = p;
         if (p == NULL) {
             error(line, "no comma after ip", buf, len);
             goto next;
@@ -162,7 +181,7 @@ int main(int argc, char *argv[])
             abort();
         }
 
-        char *projectid, *size, *os, *cpu, *version, *status;
+        char *projectid, *real_project_id, *workunit_id, *size, *os, *cpu, *version, *core, *cmc_last, *cmc_ok, *status;
         if (sane) {
 
             char *fields[10];
@@ -186,11 +205,15 @@ int main(int argc, char *argv[])
                 break;
             case RC572:
                 projectid = "8";
-                size      = fields[1];
-                os        = fields[2];
-                cpu       = fields[3];
-                version   = fields[4];
-                status    = (trailing == 9 ? fields[8] : (char*)"0");
+                workunit_id = fields[0];
+                size        = fields[1];
+                os          = fields[2];
+                cpu         = fields[3];
+                version     = fields[4];
+                core        = fields[5];
+                cmc_last    = fields[6];
+                cmc_ok      = fields[7];
+                status      = (trailing == 9 ? fields[8] : (char*)"0");
                 break;
             case OGR:
                 projectid = fields[0];
@@ -198,11 +221,37 @@ int main(int argc, char *argv[])
                 if (atoi(projectid) == 26) {
                     projectid = "25";
                 }
-                size      = fields[1];
-                os        = fields[2];
-                cpu       = fields[3];
-                version   = fields[4];
-                status    = (trailing == 6 ? fields[5] : (char*)"-32767");
+                // TODO strip off leading ruler length
+                workunit_id = fields[0];
+                size        = fields[1];
+                os          = fields[2];
+                cpu         = fields[3];
+                version     = fields[4];
+                status      = (trailing == 6 ? fields[5] : (char*)"-32767");
+                break;
+            case OGRP2:
+                projectid = fields[0];
+                projectid[2] = 0;
+                if (atoi(projectid) == 26) {
+                    projectid = "25";
+                }
+                // Because we log P2 seperately, we want to track it seperately in the database, which means different project_id's
+                switch (atoi(projectid)) {
+                    case 24:
+                        real_project_id = "9";
+                        break;
+                    case 25:
+                        real_project_id = "10";
+                        break;
+                }
+
+                // TODO strip off leading ruler length
+                workunit_id = fields[0];
+                size        = fields[1];
+                os          = fields[2];
+                cpu         = fields[3];
+                version     = fields[4];
+                status      = (trailing == 6 ? fields[5] : (char*)"-32767");
                 break;
             default:
                 error(line, "unexpected project", buf, len);
@@ -325,25 +374,6 @@ int main(int argc, char *argv[])
 
         }
 
-        int nstatus = atoi(status);
-        switch (project) {
-        case OGR:
-            if ( !pproxy && !(nstatus >= -5 && nstatus <= 5) ) {
-                error(line, "status not between -5 and 5", buf, len);
-                goto next;
-            }
-            break;
-        case RC572:
-            if (nstatus != 0 && nstatus != 1) {
-                error(line, "cmcstatus not 0 or 1", buf, len);
-                goto next;
-            }
-            break;
-        case RC564:
-        default:
-            break;
-        }
-
         // convert version to exclude buildfrac if it had it.
         int iversion = atoi(version);
         if (iversion >= 90010477 && 
@@ -361,8 +391,41 @@ int main(int argc, char *argv[])
             *p = '.';
         }
 
-        // write out the final entry.
-        printf("%04d%02d%02d,%s,%s,%s,%s,%s,%s\n", date_year, date_month, date_day, email, projectid, size, os, cpu, version);
+        if ( logdb ) {
+            switch (project) {
+                case OGR:
+                    printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", date, ip, email, projectid, workunit_id, size, os, cpu, version, status);
+                    break;
+                case OGRP2:
+                    printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", date, ip, email, real_project_id, workunit_id, size, os, cpu, version, status);
+                    break;
+                case RC572:
+                    printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", date, ip, email, projectid, workunit_id, size, os, cpu, version, core, cmc_last, cmc_ok, status);
+                    break;
+            }
+        } else {
+            // error checking
+            int nstatus = atoi(status);
+            switch (project) {
+            case OGR:
+                if ( !pproxy && !(nstatus >= -5 && nstatus <= 5) ) {
+                    error(line, "status not between -5 and 5", buf, len);
+                    goto next;
+                }
+                break;
+            case RC572:
+                if (nstatus != 0 && nstatus != 1) {
+                    error(line, "cmcstatus not 0 or 1", buf, len);
+                    goto next;
+                }
+                break;
+            case RC564:
+            default:
+                break;
+            }
+
+            // write out the final entry.
+            printf("%04d%02d%02d,%s,%s,%s,%s,%s,%s\n", date_year, date_month, date_day, email, projectid, size, os, cpu, version);
         }
 next:
         line++;
