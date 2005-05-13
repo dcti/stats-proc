@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.38 2005/04/29 20:50:32 decibel Exp $
+# $Id: stats.pm,v 1.39 2005/05/13 16:40:55 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -20,7 +20,7 @@ BEGIN {
     # Note we can't call debug in BEGIN
     print "stats::BEGIN connect to stats database $statsconf::database\n" if ($statsconf::debug >= 7); 
     if (not ($dbh = DBI->connect("DBI:Pg:dbname=$statsconf::database", $statsconf::sqllogin)) ) {
-        stats::log($project,131,"Unable to connect to database '$statsconf::database' using login '$statsconf::sqllogin'!");
+        print "Unable to connect to database '$statsconf::database' using login '$statsconf::sqllogin'!";
         die;
     }
 
@@ -29,10 +29,13 @@ BEGIN {
         die;
     };
 
+    $statsconf::logdb = 0 if ! defined $statsconf::logdb;
+    print ( "CONFIG: " . ($statsconf::logdb ? "" : "don't ") . "log to the log database\n" ) if ($statsconf::debug >= 1);
+
     if ($statsconf::logdb) {
         print "stats::BEGIN connect to log database $statsconf::logdatabase\n" if ($statsconf::debug >= 7); 
         if (not ($logdbh = DBI->connect("DBI:Pg:dbname=$statsconf::logdatabase", $statsconf::sqllogin)) ) {
-            stats::log($project,131,"Unable to connect to database '$statsconf::logdatabase' using login '$statsconf::sqllogin'!");
+            print "Unable to connect to database '$statsconf::logdatabase' using login '$statsconf::sqllogin'!";
             die;
         }
 
@@ -41,6 +44,8 @@ BEGIN {
             die;
         };
     }
+
+    print "stats::BEGIN done\n" if ($statsconf::debug >= 7); 
 }
 
 sub debug ($$) {
@@ -77,8 +82,8 @@ sub log {
 
 	my $ts = sprintf("[%d-%s-%d %02s:%02s:%02s]",$dd,$mm,$yy,$hh,$mi,$sc);
 
-    debug(7,"stats::log logdir: $logdir\n");
-    debug(7,"stats::log project: $project\n");
+    debug(9,"stats::log logdir: $logdir\n");
+    debug(9,"stats::log project: $project\n");
 	if (open LOGFILE, ">>$logdir/$project.log") {
 		print LOGFILE $ts," ",@par,"\n";
 		close LOGFILE;
@@ -125,7 +130,7 @@ sub DCTIeventsay {
 	my $project = shift;
 	my $message = shift;
 
-        debug (6,"DCTIeventsay: port=$port, password=$password, project=$project, message=$message\n");
+        debug (8,"DCTIeventsay: port=$port, password=$password, project=$project, message=$message\n");
 	
 	local $SIG{ALRM} = sub { die "timeout" };
 

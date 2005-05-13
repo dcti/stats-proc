@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.124 2005/05/12 22:55:58 decibel Exp $
+# $Id: hourly.pl,v 1.125 2005/05/13 16:40:55 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -57,13 +57,8 @@ sub findlog ($$) {
 
   use Time::Local;
   
-  my $yyyy = (gmtime(time-3600))[5]+1900;
-  my $mm = (gmtime(time-3600))[4]+1;
-  my $dd = (gmtime(time-3600))[3];
-  my $hh = (gmtime(time-3600))[2];
-  my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
   my $logtoload = "29991231-23";
-  my $logext;
+  my $logext = '';
   my $lastlog = stats::lastlog($project);
 
   if (defined($lastlog) ) {
@@ -78,24 +73,31 @@ sub findlog ($$) {
     # suitable replacement for sh and here's an example.
     if( !open LS, "tcsh -c 'ssh -n $server[0] \"ls -l $server[1] | grep $logprefix\"'|" ) {
       stats::log($project,131,"Unable to contact log source!");
-      return "",0;
+      return "","",0;
     } 
   } else {
     if( !open LS, "ls -l $server[0] | grep $logprefix |" ) {
       stats::log($project,131,"Unable to contact log source!");
-      return "",0;
+      return "","",0;
     } 
   }
 
   my $linecount = 0;
   my $qualcount = 0;
 
-  my $logfilter;
-  # The - is to ensure we ignore directories. We also test for permissions
+  my ($logfilter, $datestr);
+  my $yyyy = (gmtime(time-3600))[5]+1900;
+  my $mm = (gmtime(time-3600))[4]+1;
+  my $dd = (gmtime(time-3600))[3];
+  my $hh = (gmtime(time-3600))[2];
   if($statsconf::dailyonly) {
+    # The - is to ensure we ignore directories. We also test for permissions
     $logfilter = "-(...)(...)(...).*$logprefix(\\d\\d\\d\\d\\d\\d\\d\\d)(.*)";
+    $datestr = sprintf("%04s%02s%02s", $yyyy, $mm, $dd);
   } else {
+    # The - is to ensure we ignore directories. We also test for permissions
     $logfilter = "-(...)(...)(...).*$logprefix(\\d\\d\\d\\d\\d\\d\\d\\d-\\d\\d)(.*)";
+    $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
   }
   stats::debug (5,"log filter: $logfilter\n");
 
@@ -127,7 +129,7 @@ sub findlog ($$) {
           print $_;
           if(! ($_ =~ /(gz|bz2)$/) ) {
             stats::log($project,131,"The master failed to compress the $lastdate logfile.  Skipping to next project.");
-            return "",0;
+            return "","",0;
           }
           $logtoload = $lastdate;
           $logext = $lastext;
@@ -386,10 +388,10 @@ sub rate_calc ($$) {
   return $f_outstr;
 }
 
+$statsconf::allow_missing_logs = 0 if ! defined $statsconf::allow_missing_logs;
+stats::debug( 1, "CONFIG: " . ($statsconf::allow_missing_logs ? "don't " : "") . "allow missing logs\n" );
+
 my $respawn = 1;
-if ( undef $statsconf::allow_missing_logs ) {
-  $statsconf::allow_missing_logs = 0;
-}
 
 ($ENV{'HOME'} . '/workdir/hourly/') =~ /([A-Za-z0-9_\-\/]+)/;
 my $workdir = $1;
@@ -398,7 +400,7 @@ if(! -d $workdir) {
   die;
 }
 
-while ($respawn == 1 and not -e 'stop') {
+while ($respawn and not -e 'stop') {
   $respawn = 0;
   RUNPROJECTS: for (my $i = 0; $i < @statsconf::projects; $i++) {
     my $project = $statsconf::projects[$i];
@@ -460,7 +462,8 @@ while ($respawn == 1 and not -e 'stop') {
         my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
         my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
     
-        if ( !$statsconf::allow_missing_logs && $lasttime != ($logtime - 86400)) {
+        if ( not $statsconf::allow_missing_logs and $lasttime != ($logtime - 86400)) {
+          stats::debug(8, "allow_missing_logs=$statsconf::allow_missing_logs\n");
           stats::log($project,139,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
           die;
         } else {
@@ -520,6 +523,7 @@ while ($respawn == 1 and not -e 'stop') {
   }
 }
 
+print "stop file exists; exiting\n" if -e 'stop';
 exit 0;
 
 # vi:expandtab sw=2 ts=2
