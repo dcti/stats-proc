@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.125 2005/05/13 16:40:55 decibel Exp $
+# $Id: hourly.pl,v 1.126 2005/05/17 02:11:50 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -64,7 +64,7 @@ sub findlog ($$) {
   if (defined($lastlog) ) {
     stats::log($project,1,"Looking for new logs, last log processed was $lastlog");
   } else {
-    stats::log($project,131,"Warning: It appears that no logs have ever been loaded for this project.");
+    stats::log($project,128+2+1,"Warning: It appears that no logs have ever been loaded for this project.");
     $lastlog='';
   }
 
@@ -72,12 +72,12 @@ sub findlog ($$) {
     # fscking linux.  There's a damn good reason why bash isn't a
     # suitable replacement for sh and here's an example.
     if( !open LS, "tcsh -c 'ssh -n $server[0] \"ls -l $server[1] | grep $logprefix\"'|" ) {
-      stats::log($project,131,"Unable to contact log source!");
+      stats::log($project,128+2+1,"Unable to contact log source!");
       return "","",0;
     } 
   } else {
     if( !open LS, "ls -l $server[0] | grep $logprefix |" ) {
-      stats::log($project,131,"Unable to contact log source!");
+      stats::log($project,128+2+1,"Unable to contact log source!");
       return "","",0;
     } 
   }
@@ -123,12 +123,12 @@ sub findlog ($$) {
 	# to the log filename
         if(($lastdate lt $logtoload) and ($lastdate le $datestr)) {
           if(! ($2 =~ /r/) ) {
-            stats::log($project,131,"I need to load log $lastdate, but I cannot because the master created it with the wrong permissions!");
+            stats::log($project,128+2+1,"I need to load log $lastdate, but I cannot because the master created it with the wrong permissions!");
             die;
           }
           print $_;
           if(! ($_ =~ /(gz|bz2)$/) ) {
-            stats::log($project,131,"The master failed to compress the $lastdate logfile.  Skipping to next project.");
+            stats::log($project,128+2+1,"The master failed to compress the $lastdate logfile.  Skipping to next project.");
             return "","",0;
           }
           $logtoload = $lastdate;
@@ -140,7 +140,7 @@ sub findlog ($$) {
   }
 
   if($linecount == 0) {
-    stats::log($project,131,"No log files found!");
+    stats::log($project,128+2+1,"No log files found!");
     return "","",0;
   }
 
@@ -253,7 +253,7 @@ sub filter ($$$$) {
     if ($? == 0) {
         stats::log($project,1,"$rawfn successfully filtered through $prefilter.");
     } else {
-        stats::log($project,131,"unable to filter $rawfn through $prefilter!");
+        stats::log($project,128+2+1,"unable to filter $rawfn through $prefilter!");
         die;
     }
   }
@@ -274,7 +274,7 @@ sub bcp ($$$) {
   my $bcp = `time ./bcp.sh $statsconf::database $workdir$finalfn 2>&1`;
   if($? != 0) {
     print "bcp error: $bcp\n";
-    stats::log($project,131,"Error launching BCP, aborting hourly run.");
+    stats::log($project,128+8+2+1,"Error launching BCP, aborting hourly run.");
     die;
   }
 
@@ -284,7 +284,7 @@ sub bcp ($$$) {
   stats::log($project,1,"$finalfn successfully BCP'd; $bcprows rows at $rate rows/second.");
 
   if($bcprows == 0) {
-    stats::log($project,139,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+    stats::log($project,128+8+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
   }
 
   return $bcprows;
@@ -306,7 +306,7 @@ sub process ($$$$$) {
 
   stats::debug (5,"process: command: $cmd\n");
   if(!open SQL, $cmd) {
-    stats::log($project,139,"Error launching psql, aborting hourly run.");
+    stats::log($project,128+8+2+1,"Error launching psql, aborting hourly run.");
     die;
   }
   while (<SQL>) {
@@ -332,7 +332,7 @@ sub process ($$$$$) {
   }
   close SQL;
   if( $psqlsuccess > 0) {
-    stats::log($project,139,"integrate.sql failed on $basefn - aborting.  Details are in $workdir/psql_errors");
+    stats::log($project,128+8+2+1,"integrate.sql failed on $basefn - aborting.  Details are in $workdir/psql_errors");
     open SQERR, ">$workdir/psql_errors";
     print SQERR "$bufstorage";
     close SQERR;
@@ -396,7 +396,7 @@ my $respawn = 1;
 ($ENV{'HOME'} . '/workdir/hourly/') =~ /([A-Za-z0-9_\-\/]+)/;
 my $workdir = $1;
 if(! -d $workdir) {
-  stats::log("stats",131,"Hey! Someone needs to mkdir $workdir!");
+  stats::log("stats",128+2+1,"Hey! Someone needs to mkdir $workdir!");
   die;
 }
 
@@ -440,7 +440,7 @@ while ($respawn and not -e 'stop') {
     closedir WD;
 
     if(@wdcontents > 0) {
-      stats::log($project,131,"Workdir is not empty!  I refuse to proceed with hourly processing.");
+      stats::log($project,128+2+1,"Workdir is not empty!  I refuse to proceed with hourly processing.");
       die;
     }
 
@@ -457,17 +457,17 @@ while ($respawn and not -e 'stop') {
       chomp $lastday;
 
       if ($lastday eq "") {
-        stats::log($project,131,"Warning: It appears that there has never been a daily run for this project.");
+        stats::log($project,128+2+1,"Warning: It appears that there has never been a daily run for this project.");
       } else {
         my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
         my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
     
         if ( not $statsconf::allow_missing_logs and $lasttime != ($logtime - 86400)) {
           stats::debug(8, "allow_missing_logs=$statsconf::allow_missing_logs\n");
-          stats::log($project,139,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
+          stats::log($project,128+8+2+1,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
           die;
         } else {
-          stats::log($project,139,"I'm supposed to load a log from $yyyymmdd, but the last daily processing run was for $lastday. Just thought you'd like to know!");
+          stats::log($project,128+8+2+1,"I'm supposed to load a log from $yyyymmdd, but the last daily processing run was for $lastday. Just thought you'd like to know!");
         }
       }
 
@@ -499,7 +499,7 @@ while ($respawn and not -e 'stop') {
 
         # perform sanity checking here
         if ( ( $sqlrows + $skippedrows ) != $bcprows ) {
-          stats::log($project,139,"Row counts for BCP($bcprows) and SQL( $sqlrows + $skippedrows ) do not match, aborting.");
+          stats::log($project,128+8+2+1,"Row counts for BCP($bcprows) and SQL( $sqlrows + $skippedrows ) do not match, aborting.");
           die;
         }
         stats::log($project,1,"$basefn successfully processed.");
@@ -517,7 +517,7 @@ while ($respawn and not -e 'stop') {
       }
     }
     if(stats::semflag('hourly') ne "OK") {
-      stats::log($project,139,"Error clearing hourly.pl lock");
+      stats::log($project,128+8+2+1,"Error clearing hourly.pl lock");
       die;
     }
   }
