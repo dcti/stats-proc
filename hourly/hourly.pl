@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.127 2005/05/17 02:24:49 decibel Exp $
+# $Id: hourly.pl,v 1.128 2005/05/17 03:16:16 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -284,7 +284,7 @@ sub bcp ($$$) {
   stats::log($project,1,"$finalfn successfully BCP'd; $bcprows rows at $rate rows/second.");
 
   if($bcprows == 0) {
-    stats::log($project,128+8+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+    stats::log($project,128+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
   }
 
   return $bcprows;
