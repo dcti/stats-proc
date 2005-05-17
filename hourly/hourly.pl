@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.126 2005/05/17 02:11:50 decibel Exp $
+# $Id: hourly.pl,v 1.127 2005/05/17 02:24:49 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -462,12 +462,14 @@ while ($respawn and not -e 'stop') {
         my $lasttime = timegm(0,0,0,(substr $lastday, 6, 2),((substr $lastday, 4, 2)-1),(substr $lastday, 0, 4));
         my $logtime = timegm(0,0,0,(substr $yyyymmdd, 6, 2),((substr $yyyymmdd, 4, 2)-1),(substr $yyyymmdd, 0, 4));
     
-        if ( not $statsconf::allow_missing_logs and $lasttime != ($logtime - 86400)) {
-          stats::debug(8, "allow_missing_logs=$statsconf::allow_missing_logs\n");
-          stats::log($project,128+8+2+1,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
-          die;
-        } else {
-          stats::log($project,128+8+2+1,"I'm supposed to load a log from $yyyymmdd, but the last daily processing run was for $lastday. Just thought you'd like to know!");
+        if ( $lasttime != ($logtime - 86400)) {
+          if ( not $statsconf::allow_missing_logs ) {
+            stats::debug(8, "allow_missing_logs=$statsconf::allow_missing_logs\n");
+            stats::log($project,128+8+2+1,"Aborting: I'm supposed to load a log from $yyyymmdd, but my last daily processing run was for $lastday!");
+            die;
+          } else {
+            stats::log($project,128+8+2+1,"I'm supposed to load a log from $yyyymmdd, but the last daily processing run was for $lastday. Just thought you'd like to know!");
+          }
         }
       }
 
