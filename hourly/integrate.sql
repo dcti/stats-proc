@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.47 2005/04/29 21:15:08 decibel Exp $
+# $Id: integrate.sql,v 1.48 2005/05/20 04:42:35 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -20,7 +20,6 @@ Accept BCPcount as an argument and puke if our rowcounts don't match
 
 \t
 \set ON_ERROR_STOP 1
-set sort_mem=128000;
 
 /* Create a temp table that lets us know what project(s) we're working on here */
 /* [BW] If this step wasn't here, it would be possible to run integrate without
