@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.39 2005/05/11 18:10:54 decibel Exp $
+# $Id: daily.pl,v 1.40 2005/05/21 18:05:27 decibel Exp $
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -20,6 +20,9 @@ my $hh = (gmtime(time-3600))[2];
 my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my $respawn = 0;
+
+$statsconf::pcpages_pre = '' if ! defined $statsconf::pcpages_pre;
+stats::debug( 1, "CONFIG: pcpages_pre = '$statsconf::pcpages_pre'");
 
 ($ENV{'HOME'} . '/workdir/daily/') =~ /([A-Za-z0-9_\-\/]+)/;
 my $workdir = $1;
