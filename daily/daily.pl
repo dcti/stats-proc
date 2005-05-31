@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.43 2005/05/31 16:47:12 decibel Exp $
+# $Id: daily.pl,v 1.44 2005/05/31 17:19:18 jlawson Exp $
 
 use strict;
 $ENV{'PATH'} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -23,11 +23,11 @@ my $respawn = 0;
 $statsconf::pcpages_pre = '' if ! defined $statsconf::pcpages_pre;
 stats::debug( 1, "CONFIG: statsconf::pcpages_pre = '$statsconf::pcpages_pre'\n");
 
-($ENV{'HOME'} . '/workdir/daily/') =~ m/^(/[A-Za-z0-9_\-\/]+)$/ 
+($ENV{'HOME'} . '/workdir/daily/') =~ m/^(\/[A-Za-z0-9_\-\/]+)$/ 
     or die "unsafe HOME directory";
 my $workdir = $1;       # ensures untaintedness
 
-($ENV{'HOME'} . '/stats-proc/misc/pcpages') =~ m/^(/[A-Za-z0-9_\-\/]+)$/ 
+($ENV{'HOME'} . '/stats-proc/misc/pcpages') =~ m/^(\/[A-Za-z0-9_\-\/]+)$/ 
     or die "unsafe HOME directory";
 my $pcpages = $1;       # ensures untaintedness
 
