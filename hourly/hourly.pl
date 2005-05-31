@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.128 2005/05/17 03:16:16 decibel Exp $
+# $Id: hourly.pl,v 1.129 2005/05/31 16:53:15 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -388,8 +388,11 @@ sub rate_calc ($$) {
   return $f_outstr;
 }
 
+$statsconf::dailyonly = 0 if ! defined $statsconf::dailyonly;
+stats::debug( 1, "CONFIG: " . ($statsconf::dailyonly ? "don't " : "") . "expect daily-only logs (statsconf::dailyonly=$statsconf::dailyonly)\n" );
+
 $statsconf::allow_missing_logs = 0 if ! defined $statsconf::allow_missing_logs;
-stats::debug( 1, "CONFIG: " . ($statsconf::allow_missing_logs ? "don't " : "") . "allow missing logs\n" );
+stats::debug( 1, "CONFIG: " . ($statsconf::allow_missing_logs ? "don't " : "") . "allow missing logs (statsconf::allow_missing_logs=$statsconf::allow_missing_logs)\n" );
 
 my $respawn = 1;
 
