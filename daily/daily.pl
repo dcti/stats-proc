@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.40 2005/05/21 18:05:27 decibel Exp $
+# $Id: daily.pl,v 1.41 2005/05/31 06:39:53 jlawson Exp $
 
 use strict;
-$ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
+$ENV{'PATH'} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
 
-#$0 =~ /(.*\/)([^\/]+)/;
+#$0 =~ m/^(.*\/)([^\/]+)$/ or die;
 #my $cwd = $1;
 #my $me = $2;
 #chdir $cwd;
@@ -13,10 +13,9 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin
 use statsconf;
 use stats;
 
-my $yyyy = (gmtime(time-3600))[5]+1900;
-my $mm = (gmtime(time-3600))[4]+1;
-my $dd = (gmtime(time-3600))[3];
-my $hh = (gmtime(time-3600))[2];
+my ($yyyy,$mm,$dd,$hh) = (gmtime(time-3600))[5,4,3,2];
+$yyyy += 1900;
+$mm += 1;
 my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 
 my $respawn = 0;
@@ -24,11 +23,13 @@ my $respawn = 0;
 $statsconf::pcpages_pre = '' if ! defined $statsconf::pcpages_pre;
 stats::debug( 1, "CONFIG: pcpages_pre = '$statsconf::pcpages_pre'");
 
-($ENV{'HOME'} . '/workdir/daily/') =~ /([A-Za-z0-9_\-\/]+)/;
-my $workdir = $1;
+($ENV{'HOME'} . '/workdir/daily/') =~ m/^(/[A-Za-z0-9_\-\/]+)$/ 
+    or die "unsafe HOME directory";
+my $workdir = $1;       # ensures untaintedness
 
-($ENV{'HOME'} . '/stats-proc/misc/pcpages') =~ /([A-Za-z0-9_\-\/]+)/;
-my $pcpages = $1;
+($ENV{'HOME'} . '/stats-proc/misc/pcpages') =~ m/^(/[A-Za-z0-9_\-\/]+)$/ 
+    or die "unsafe HOME directory";
+my $pcpages = $1;       # ensures untaintedness
 
 if(! -d $workdir) {
   stats::log("stats",131,"Hey! Someone needs to mkdir $workdir!");
@@ -65,7 +66,7 @@ if(!$statsconf::prids{$project}) {
     psql("tm_rank.sql", $project_id);
     psql("platform.sql", $project_id);
     psql("dy_dailyblocks.sql", $project_id);
-    if (! $statsconf::pcpages_pre =~ /^no$/i) {
+    if (lc($statsconf::pcpages_pre) ne 'no') {
         system "$statsconf::pcpages_pre $pcpages $project_id";
     }
     psql("audit.sql", $project_id);
@@ -90,7 +91,7 @@ sub psql {
   }
 
   while (<SQL>) {
-    my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]);
+    my $ts = sprintf("[%02s:%02s:%02s]",(gmtime)[2,1,0]);
     my $buf = $_;
     chomp $buf;
     if ($buf ne "") {
