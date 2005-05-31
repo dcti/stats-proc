@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.42 2005/05/31 16:46:29 decibel Exp $
+# $Id: daily.pl,v 1.43 2005/05/31 16:47:12 decibel Exp $
 
 use strict;
 $ENV{'PATH'} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -67,7 +67,7 @@ if(!$statsconf::prids{$project}) {
     psql("platform.sql", $project_id);
     psql("dy_dailyblocks.sql", $project_id);
     if ( $statsconf::pcpages_pre =~ /^no$/i ) {
-        print "statsconf::pcpages_pre is set to '$statsconf::pcpages_pre', skipping pcpages\n";
+        stats::debug( 1, "statsconf::pcpages_pre is set to '$statsconf::pcpages_pre', skipping pcpages\n" );
     } else {
         system "$statsconf::pcpages_pre $pcpages $project_id";
         stats::debug( 6, "$statsconf::pcpages_pre $pcpages $project_id" );
