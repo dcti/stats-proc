@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I../global
 #
-# $Id: daily.pl,v 1.41 2005/05/31 06:39:53 jlawson Exp $
+# $Id: daily.pl,v 1.42 2005/05/31 16:46:29 decibel Exp $
 
 use strict;
 $ENV{'PATH'} = '/usr/local/bin:/usr/bin:/bin:/usr/local/sybase/bin:/opt/sybase/bin';
@@ -21,7 +21,7 @@ my $datestr = sprintf("%04s%02s%02s-%02s", $yyyy, $mm, $dd, $hh);
 my $respawn = 0;
 
 $statsconf::pcpages_pre = '' if ! defined $statsconf::pcpages_pre;
-stats::debug( 1, "CONFIG: pcpages_pre = '$statsconf::pcpages_pre'");
+stats::debug( 1, "CONFIG: statsconf::pcpages_pre = '$statsconf::pcpages_pre'\n");
 
 ($ENV{'HOME'} . '/workdir/daily/') =~ m/^(/[A-Za-z0-9_\-\/]+)$/ 
     or die "unsafe HOME directory";
@@ -66,8 +66,11 @@ if(!$statsconf::prids{$project}) {
     psql("tm_rank.sql", $project_id);
     psql("platform.sql", $project_id);
     psql("dy_dailyblocks.sql", $project_id);
-    if (lc($statsconf::pcpages_pre) ne 'no') {
+    if ( $statsconf::pcpages_pre =~ /^no$/i ) {
+        print "statsconf::pcpages_pre is set to '$statsconf::pcpages_pre', skipping pcpages\n";
+    } else {
         system "$statsconf::pcpages_pre $pcpages $project_id";
+        stats::debug( 6, "$statsconf::pcpages_pre $pcpages $project_id" );
     }
     psql("audit.sql", $project_id);
 
