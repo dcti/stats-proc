@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.129 2005/05/31 16:53:15 decibel Exp $
+# $Id: hourly.pl,v 1.130 2005/06/18 17:37:09 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -26,6 +26,9 @@ $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
 use statsconf;
 use stats;
 
+#
+# spawn_daily
+#
 sub spawn_daily ($) {
   my ($f_project) = @_;
 
@@ -41,6 +44,9 @@ sub spawn_daily ($) {
 
 }
 
+#
+# findlog
+#
 sub findlog ($$) {
   my ($project, $logprefix) = @_;
   # Get list of logs that are on the master
@@ -153,6 +159,9 @@ sub findlog ($$) {
   return $logtoload,$logext,$qualcount;
 }
 
+#
+# scp
+#
 sub scp ($$$$$) {
   my ($project, $workdir, $server, $fullfn, $basefn) = @_;
   # Get list of logs that are on the master
@@ -191,6 +200,9 @@ sub scp ($$$$$) {
   }
 }
 
+#
+# uncompress
+#
 sub uncompress ($$$$) {
   my ( $project, $workdir, $basefn, $logext ) = @_;
   # Get list of logs that are on the master
@@ -236,6 +248,9 @@ sub uncompress ($$$$) {
   return $rawfn;
 }
 
+#
+# filter
+#
 sub filter ($$$$) {
   my ( $project, $workdir, $rawfn, $prefilter ) = @_;
   # Get list of logs that are on the master
@@ -260,6 +275,9 @@ sub filter ($$$$) {
   return $finalfn;
 }
 
+#
+# bcp
+#
 sub bcp ($$$) {
   my ( $project, $workdir, $finalfn ) = @_;
   # Bulk copy data into the database
@@ -290,6 +308,9 @@ sub bcp ($$$) {
   return $bcprows;
 }
 
+#
+# process
+#
 sub process ($$$$$) {
   my ( $project, $workdir, $basefn, $yyyymmdd, $hh ) = @_;
   # Runs SQL-based processing
@@ -342,6 +363,9 @@ sub process ($$$$$) {
   return $sqlrows, $skippedrows;
 }
 
+#
+# num_format
+#
 sub num_format ($) {
   my ($f_num) = @_;
   my $f_outstr = "";
@@ -367,6 +391,9 @@ sub num_format ($) {
   return $f_outstr;
 }
 
+#
+# rate_calc
+#
 sub rate_calc ($$) {
   my ($bytes,$secs) = @_;
   my @units = ('B/s','KB/s','MB/s');
@@ -387,6 +414,10 @@ sub rate_calc ($$) {
 
   return $f_outstr;
 }
+
+#
+# main
+#
 
 $statsconf::dailyonly = 0 if ! defined $statsconf::dailyonly;
 stats::debug( 1, "CONFIG: " . ($statsconf::dailyonly ? "don't " : "") . "expect daily-only logs (statsconf::dailyonly=$statsconf::dailyonly)\n" );
