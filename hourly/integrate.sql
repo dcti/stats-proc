@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.49 2005/07/21 17:35:49 decibel Exp $
+# $Id: integrate.sql,v 1.50 2005/07/22 16:56:16 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -258,30 +258,6 @@ insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
     where i.PROJECT_ID = p.PROJECT_ID
         and i.TIME_STAMP = p.LAST_DATE
     group by i.PROJECT_ID, i.CPU, i.OS, i.VER
-;
-
--- Add any new CPU or OS's
-INSERT INTO stats_os( os, name )
-    SELECT os, name
-        FROM (
-                SELECT DISTINCT os, 'Unknown' AS name
-                    FROM TEMP_Platform_Contrib_today
-            ) t
-        WHERE NOT EXISTS (SELECT *
-                                FROM stats_os o
-                                WHERE o.os = t.os
-                            )
-;
-INSERT INTO stats_cpu( cpu, name )
-    SELECT cpu, name
-        FROM (
-                SELECT DISTINCT cpu, 'Unknown' AS name
-                    FROM TEMP_Platform_Contrib_today
-            ) t
-        WHERE NOT EXISTS (SELECT *
-                                FROM stats_cpu o
-                                WHERE o.cpu = t.cpu
-                            )
 ;
 
 insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
