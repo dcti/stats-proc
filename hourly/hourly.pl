@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.130 2005/06/18 17:37:09 decibel Exp $
+# $Id: hourly.pl,v 1.131 2005/08/05 15:05:48 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -525,7 +525,7 @@ while ($respawn and not -e 'stop') {
 
       my $rawfn = uncompress( $project, $workdir, $basefn, $logext );
       if( $rawfn eq "" ) {
-        stats::log($project,130,"$basefn failed decompression!");
+        stats::log($project,128+8+2+1,"$basefn failed decompression!");
       } else {
         my $finalfn = filter( $project, $workdir, $rawfn, $prefilter );
 
