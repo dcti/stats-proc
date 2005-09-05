@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.39 2005/05/13 16:40:55 decibel Exp $
+# $Id: stats.pm,v 1.40 2005/09/05 15:08:27 decibel Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -55,9 +55,14 @@ sub debug ($$) {
     }
 }
 
-sub log {
-
-	# log ( project, dest, message)
+sub log ($$$) {
+    my ($project, $dest, $message) = @_;
+    # Log activity
+    #
+    # Accepts:
+	#   Project ID
+    #   Log Destination
+    #   Message
 	#
 	# dest:	  0 - file (always on)
 	#	  1 - #dcti-logs
@@ -67,9 +72,6 @@ sub log {
 	#	 64 - Print to STDERR instead of STDOUT
 	#	128 - High Priority
 
-	my @par = @_;
-	my $project = shift(@par);
-	my $dest = shift(@par);
 	my $logdir = $statsconf::logdir{$project};
 	my $pass = "";
 
@@ -85,7 +87,7 @@ sub log {
     debug(9,"stats::log logdir: $logdir\n");
     debug(9,"stats::log project: $project\n");
 	if (open LOGFILE, ">>$logdir/$project.log") {
-		print LOGFILE $ts," ",@par,"\n";
+		print LOGFILE $ts," ",$message,"\n";
 		close LOGFILE;
 	} else {
 		print "Unable to open [$logdir/$project.log]!\n";
@@ -93,9 +95,9 @@ sub log {
 	}
 
 	if ($dest & 64) {
-		print STDERR $ts," $project: ",@par,"\n";
+		print STDERR $ts," $project: ",$message,"\n";
 	} else {
-		print $ts," $project: ",@par,"\n";
+		print $ts," $project: ",$message,"\n";
 	}
 
 
@@ -107,7 +109,7 @@ sub log {
 			$pass = $notify;
 		}
 		if($dest & $bitmask) {
-			DCTIeventsay($port, "$pass", "$project", @par);
+			DCTIeventsay($port, "$pass", "$project", $message);
 		}
 	}
 
@@ -117,25 +119,22 @@ sub log {
 
         if (!$statsconf::pagers eq '') {
             open PAGER, "|mail \"-s$statsconf::logtag/$project\" $statsconf::pagers";
-            print PAGER "@par\n";
+            print PAGER "$message\n";
             close PAGER;
         }
 
 	}
 }
 
-sub DCTIeventsay {
-	my $port = shift;
-	my $password = shift;
-	my $project = shift;
-	my $message = shift;
+sub DCTIeventsay ($$$$) {
+    my ($port, $password, $project, $message) = @_;
 
-        debug (8,"DCTIeventsay: port=$port, password=$password, project=$project, message=$message\n");
+    debug (8,"DCTIeventsay: port=$port, password=$password, project=$project, message=$message\n");
 	
 	local $SIG{ALRM} = sub { die "timeout" };
 
 	eval {
-		alarm 5;
+		alarm 30;
 		my $iaddr = gethostbyname( $statsconf::dctievent ); 
 		my $proto = getprotobyname('tcp') || die "getproto: $!\n";
 		my $paddr = Socket::sockaddr_in($port, $iaddr);
@@ -163,15 +162,20 @@ sub DCTIeventsay {
 }
 
 sub semflag {
-	# project id
-	# task at hand or NULL to signal clear
+    my ($process, $task) = @_;
+    # Set a lockfile
+    # Accepts:
+	#   Process name (hourly, log_import, etc)
+	#   task at hand or NULL to signal clear
+    #
+    # Returns:
+    #   Contents of lockfile if it exists, or undef if it doesn't
 
-        my ($project, $task) = @_;
 
 	if($task) {
-	    if(semcheck($project)) {
+	    if(semcheck($process)) {
 		# Can't set the lock if it already exists.
-			return semcheck($project);
+			return semcheck($process);
 		} else {
 			# Apply lock
 			`echo "$task" > $statsconf::lockfile`;
@@ -184,10 +188,14 @@ sub semflag {
 	}
 }
 
-sub semcheck {
-	# project id
-
-	my ($project) = @_;
+sub semcheck ($) {
+	my ($process) = @_;
+    # Check to see if a lockfile exists
+    # Accepts:
+	#   Process name (hourly, log_import, etc)
+    #
+    # Returns:
+    #   Contents of lockfile if it exists, or undef if it doesn't
 
 	$statsconf::lockfile or die 'lockfile undefined';
 	$statsconf::lockfile ne '' or die 'lockfile undefined (empty)';
