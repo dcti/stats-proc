@@ -1,0 +1,15 @@
+hourly.pl:
+Allow for specifying which project to run, and running multiple projects at once.
+
+Switch to getting the full list of logs on master, and add support for finding
+logs to load only into logdb.
+
+integrate.sql:
+
+Is it faster to aggregate today's emails before looking them up in
+stats_participant, or should we just use a left join?
+
+Put a lock around grabbing participant ID's and assigning new ones so that
+multiple projects can run at the same time
+
+Put a lock around inserting into stats_os and stats_cpu.
