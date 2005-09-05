@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.50 2005/07/22 16:56:16 decibel Exp $
+# $Id: integrate.sql,v 1.51 2005/09/05 15:07:29 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -239,11 +239,11 @@ update import_bcp set OS = 0
 
 create TEMP table TEMP_Platform_Contrib_Today
 (
-    PROJECT_ID    smallint        not NULL,
-    CPU        smallint    not NULL,
-    OS        smallint    not NULL,
-    VER        smallint    not NULL,
-    WORK_UNITS    numeric(20, 0)    not NULL
+    PROJECT_ID  smallint        not NULL,
+    CPU         smallint        not NULL,
+    OS          smallint        not NULL,
+    VER         smallint        not NULL,
+    WORK_UNITS  numeric(20, 0)  not NULL
 ) WITHOUT OIDS
 ;
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
