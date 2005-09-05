@@ -1,60 +1,22 @@
-$Id: README,v 1.9 2003/12/15 22:22:14 decibel Exp $
+$Id: README,v 1.10 2005/09/05 15:06:44 decibel Exp $
 
 GETTING STARTED
-
 You will need a stats database to run from. See stats-sql/build.
 
 In global, copy statsconf.pm.default to statsconf.pm.
 
 %logsource: where your log files can be found.
 
-*** OLD INFO PERTAINING TO BLOWER ***
+RUNNING hourly.pl
+hourly/hourly.pl is responsible for running daily/daily.pl. misc/hourly.sh is a
+convenient wrapper for hourly.pl that can go into your crontab. Until you know
+everything is setup correctly you'll want to run hourly.pl manually; ie:
 
-*** How to run daily stats ***
-You will want to run ~decibel/stats-proc/daily/runday *project_id*, which
-is a dumb sh script. Take note of the output at the end from audit.sql!!
-If it flags any errors then something is definitely wrong! After you've
-verified that the run progressed as expected, you want to run
-~decibel/stats-proc/daily/runday2 *project_id*
+cd stats-proc/hourly && ./hourly.pl ~/workdir
 
+Once stat-proc is working you can get stats-html setup.
 
-*** NOTICE: IMPORTANT CHANGE  ***
-
-./global/ is completely re-worked and this *will* break existing 
-installations.  Brief summary of effective changes:
-
-  o stats.pm no longer needs to live in the perl default @INC path
-  o stats.pm has been split, configuration info now lives in the
-    statsconf.pm file
-  o statsconf.pm is NOT part of the cvs repository.  Rather, there's
-    a statsconf.pm.default file which shows you what needs to be
-    placed in the live file for proper operation.
-
-These changes were made in order to remove sensitive information from
-the live scripts.  (i.e. -- statsproc login id and password).  
-
-After cvs upping, you'll need to cp ./global/statsconf.pm.default to
-./global/statsconf.pm and edit the sqlserver, sqllogin, and sqlpasswd
-lines for statproc login info.
-
-*** YOU HAVE BEEN WARNED :) ***
-
-stats-rc5 is non-live, non-production code and is slated to be Attic'd
-very soon.
-
-"daily" is intended to be the new cross-project daily processing code and
-will be made production code as soon as it can handle ogr and rc5 stats.
-
-In a production environment, you'll need to add some symlinks to the daily
-directory for it to function properly.
-
-The old csc dir had the following, this will obviouslyu need to be tweaked
-somewhat:
-
-   incoming -> /home/incoming/newlogs-csc
-   stalelogs -> ../stale-csc/
-
-should symlink a workdir someplace, too.
-
-There was a "backup" directory which I committed and immediately threw
-into the attic.
+RUNNING BY HAND
+Occasionally you might need to do a daily run by hand. daily/runday* will do this.
+You can also restore data from a previous day's run using daily/backout.sh. You can
+also rebuild all the 'secondary' tables using stats-sql/recovery/rebuild.
