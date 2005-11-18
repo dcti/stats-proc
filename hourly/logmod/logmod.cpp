@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.19 2005/06/08 17:16:59 gregh Exp $
+ * $Id: logmod.cpp,v 1.20 2005/11/18 14:51:15 decibel Exp $
  */
 
 #include <assert.h>
@@ -368,6 +368,11 @@ void process_line(int project, int line, const char *origbuf)
         case RC564:
         default:
             break;
+        }
+
+        // Force os 43 to be os 17
+        if ( strcmp(os, "43") == 0 ) {
+            os = "27";
         }
 
         // write out the final entry.

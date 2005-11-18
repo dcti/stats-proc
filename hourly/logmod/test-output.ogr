@@ -5,3 +5,4 @@ BADLOG: line 6: (status not between -5 and 5) 08/25/03 04:16:44,127.0.0.1,bad.st
 20030825,moo@prodigy.net,25,6817385039,7,3,8019
 20030825,moo.M.cow@intel.com,25,16025832509,4,1,9005
 20030825,-email@with.leading.dash.com,25,16025832509,4,1,9005
+20030825,bad@os.id,25,6817385039,27,43,8019
