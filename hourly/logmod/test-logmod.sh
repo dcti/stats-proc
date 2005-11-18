@@ -30,11 +30,11 @@ run_test () {
 make
 run_test rc572
 run_test ogr
-run_test ogrp2
-run_test rc572 logdb
-run_test ogr logdb
-run_test ogrp2 logdb
+#run_test ogrp2
+#run_test rc572 logdb
+#run_test ogr logdb
+#run_test ogrp2 logdb
 run_test ogr pproxy
-run_test ogrp2 pproxy
-run_test ogr logdb pproxy
-run_test ogrp2 logdb pproxy
+#run_test ogrp2 pproxy
+#run_test ogr logdb pproxy
+#run_test ogrp2 logdb pproxy
