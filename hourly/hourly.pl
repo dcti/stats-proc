@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.131 2005/08/05 15:05:48 decibel Exp $
+# $Id: hourly.pl,v 1.132 2005/11/18 14:52:27 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -264,6 +264,7 @@ sub filter ($$$$) {
     stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
     $finalfn = $rawfn;
   } else {
+    `echo $rawfn >> $logdir/filter_$project.err`;
     `cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> $logdir/filter_$project.err`;
     if ($? == 0) {
         stats::log($project,1,"$rawfn successfully filtered through $prefilter.");
