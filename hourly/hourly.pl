@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.132 2005/11/18 14:52:27 decibel Exp $
+# $Id: hourly.pl,v 1.133 2005/12/22 20:59:54 nerf Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -279,8 +279,8 @@ sub filter ($$$$) {
 #
 # bcp
 #
-sub bcp ($$$) {
-  my ( $project, $workdir, $finalfn ) = @_;
+sub bcp ($$$$) {
+  my ( $project, $workdir, $finalfn, $database ) = @_;
   # Bulk copy data into the database
   #
   # Returns
@@ -290,7 +290,7 @@ sub bcp ($$$) {
   $bcprows =~ s/ +//g;
   chomp $bcprows;
 
-  my $bcp = `time ./bcp.sh $statsconf::database $workdir$finalfn 2>&1`;
+  my $bcp = `time ./bcp.sh $database $workdir$finalfn 2>&1`;
   if($? != 0) {
     print "bcp error: $bcp\n";
     stats::log($project,128+8+2+1,"Error launching BCP, aborting hourly run.");
@@ -300,7 +300,8 @@ sub bcp ($$$) {
   $bcp =~ /([0123456789.]+)/;
   my $rate = int($bcprows / $1);
 
-  stats::log($project,1,"$finalfn successfully BCP'd; $bcprows rows at $rate rows/second.");
+  stats::log($project,1,"$finalfn successfully BCP'd into $database; $bcprows rows at $rate rows/second.");
+
 
   if($bcprows == 0) {
     stats::log($project,128+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
@@ -365,6 +366,71 @@ sub process ($$$$$) {
 }
 
 #
+# process
+#
+sub process_logdb ($$$$$) {
+  my ( $project, $workdir, $basefn, $yyyymmdd, $hh ) = @_;
+  # Runs SQL-based processing for logdb
+  #
+  # Returns
+  #   Number of rows processed
+  #   Number of rows skipped
+
+  my $bufstorage = "";
+  my $psqlsuccess = 0;
+  my $sqlrows = 0;
+  my $skippedrows = 0;
+  my $lockcmd = qq(
+    INSERT INTO history(project,logday,loghour,starttime)
+      VALUES ($project,$yyyymmdd, $hh, now()::timestamp)
+  );
+  my $cmd = "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |";
+
+  stats::debug (5,"process: command: $cmd\n");
+  if(!open SQL, $cmd) {
+    stats::log($project,128+8+2+1,"Error launching psql, aborting hourly run.");
+    die;
+  }
+  while (<SQL>) {
+    my $buf = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]) . $_;
+    chomp $buf;
+    if ( $buf ne '') {
+      stats::log($project,0,$buf);
+      $bufstorage = "$bufstorage$buf\n";
+    }
+    if( $_ =~ /^Msg|ERROR/ ) {
+      $psqlsuccess = 1;
+    } elsif ( $_ =~ /^ Total rows: *(\d+)/ ) {
+      $sqlrows = $1;
+    } elsif ( $_ =~ /^ Skipped *(\d+) rows from project/ ) {
+      $skippedrows = $1;
+
+      # Don't do this before grabbing $1
+      s/^ *//;
+      if ( $skippedrows != 0 ) {
+        stats::log($project,1,"$_");
+      }
+    }
+  }
+  close SQL;
+  if( $psqlsuccess > 0) {
+    stats::log($project,128+8+2+1,"integrate.sql failed on $basefn - aborting.  Details are in $workdir/psql_errors");
+    open SQERR, ">$workdir/psql_errors";
+    print SQERR "$bufstorage";
+    close SQERR;
+    die;
+  }
+
+  return $sqlrows, $skippedrows;
+}
+
+#
+# num_format
+#
+sub num_format ($) {
+  my ($f_num) = @_;
+
+#
 # num_format
 #
 sub num_format ($) {
@@ -414,6 +480,28 @@ sub rate_calc ($$) {
   my $f_outstr = "$f_num $unit";
 
   return $f_outstr;
+}
+
+#
+# logdb
+#
+sub logdb ($$$) {
+  my ($project, $workdir, $rawfn) = @_;
+  my $logproject = "logdb";
+
+  my $finalfn = filter( $logproject, $workdir, $rawfn, $statsconf::logdb{prefilter} );
+
+  my $bcprows = bcp( $logproject, $workdir, $finalfn, $statsconf::logdatabase );
+  #cmh
+
+  my ( $sqlrows, $skippedrows ) = process( $project, $workdir, $basefn, $yyyymmdd, $hh );
+
+  # perform sanity checking here
+  if ( ( $sqlrows + $skippedrows ) != $bcprows ) {
+    stats::log($project,128+8+2+1,"Row counts for BCP($bcprows) and SQL( $sqlrows + $skippedrows ) do not match, aborting.");
+    die;
+  }
+  stats::log($project,1,"$basefn successfully processed.");
 }
 
 #
@@ -528,9 +616,18 @@ while ($respawn and not -e 'stop') {
       if( $rawfn eq "" ) {
         stats::log($project,128+8+2+1,"$basefn failed decompression!");
       } else {
+
+      #Load log into log db.
+      if ($statsconf::logdb) {
+        if (logdb($workdir, $rawfn)) {
+          stats::log("logdb",1,"$basefn successfully processed.")
+        };
+      }
+        
+        #Now do the real processing
         my $finalfn = filter( $project, $workdir, $rawfn, $prefilter );
 
-        my $bcprows = bcp( $project, $workdir, $finalfn );
+        my $bcprows = bcp( $project, $workdir, $finalfn, $statsconf::database );
 
         my ( $sqlrows, $skippedrows ) = process( $project, $workdir, $basefn, $yyyymmdd, $hh );
 
