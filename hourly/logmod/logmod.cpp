@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.22 2006/02/15 19:25:02 jlawson Exp $
+ * $Id: logmod.cpp,v 1.23 2006/02/15 19:30:43 jlawson Exp $
  */
 
 #include <assert.h>
@@ -234,6 +234,8 @@ void process_line(int project, int line, const char *origbuf)
               wantedfields = 5;  // size,cpu,os,version,status
           }
           break;
+        case OGRP2:
+          // TODO
         default:
           error(line, "unexpected project", origbuf);
           abort();
@@ -288,6 +290,8 @@ void process_line(int project, int line, const char *origbuf)
                 status  = endfieldptrs[0];
             }
             break;
+        case OGRP2:
+            // TODO
         default:
             error(line, "unexpected project", origbuf);
             abort();
@@ -315,6 +319,11 @@ void process_line(int project, int line, const char *origbuf)
                 projectid = "25";
             }
             break;
+        case OGRP2:
+            // TODO
+        default:
+            error(line, "unexpected project", origbuf);
+            abort();
         }
         *q = 0;
 
@@ -348,14 +357,23 @@ void process_line(int project, int line, const char *origbuf)
             case RC572:
                 printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", date, ip, email, projectid, workunit_id, size, os, cpu, version, core, cmc_last, cmc_ok, status);
                 break;
+            default:
+                error(line, "unexpected project", origbuf);
+                abort();
         }
     } else {
-        // error checking
+        // status code checking
         int nstatus = atoi(status);
         switch (project) {
         case OGR:
-            if ( !pproxy && !(nstatus >= 0 && nstatus <= 5) ) {
-                error(line, "status not between 0 and 5", origbuf);
+            if ( !pproxy && !(nstatus >= -5 && nstatus <= 5) ) {
+                error(line, "status not between -5 and 5", origbuf);
+                return;
+            }
+            break;
+        case OGRP2:
+            if ( !pproxy && !(nstatus >= 0) ) {
+                error(line, "status not 0 or greater", origbuf);
                 return;
             }
             break;
@@ -366,8 +384,10 @@ void process_line(int project, int line, const char *origbuf)
             }
             break;
         case RC564:
-        default:
             break;
+        default:
+            error(line, "unexpected project", origbuf);
+            abort();
         }
 
         // Force os 43 to be os 27 (rhapsody vs mac os x)
