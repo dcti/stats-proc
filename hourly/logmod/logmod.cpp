@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.21 2006/02/15 19:13:58 decibel Exp $
+ * $Id: logmod.cpp,v 1.22 2006/02/15 19:25:02 jlawson Exp $
  */
 
 #include <assert.h>
@@ -370,7 +370,7 @@ void process_line(int project, int line, const char *origbuf)
             break;
         }
 
-        // Force os 43 to be os 17
+        // Force os 43 to be os 27 (rhapsody vs mac os x)
         if ( strcmp(os, "43") == 0 ) {
             os = "27";
         }
@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
         if (strcmp(argv[2], "-pproxy") == 0) {
             pproxy = true;
         } else {
-            if (argc = 3 && strcmp(argv[2], "-logdb") == 0) {
+            if (argc == 3 && strcmp(argv[2], "-logdb") == 0) {
                 logdb = true;
             } else {
                 usage();
