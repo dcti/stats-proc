@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.23 2006/02/15 19:30:43 jlawson Exp $
+ * $Id: logmod.cpp,v 1.24 2006/02/15 19:54:09 decibel Exp $
  */
 
 #include <assert.h>
@@ -366,8 +366,8 @@ void process_line(int project, int line, const char *origbuf)
         int nstatus = atoi(status);
         switch (project) {
         case OGR:
-            if ( !pproxy && !(nstatus >= -5 && nstatus <= 5) ) {
-                error(line, "status not between -5 and 5", origbuf);
+            if ( !pproxy && !(nstatus >= 0 && nstatus <= 2) ) {
+                error(line, "status not between 0 and 2", origbuf);
                 return;
             }
             break;
