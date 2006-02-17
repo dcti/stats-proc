@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.24 2006/02/15 19:54:09 decibel Exp $
+ * $Id: logmod.cpp,v 1.25 2006/02/17 20:34:18 decibel Exp $
  */
 
 #include <assert.h>
@@ -372,8 +372,8 @@ void process_line(int project, int line, const char *origbuf)
             }
             break;
         case OGRP2:
-            if ( !pproxy && !(nstatus >= 0) ) {
-                error(line, "status not 0 or greater", origbuf);
+            if ( !pproxy && !(nstatus >= -1) ) {
+                error(line, "status not -1 or greater", origbuf);
                 return;
             }
             break;
