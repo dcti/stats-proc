@@ -1,4 +1,4 @@
-BADLOG: line 9: (status not 0 or greater) 08/25/03 04:16:44,127.0.0.1,bad.status@distributed.net,25/31-3-11-6-9-7,16025832509,4,1,90050483,-1
+BADLOG: line 10: (status not -1 or greater) 08/25/03 04:16:44,127.0.0.1,bad.status@distributed.net,25/31-3-11-6-9-7,16025832509,4,1,90050483,-2
 20030825,moo@cow.com,25,258879543675,1,1,8015
 20080325,moo@cow.com,25,258879543675,1,1,8015
 20080325,comma.moo@cow.com,25,258879543675,1,1,8015
@@ -7,5 +7,6 @@ BADLOG: line 9: (status not 0 or greater) 08/25/03 04:16:44,127.0.0.1,bad.status
 20030825,good.status1@distributed.net,25,16025832509,4,1,9005
 20030825,good.status2@distributed.net,25,16025832509,4,1,9005
 20030825,good.status3@distributed.net,25,16025832509,4,1,9005
+20030825,good.status33@distributed.net,25,16025832509,4,1,9005
 20030825,-email@with.leading.dash.com,25,16025832509,4,1,9005
 20030825,bad@os.id,25,6817385039,27,43,8019
