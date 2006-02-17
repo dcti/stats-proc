@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.25 2006/02/17 20:34:18 decibel Exp $
+ * $Id: logmod.cpp,v 1.26 2006/02/17 20:56:34 jlawson Exp $
  */
 
 #include <assert.h>
@@ -116,6 +116,7 @@ void process_line(int project, int line, const char *origbuf)
         sane = (trailing == 6 || trailing == 9);
         break;
     case OGR:
+    case OGRP2:
         if (pproxy) {
             sane = (trailing == 5);
         } else {
@@ -228,14 +229,13 @@ void process_line(int project, int line, const char *origbuf)
           wantedfields = 5;  // size,cpu,os,version,coreid
           break;
         case OGR:
+        case OGRP2:
           if (pproxy) {
               wantedfields = 4;  // size,cpu,os,version
           } else {
               wantedfields = 5;  // size,cpu,os,version,status
           }
           break;
-        case OGRP2:
-          // TODO
         default:
           error(line, "unexpected project", origbuf);
           abort();
@@ -276,6 +276,7 @@ void process_line(int project, int line, const char *origbuf)
             status  = "0";      // coreid is ignored
             break;
         case OGR:
+        case OGRP2:
             if (pproxy) {
                 size    = endfieldptrs[3];
                 os      = endfieldptrs[2];
@@ -290,8 +291,6 @@ void process_line(int project, int line, const char *origbuf)
                 status  = endfieldptrs[0];
             }
             break;
-        case OGRP2:
-            // TODO
         default:
             error(line, "unexpected project", origbuf);
             abort();
@@ -313,14 +312,13 @@ void process_line(int project, int line, const char *origbuf)
             projectid = "8";
             break;
         case OGR:
+        case OGRP2:
             projectid = q+1;
             projectid[2] = 0;
             if (atoi(projectid) == 26) {
                 projectid = "25";
             }
             break;
-        case OGRP2:
-            // TODO
         default:
             error(line, "unexpected project", origbuf);
             abort();
