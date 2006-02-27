@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.133 2005/12/22 20:59:54 nerf Exp $
+# $Id: hourly.pl,v 1.134 2006/02/27 15:58:30 nerf Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -366,7 +366,7 @@ sub process ($$$$$) {
 }
 
 #
-# process
+# process_logdb
 #
 sub process_logdb ($$$$$) {
   my ( $project, $workdir, $basefn, $yyyymmdd, $hh ) = @_;
@@ -429,12 +429,6 @@ sub process_logdb ($$$$$) {
 #
 sub num_format ($) {
   my ($f_num) = @_;
-
-#
-# num_format
-#
-sub num_format ($) {
-  my ($f_num) = @_;
   my $f_outstr = "";
   my $f_counter = 0;
   my $f_dotspot = 0;
@@ -482,27 +476,6 @@ sub rate_calc ($$) {
   return $f_outstr;
 }
 
-#
-# logdb
-#
-sub logdb ($$$) {
-  my ($project, $workdir, $rawfn) = @_;
-  my $logproject = "logdb";
-
-  my $finalfn = filter( $logproject, $workdir, $rawfn, $statsconf::logdb{prefilter} );
-
-  my $bcprows = bcp( $logproject, $workdir, $finalfn, $statsconf::logdatabase );
-  #cmh
-
-  my ( $sqlrows, $skippedrows ) = process( $project, $workdir, $basefn, $yyyymmdd, $hh );
-
-  # perform sanity checking here
-  if ( ( $sqlrows + $skippedrows ) != $bcprows ) {
-    stats::log($project,128+8+2+1,"Row counts for BCP($bcprows) and SQL( $sqlrows + $skippedrows ) do not match, aborting.");
-    die;
-  }
-  stats::log($project,1,"$basefn successfully processed.");
-}
 
 #
 # main
@@ -619,11 +592,18 @@ while ($respawn and not -e 'stop') {
 
       #Load log into log db.
       if ($statsconf::logdb) {
-        if (logdb($workdir, $rawfn)) {
-          stats::log("logdb",1,"$basefn successfully processed.")
-        };
+          my $logproject = "logdb";
+          my $finalfn = filter( $logproject, $workdir, $rawfn, $statsconf::logdb{prefilter} );
+          my $bcprows = bcp( $logproject, $workdir, $finalfn, $statsconf::logdatabase );
+          my ( $sqlrows, $skippedrows ) = process_logdb( $project, $workdir, $basefn, $yyyymmdd, $hh );
+          # perform sanity checking here
+          if ( ( $sqlrows + $skippedrows ) != $bcprows ) {
+            stats::log($project,128+8+2+1,"Row counts for BCP($bcprows) and SQL( $sqlrows + $skippedrows ) do not match, aborting.");
+            die;
+          }
+          stats::log($project,1,"$basefn successfully processed into $logproject.");
       }
-        
+
         #Now do the real processing
         my $finalfn = filter( $project, $workdir, $rawfn, $prefilter );
 
