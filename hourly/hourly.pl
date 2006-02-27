@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.134 2006/02/27 15:58:30 nerf Exp $
+# $Id: hourly.pl,v 1.135 2006/02/27 16:17:49 nerf Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -366,7 +366,57 @@ sub process ($$$$$) {
 }
 
 #
-# process_logdb
+# logdb_lock
+#
+
+sub logdb_lock ($$$) {
+  my ($project, $yyyymmdd, $hh) = @_;
+  local $logdbh->{RaiseError} = 0;  # localize and turn off for this block
+  local $logdbh->{AutoCommit} = 1;  # localize and turn on for this block
+  # "Locks" a record in logdb.  This should not be confused with
+  # real semaphores
+  #
+  # Returns {SUCCESS|FAIL_STARTEDs|FAIL_FINISHED}
+  # FAIL_STARTED means the log was started but has not (yet) been finished
+  # FAIL_FINISHED means the log was started and finished
+  
+  my $lockcmd = qq(
+    INSERT INTO history(project,logday,loghour,starttime)
+      VALUES (?,?,?, now()::timestamp)
+  );
+  $lockstd = $logdbh->prepare($lockcmd);
+
+  if ($locksth->execute($project, $yyyymmdd, $hh)) {
+    $locksth->finish;
+    return "SUCCESS";
+  } else {
+    $histsth = $logdbh->prepare(q(
+      SELECT project,logday,loghour,starttime,endtime
+        FROM history
+        WHERE project=?
+        AND logday=?
+        AND loghour=?));
+    $histsth->execute($project, $yyyymmdd, $hh);
+    if ($histsth->rows != 1) {
+      stats::log($project,128+8+2+1,"Two rows found in history for $project, $yyyymmdd, $hh. Aborting.");
+      die;
+    }
+
+    ($rproject,$rlogday,$rloghour,$rstarttime,$rendtime) = $histsth->fetchrow_array;
+    $histsth->finish;
+    $locksth->finish;
+    if ($rendtime == '') {
+      return "FAIL_STARTED";
+    } else {
+      return "FAIL_FINISHED";
+    };
+
+    # We shouldn't reach here
+  }
+};
+
+#
+# process logdb
 #
 sub process_logdb ($$$$$) {
   my ( $project, $workdir, $basefn, $yyyymmdd, $hh ) = @_;
@@ -380,10 +430,6 @@ sub process_logdb ($$$$$) {
   my $psqlsuccess = 0;
   my $sqlrows = 0;
   my $skippedrows = 0;
-  my $lockcmd = qq(
-    INSERT INTO history(project,logday,loghour,starttime)
-      VALUES ($project,$yyyymmdd, $hh, now()::timestamp)
-  );
   my $cmd = "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |";
 
   stats::debug (5,"process: command: $cmd\n");
@@ -475,7 +521,6 @@ sub rate_calc ($$) {
 
   return $f_outstr;
 }
-
 
 #
 # main
@@ -602,6 +647,7 @@ while ($respawn and not -e 'stop') {
             die;
           }
           stats::log($project,1,"$basefn successfully processed into $logproject.");
+
       }
 
         #Now do the real processing
