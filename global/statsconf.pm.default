@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.21 2005/05/12 22:54:35 decibel Exp $
+# $Id: statsconf.pm.default,v 1.22 2007/01/01 22:58:23 decibel Exp $
 #
 # Stats global configuration
 #
@@ -42,6 +42,7 @@ $lockfile = "$homedir/log/statsrun.lck";
 %prefilter = (
 	"r72"	=> "./logmod/logmod -rc572",
 	"ogr"	=> "./logmod/logmod -ogr",
+	"ogrp2"	=> "./logmod/logmod -ogrp2",
 );
 
 # the $dctievent variable holds the hostname of the irc repeater
