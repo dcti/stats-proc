@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.51 2005/09/05 15:07:29 decibel Exp $
+# $Id: integrate.sql,v 1.52 2007/01/01 22:57:35 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -20,6 +20,8 @@ Accept BCPcount as an argument and puke if our rowcounts don't match
 
 \t
 \set ON_ERROR_STOP 1
+
+BEGIN;
 
 /* Create a temp table that lets us know what project(s) we're working on here */
 /* [BW] If this step wasn't here, it would be possible to run integrate without
@@ -269,7 +271,6 @@ insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
 ;
 
 \echo Moving data from temptable to Platform_Contrib_Today
-BEGIN;
 delete from Platform_Contrib_Today
     where PROJECT_ID IN (SELECT project_id
                                                 FROM TEMP_Projects p
