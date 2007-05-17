@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.136 2007/05/17 21:24:05 decibel Exp $
+# $Id: hourly.pl,v 1.137 2007/05/17 21:35:46 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -371,6 +371,41 @@ sub process ($$$$$) {
 
 sub logdb_lock ($$$) {
   my ($project, $yyyymmdd, $hh) = @_;
+
+  # This is not how we want to be doing this... we should use the locking built into the database. Basically, we need to
+  #
+  # BEGIN;
+  #   INSERT INTO log_history
+  #   -- Do processing
+  #   UPDATE log_history SET lines, badlines, endtime
+  # COMMIT;
+  #
+  # That's what things will look like to the database connection that's
+  # handling the locking. If we wanted to we could actually do the processing
+  # in that connection as well, but we don't have to. If there's an error we
+  # just do a ROLLBACK on that transaction and abort. If we wanted to get
+  # fancy, we could make the entry but mark it as having an error so we could
+  # continue processing, but I don't think it's worth it.
+  #
+  # Something that needs to be said... it's *super critical* that we either
+  # commit or rollback that transaction on a log-by-log basis. We might just
+  # want to make it part if integrate.sql, but that would mean not being able
+  # to process logs asyncronously with multiple loading daemons. Well, at least
+  # not very well... So I think we might want to stick with logdb_lock and
+  # logdb_unlock. It's just important to make sure that logdb_lock starts a
+  # transaction, that logdb_unlock closes that transaction with COMMIT or
+  # ROLLBACK, and that we make sure to call both of them. Luckily, we shouldn't
+  # have to go to the extent of trying to trap signals in perl or anything...
+  # if perl dies so does the database connection (eventually) and the
+  # transaction rolls back.
+  # 
+  # Now that I think about it... the problem we'd face with this process and
+  # trying to do multiple loading backends is that that INSERT will just sit
+  # there waiting. Maybe a good way around that would be to set
+  # statement_timeout to something like 5 seconds.
+  #
+  # Note that this was discussed in #dcti on Feb 27 2006
+  
   local $logdbh->{RaiseError} = 0;  # localize and turn off for this block
   local $logdbh->{AutoCommit} = 1;  # localize and turn on for this block
   # "Locks" a record in logdb.  This should not be confused with
