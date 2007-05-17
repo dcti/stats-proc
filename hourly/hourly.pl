@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.137 2007/05/17 21:35:46 decibel Exp $
+# $Id: hourly.pl,v 1.138 2007/05/17 21:39:24 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -404,6 +404,9 @@ sub logdb_lock ($$$) {
   # there waiting. Maybe a good way around that would be to set
   # statement_timeout to something like 5 seconds.
   #
+  # One last thing... we only need per-logfile locking to safely allow multiple
+  # importing processes, so we don't need this to get started.
+  #
   # Note that this was discussed in #dcti on Feb 27 2006
   
   local $logdbh->{RaiseError} = 0;  # localize and turn off for this block
@@ -669,6 +672,10 @@ while ($respawn and not -e 'stop') {
     #     loop
     #   loop
     # loop
+    # 
+    # Having said all of that... I think the first step should be to just get
+    # logdb importing during regular statsrun. We could even do that without
+    # the per-logfile locking code for a start.
     
     my ($logtoload,$logext,$qualcount) = findlog($project, $logprefix);
     stats::debug(4, "findlog returned logtoload: '$logtoload' logext: '$logext' qualcount: $qualcount\n");
