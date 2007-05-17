@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.135 2006/02/27 16:17:49 nerf Exp $
+# $Id: hourly.pl,v 1.136 2007/05/17 21:24:05 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -568,6 +568,7 @@ while ($respawn and not -e 'stop') {
 
     my $sourcelist = $statsconf::logsource{$project};
     stats::debug(2,"sourcelist: $sourcelist\n");
+    # This is ugly; we're storing the server and file directory info in an array here, but there may not be a server...
     my @server = split /:/, $sourcelist;
     if(!defined($server[1])) {
       $server[1] = $server[0];
@@ -585,9 +586,59 @@ while ($respawn and not -e 'stop') {
       die;
     }
 
+    # Find the log that we should load
+    #
+    # Right now this is very tied into the old stats process. We need to expand
+    # things to allow for the log database. I think the best way to do that
+    # would be to have a function that loads the list of log files into memory
+    # from the master. We'd take the output of that and find what log files are
+    # needed in both databases and process those. Once that's done, we can
+    # start looking for files that haven't be imported into the log database,
+    # as a separate phase.
+    #
+    # There's one thing that's a bit tricky about that... we currently do a
+    # crappy job of detecting when compression is running, so we just punt to
+    # running far enough past the hour that it doesn't matter. Well, that would
+    # break if we end up in a permanent loop processing old logdb stuff. So I
+    # think we want to split things into two phases. The first phase would
+    # handle stats and logdb imports. The second phase would handle only logdb
+    # imports, but it would have a time limit that would cause an exit once the
+    # *statsrun* had been going on for too long, so that we'd be sure to exit
+    # before cron tried to fire up again.
+    #
+    # BTW, in each phase I think we'd want to rotate through projects while doing logs. So, here's what I think the final code needs to look like:
+    #
+    # for each project_type
+    #   load list of available logs into $logfiles{$project_type} (which is an array)
+    #   # Actually, I think we might want to just load the logs into the database... it's a lot easier to work with sets there than in perl!!
+    # 
+    # # start stats process loop
+    # while there's any stats work to do
+    #   for each project_type
+    #     process next logfile for that project type. We'll need to change findlog so that it uses the array of logfiles
+    #     if that logfile was -23, spawn a daily run
+    #
+    # Ok, now the stats work is done and we can concentrate on logdb importing
+    # First, find a log to work on. Actually, the best way to do this might
+    # well be to convert all the logfiles into a table of log_timestamps, and
+    # then have the database produce a list of logs that haven't been worked
+    # on.
+    #
+    # Now that we've got a list... (ok, a set of them...)
+    # while timeout hasn't expired
+    #   for each project_type
+    #     for each log in $list{$project_type}
+    #       scp and decompress (should be able to use same code as stats)
+    #       bcp into logdb
+    #       run logdb integrate.sql
+    #     loop
+    #   loop
+    # loop
+    
     my ($logtoload,$logext,$qualcount) = findlog($project, $logprefix);
     stats::debug(4, "findlog returned logtoload: '$logtoload' logext: '$logext' qualcount: $qualcount\n");
 
+    # Check the time of logtoload compared to our last run and see if we're missing a log
     if( $qualcount > 0 ) {
       my ($yyyymmdd, $hh) = split /-/, $logtoload;
       if (! defined($hh) ) {
