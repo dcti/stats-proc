@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.52 2007/01/01 22:57:35 decibel Exp $
+# $Id: integrate.sql,v 1.53 2007/06/06 17:40:30 decibel Exp $
 #
 # Move data from the import_bcp table to the daytables
 #
@@ -233,10 +233,10 @@ insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 
 /* First, make sure we don't have any crap in the logs */
 update import_bcp set CPU = 0
-    where CPU > (select max(CPU)+20 from STATS_cpu)
+    where CPU NOT BETWEEN 0 AND (select max(CPU)+20 from STATS_cpu)
 ;
 update import_bcp set OS = 0
-    where OS > (select max(OS)+20 from STATS_os)
+    where OS NOT BETWEEN 0 AND (select max(OS)+20 from STATS_os)
 ;
 
 create TEMP table TEMP_Platform_Contrib_Today
