@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.139 2007/06/17 01:33:26 decibel Exp $
+# $Id: hourly.pl,v 1.140 2007/06/17 04:54:05 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -730,9 +730,13 @@ while ($respawn and not -e 'stop') {
 
       # Load log into log db.
       if ($statsconf::logdb) {
-        # We shouldn't just assume we can load the log; we should check to make sure it's not already in the database
+
+          # XXX We shouldn't just assume we can load the log; we should check to make sure it's not already in the database
 
           my $logproject = "logdb";
+
+          # First, start a transaction in the database. We'll use it's start time later when we call integrate
+          $stats::logdbh->begin_work or die $stats::logdbh->errstr;
 
           # Filter the logfile
           my $finalfn = filter( $logproject, $workdir, $rawfn, $statsconf::logdb{prefilter} );
@@ -741,13 +745,33 @@ while ($respawn and not -e 'stop') {
           my $bcprows = bcp( $logproject, $workdir, $finalfn, $statsconf::logdatabase );
           
           # Do the actual processing
-          my ( $sqlrows, $skippedrows ) = process_logdb( $project, $workdir, $basefn, $yyyymmdd, $hh );
+          #my ( $sqlrows, $skippedrows ) = process_logdb( $project, $workdir, $basefn, $yyyymmdd, $hh );
+          my $stmt = $stats::logdbh->prepare("SELECT * FROM integrate(?, ?::date, ?, now() AT TIMEZONE 'UTC')");
+          if (! $stmt->execute($project, $yyyymmdd, $hh); ) {
+              stats::log($project,131,"Error calling integrate(): + $logdbh->errstr");
+              die;
+          }
+          # XXX This is stupendously ugly... we should be getting a hash instead of an array
+          if (! (@result = $stmt->fetchrow_array) ) {
+              stats::log($project,131,'Unable to call integrate()!');
+              die;
+          }
+          my $new_emails = $result[0];
+          my $new_platforms = $result[1];
+          my $inserted_rows = $result[2];
+          my $deleted_rows = $result[3];
+          # I suspect this is going to leak memory without a close.. if we stuffed all this into a function it'd probably be OK though, since everything is local variables
+
           # perform sanity checking here
-          if ( ( $sqlrows + $skippedrows ) != $bcprows ) {
-            stats::log($project,128+8+2+1,"Row counts for BCP($bcprows) and SQL( $sqlrows + $skippedrows ) do not match, aborting.");
+          if ( ( $inserted_rows ) != $bcprows ) {
+            stats::log($project,128+8+2+1,"Row counts for BCP($bcprows) and SQL( $inserted_rows ) do not match, aborting.");
             die;
           }
-          stats::log($project,1,"$basefn successfully processed into $logproject.");
+          if (! $stats::logdbh->commit ) {
+              stats::log($project,131,"Unable to commit: $logdbh->errstr");
+              die;
+          }
+          stats::log($project,1,"$basefn successfully processed into $logproject ($new_emails new emails, $new_platforms new platforms).");
 
       }
 
