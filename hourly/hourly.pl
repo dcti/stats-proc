@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.138 2007/05/17 21:39:24 decibel Exp $
+# $Id: hourly.pl,v 1.139 2007/06/17 01:33:26 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -390,7 +390,7 @@ sub logdb_lock ($$$) {
   # Something that needs to be said... it's *super critical* that we either
   # commit or rollback that transaction on a log-by-log basis. We might just
   # want to make it part if integrate.sql, but that would mean not being able
-  # to process logs asyncronously with multiple loading daemons. Well, at least
+  # to process logs asynchronously with multiple loading daemons. Well, at least
   # not very well... So I think we might want to stick with logdb_lock and
   # logdb_unlock. It's just important to make sure that logdb_lock starts a
   # transaction, that logdb_unlock closes that transaction with COMMIT or
@@ -728,11 +728,19 @@ while ($respawn and not -e 'stop') {
         stats::log($project,128+8+2+1,"$basefn failed decompression!");
       } else {
 
-      #Load log into log db.
+      # Load log into log db.
       if ($statsconf::logdb) {
+        # We shouldn't just assume we can load the log; we should check to make sure it's not already in the database
+
           my $logproject = "logdb";
+
+          # Filter the logfile
           my $finalfn = filter( $logproject, $workdir, $rawfn, $statsconf::logdb{prefilter} );
+
+          # COPY the log data into the database
           my $bcprows = bcp( $logproject, $workdir, $finalfn, $statsconf::logdatabase );
+          
+          # Do the actual processing
           my ( $sqlrows, $skippedrows ) = process_logdb( $project, $workdir, $basefn, $yyyymmdd, $hh );
           # perform sanity checking here
           if ( ( $sqlrows + $skippedrows ) != $bcprows ) {
