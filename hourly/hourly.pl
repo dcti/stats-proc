@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.140 2007/06/17 04:54:05 decibel Exp $
+# $Id: hourly.pl,v 1.141 2007/10/24 21:13:20 nerf Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -409,8 +409,8 @@ sub logdb_lock ($$$) {
   #
   # Note that this was discussed in #dcti on Feb 27 2006
   
-  local $logdbh->{RaiseError} = 0;  # localize and turn off for this block
-  local $logdbh->{AutoCommit} = 1;  # localize and turn on for this block
+  local $stats::logdbh->{RaiseError} = 0;  # localize and turn off for this block
+  local $stats::logdbh->{AutoCommit} = 1;  # localize and turn on for this block
   # "Locks" a record in logdb.  This should not be confused with
   # real semaphores
   #
@@ -422,13 +422,13 @@ sub logdb_lock ($$$) {
     INSERT INTO history(project,logday,loghour,starttime)
       VALUES (?,?,?, now()::timestamp)
   );
-  $lockstd = $logdbh->prepare($lockcmd);
+  my $locksth = $stats::logdbh->prepare($lockcmd);
 
   if ($locksth->execute($project, $yyyymmdd, $hh)) {
     $locksth->finish;
     return "SUCCESS";
   } else {
-    $histsth = $logdbh->prepare(q(
+    my $histsth = $stats::logdbh->prepare(q(
       SELECT project,logday,loghour,starttime,endtime
         FROM history
         WHERE project=?
@@ -440,7 +440,7 @@ sub logdb_lock ($$$) {
       die;
     }
 
-    ($rproject,$rlogday,$rloghour,$rstarttime,$rendtime) = $histsth->fetchrow_array;
+    my ($rproject,$rlogday,$rloghour,$rstarttime,$rendtime) = $histsth->fetchrow_array;
     $histsth->finish;
     $locksth->finish;
     if ($rendtime == '') {
@@ -747,11 +747,12 @@ while ($respawn and not -e 'stop') {
           # Do the actual processing
           #my ( $sqlrows, $skippedrows ) = process_logdb( $project, $workdir, $basefn, $yyyymmdd, $hh );
           my $stmt = $stats::logdbh->prepare("SELECT * FROM integrate(?, ?::date, ?, now() AT TIMEZONE 'UTC')");
-          if (! $stmt->execute($project, $yyyymmdd, $hh); ) {
-              stats::log($project,131,"Error calling integrate(): + $logdbh->errstr");
+          if (! $stmt->execute($project, $yyyymmdd, $hh) ) {
+              stats::log($project,131,"Error calling integrate(): + $stats::logdbh->errstr");
               die;
           }
           # XXX This is stupendously ugly... we should be getting a hash instead of an array
+	  my @result = ();
           if (! (@result = $stmt->fetchrow_array) ) {
               stats::log($project,131,'Unable to call integrate()!');
               die;
@@ -768,7 +769,7 @@ while ($respawn and not -e 'stop') {
             die;
           }
           if (! $stats::logdbh->commit ) {
-              stats::log($project,131,"Unable to commit: $logdbh->errstr");
+              stats::log($project,131,"Unable to commit: $stats::logdbh->errstr");
               die;
           }
           stats::log($project,1,"$basefn successfully processed into $logproject ($new_emails new emails, $new_platforms new platforms).");
