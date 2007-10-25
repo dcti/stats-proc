@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.27 2007/10/25 20:10:16 snikkel Exp $
+ * $Id: logmod.cpp,v 1.28 2007/10/25 21:13:08 nerf Exp $
  */
 
 #include <assert.h>
@@ -84,10 +84,11 @@ void process_line(int project, int line, const char *origbuf)
         error(line, "no comma after date", origbuf);
         return;
     }
+    *p = 0;
     p++;
-    // next field is ip address which we don't care about
-    p = charfwd(p, ',');
+    // next field is ip address
     char *ip = p;
+    p = charfwd(p, ',');
     if (p == NULL) {
         error(line, "no comma after ip", origbuf);
         return;
@@ -168,8 +169,8 @@ void process_line(int project, int line, const char *origbuf)
             if (atoi(projectid) == 26) {
                 projectid = "25";
             }
-            // TODO strip off leading ruler length
-            workunit_id = fields[0];
+            // strip off leading ruler length
+            workunit_id = fields[0]+3;
             size        = fields[1];
             os          = fields[2];
             cpu         = fields[3];
@@ -192,8 +193,8 @@ void process_line(int project, int line, const char *origbuf)
                     break;
             }
 
-            // TODO strip off leading ruler length
-            workunit_id = fields[0];
+            // strip off leading ruler length
+            workunit_id = fields[0]+3;
             size        = fields[1];
             os          = fields[2];
             cpu         = fields[3];
@@ -328,10 +329,12 @@ void process_line(int project, int line, const char *origbuf)
     }
 
     // convert version to exclude buildfrac if it had it.
-    int iversion = atoi(version);
-    if (iversion >= 90010477 && 
-        iversion <  99000000) {
-        sprintf(version, "%d", iversion / 10000);
+    if (!logdb) {
+    	int iversion = atoi(version);
+    	if (iversion >= 90010477 && 
+        	iversion <  99000000) {
+       		sprintf(version, "%d", iversion / 10000);
+    	}
     }
 
     // translate any commas in the email to periods.
