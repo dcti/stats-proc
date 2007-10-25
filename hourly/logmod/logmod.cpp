@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.26 2006/02/17 20:56:34 jlawson Exp $
+ * $Id: logmod.cpp,v 1.27 2007/10/25 20:10:16 snikkel Exp $
  */
 
 #include <assert.h>
@@ -416,28 +416,27 @@ int main(int argc, char *argv[])
         usage();
     }
 
+    pproxy = false;
+    logdb = false;
+ 
     if (argc > 2) {
         if (strcmp(argv[2], "-pproxy") == 0) {
             pproxy = true;
-        } else {
-            if (argc == 3 && strcmp(argv[2], "-logdb") == 0) {
-                logdb = true;
-            } else {
-                usage();
-            }
-        }
-    } else {
-        pproxy = false;
-    }
-
-    if (argc > 3) {
-        if (strcmp(argv[2], "-logdb") == 0) {
+        } else if (strcmp(argv[2], "-logdb") == 0) {
             logdb = true;
         } else {
             usage();
         }
-    } else {
-        logdb = false;
+    }
+
+    if (argc > 3) {
+        if (strcmp(argv[3], "-pproxy") == 0) {
+            pproxy = true;
+        } else if (strcmp(argv[3], "-logdb") == 0) {
+            logdb = true;
+        } else {
+            usage();
+        }
     }
 
     char buf[256];
