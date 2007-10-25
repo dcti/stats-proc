@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.141 2007/10/24 21:13:20 nerf Exp $
+# $Id: hourly.pl,v 1.142 2007/10/25 04:29:44 nerf Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -17,6 +17,7 @@
 
 use strict;
 $ENV{PATH} = '/usr/local/bin:/usr/bin:/bin';
+delete $ENV{ENV};
 
 #$0 =~ /(.*\/)([^\/]+)/;
 #my $cwd = $1;
@@ -82,7 +83,7 @@ sub findlog ($$) {
       return "","",0;
     } 
   } else {
-    if( !open LS, "ls -l $server[0] | grep $logprefix |" ) {
+    if( !open LS, "/bin/ls -l $server[0] | /usr/bin/grep $logprefix |" ) {
       stats::log($project,128+2+1,"Unable to contact log source!");
       return "","",0;
     } 
@@ -365,14 +366,7 @@ sub process ($$$$$) {
   return $sqlrows, $skippedrows;
 }
 
-#
-# logdb_lock
-#
-
-sub logdb_lock ($$$) {
-  my ($project, $yyyymmdd, $hh) = @_;
-
-  # This is not how we want to be doing this... we should use the locking built into the database. Basically, we need to
+  # Basically, we need to
   #
   # BEGIN;
   #   INSERT INTO log_history
@@ -409,104 +403,6 @@ sub logdb_lock ($$$) {
   #
   # Note that this was discussed in #dcti on Feb 27 2006
   
-  local $stats::logdbh->{RaiseError} = 0;  # localize and turn off for this block
-  local $stats::logdbh->{AutoCommit} = 1;  # localize and turn on for this block
-  # "Locks" a record in logdb.  This should not be confused with
-  # real semaphores
-  #
-  # Returns {SUCCESS|FAIL_STARTEDs|FAIL_FINISHED}
-  # FAIL_STARTED means the log was started but has not (yet) been finished
-  # FAIL_FINISHED means the log was started and finished
-  
-  my $lockcmd = qq(
-    INSERT INTO history(project,logday,loghour,starttime)
-      VALUES (?,?,?, now()::timestamp)
-  );
-  my $locksth = $stats::logdbh->prepare($lockcmd);
-
-  if ($locksth->execute($project, $yyyymmdd, $hh)) {
-    $locksth->finish;
-    return "SUCCESS";
-  } else {
-    my $histsth = $stats::logdbh->prepare(q(
-      SELECT project,logday,loghour,starttime,endtime
-        FROM history
-        WHERE project=?
-        AND logday=?
-        AND loghour=?));
-    $histsth->execute($project, $yyyymmdd, $hh);
-    if ($histsth->rows != 1) {
-      stats::log($project,128+8+2+1,"Two rows found in history for $project, $yyyymmdd, $hh. Aborting.");
-      die;
-    }
-
-    my ($rproject,$rlogday,$rloghour,$rstarttime,$rendtime) = $histsth->fetchrow_array;
-    $histsth->finish;
-    $locksth->finish;
-    if ($rendtime == '') {
-      return "FAIL_STARTED";
-    } else {
-      return "FAIL_FINISHED";
-    };
-
-    # We shouldn't reach here
-  }
-};
-
-#
-# process logdb
-#
-sub process_logdb ($$$$$) {
-  my ( $project, $workdir, $basefn, $yyyymmdd, $hh ) = @_;
-  # Runs SQL-based processing for logdb
-  #
-  # Returns
-  #   Number of rows processed
-  #   Number of rows skipped
-
-  my $bufstorage = "";
-  my $psqlsuccess = 0;
-  my $sqlrows = 0;
-  my $skippedrows = 0;
-  my $cmd = "psql -d $statsconf::database -f integrate.sql -v ProjectType=\\'$project\\' -v LogDate=\\'$yyyymmdd\\' -v HourNumber=\\'$hh\\' 2> /dev/stdout |";
-
-  stats::debug (5,"process: command: $cmd\n");
-  if(!open SQL, $cmd) {
-    stats::log($project,128+8+2+1,"Error launching psql, aborting hourly run.");
-    die;
-  }
-  while (<SQL>) {
-    my $buf = sprintf("[%02s:%02s:%02s]",(gmtime)[2],(gmtime)[1],(gmtime)[0]) . $_;
-    chomp $buf;
-    if ( $buf ne '') {
-      stats::log($project,0,$buf);
-      $bufstorage = "$bufstorage$buf\n";
-    }
-    if( $_ =~ /^Msg|ERROR/ ) {
-      $psqlsuccess = 1;
-    } elsif ( $_ =~ /^ Total rows: *(\d+)/ ) {
-      $sqlrows = $1;
-    } elsif ( $_ =~ /^ Skipped *(\d+) rows from project/ ) {
-      $skippedrows = $1;
-
-      # Don't do this before grabbing $1
-      s/^ *//;
-      if ( $skippedrows != 0 ) {
-        stats::log($project,1,"$_");
-      }
-    }
-  }
-  close SQL;
-  if( $psqlsuccess > 0) {
-    stats::log($project,128+8+2+1,"integrate.sql failed on $basefn - aborting.  Details are in $workdir/psql_errors");
-    open SQERR, ">$workdir/psql_errors";
-    print SQERR "$bufstorage";
-    close SQERR;
-    die;
-  }
-
-  return $sqlrows, $skippedrows;
-}
 
 #
 # num_format
@@ -727,54 +623,6 @@ while ($respawn and not -e 'stop') {
       if( $rawfn eq "" ) {
         stats::log($project,128+8+2+1,"$basefn failed decompression!");
       } else {
-
-      # Load log into log db.
-      if ($statsconf::logdb) {
-
-          # XXX We shouldn't just assume we can load the log; we should check to make sure it's not already in the database
-
-          my $logproject = "logdb";
-
-          # First, start a transaction in the database. We'll use it's start time later when we call integrate
-          $stats::logdbh->begin_work or die $stats::logdbh->errstr;
-
-          # Filter the logfile
-          my $finalfn = filter( $logproject, $workdir, $rawfn, $statsconf::logdb{prefilter} );
-
-          # COPY the log data into the database
-          my $bcprows = bcp( $logproject, $workdir, $finalfn, $statsconf::logdatabase );
-          
-          # Do the actual processing
-          #my ( $sqlrows, $skippedrows ) = process_logdb( $project, $workdir, $basefn, $yyyymmdd, $hh );
-          my $stmt = $stats::logdbh->prepare("SELECT * FROM integrate(?, ?::date, ?, now() AT TIMEZONE 'UTC')");
-          if (! $stmt->execute($project, $yyyymmdd, $hh) ) {
-              stats::log($project,131,"Error calling integrate(): + $stats::logdbh->errstr");
-              die;
-          }
-          # XXX This is stupendously ugly... we should be getting a hash instead of an array
-	  my @result = ();
-          if (! (@result = $stmt->fetchrow_array) ) {
-              stats::log($project,131,'Unable to call integrate()!');
-              die;
-          }
-          my $new_emails = $result[0];
-          my $new_platforms = $result[1];
-          my $inserted_rows = $result[2];
-          my $deleted_rows = $result[3];
-          # I suspect this is going to leak memory without a close.. if we stuffed all this into a function it'd probably be OK though, since everything is local variables
-
-          # perform sanity checking here
-          if ( ( $inserted_rows ) != $bcprows ) {
-            stats::log($project,128+8+2+1,"Row counts for BCP($bcprows) and SQL( $inserted_rows ) do not match, aborting.");
-            die;
-          }
-          if (! $stats::logdbh->commit ) {
-              stats::log($project,131,"Unable to commit: $stats::logdbh->errstr");
-              die;
-          }
-          stats::log($project,1,"$basefn successfully processed into $logproject ($new_emails new emails, $new_platforms new platforms).");
-
-      }
 
         #Now do the real processing
         my $finalfn = filter( $project, $workdir, $rawfn, $prefilter );
