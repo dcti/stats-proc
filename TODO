@@ -1,0 +1,6 @@
+$Id: TODO,v 1.1 2007/10/25 04:21:14 nerf Exp $
+
+1a) Write script to output os,cpu names to file
+1b) Write script tp pick up file with os,cpu and import locally
+
+2) Clean up code and remove defunct code
