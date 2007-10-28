@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.23 2007/10/25 04:07:09 nerf Exp $
+# $Id: statsconf.pm.default,v 1.24 2007/10/28 22:47:19 decibel Exp $
 #
 # Stats global configuration
 #
@@ -43,7 +43,7 @@ $lockfile = "$homedir/log/statsrun.lck";
         "r72"   => "pproxyrc572",
         "ogr"   => "pproxyogr",
 
-%prefilter = (
+%logmod = (
 	"r72"	=> "./logmod/logmod -rc572 -pproxy",
 	"ogr"	=> "./logmod/logmod -ogr -pproxy",
 	"ogrp2"	=> "./logmod/logmod -ogrp2 -pproxy",

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.143 2007/10/28 22:11:22 nerf Exp $
+# $Id: hourly.pl,v 1.144 2007/10/28 22:47:19 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -250,27 +250,27 @@ sub uncompress ($$$$) {
 }
 
 #
-# filter
+# run_logmod
 #
-sub filter ($$$$) {
-  my ( $project, $workdir, $rawfn, $prefilter ) = @_;
-  # Get list of logs that are on the master
+sub run_logmod ($$$$) {
+  my ( $project, $workdir, $rawfn, $logmod ) = @_;
+  # Runs a raw logfile through logmod
   #
   # Returns
   #   final filename
 
   my $logdir = $statsconf::logdir{$project};
-  my $finalfn = "$rawfn.filtered";
-  if( $prefilter eq "" ) {
-    stats::log($project,0,"There is no log filter for this project, proceeding to bcp.");
+  my $finalfn = "$rawfn.modified";
+  if( $logmod eq "" ) {
+    stats::log($project,0,"There is no logmod for this project, proceeding to bcp.");
     $finalfn = $rawfn;
   } else {
-    `echo $rawfn >> $logdir/filter_$project.err`;
-    `cat $workdir$rawfn | $prefilter > $workdir$finalfn 2>> $logdir/filter_$project.err`;
+    `echo $rawfn >> $logdir/logmod_$project.err`;
+    `cat $workdir$rawfn | $logmod > $workdir$finalfn 2>> $logdir/logmod_$project.err`;
     if ($? == 0) {
-        stats::log($project,1,"$rawfn successfully filtered through $prefilter.");
+        stats::log($project,1,"$rawfn successfully processed by $logmod.");
     } else {
-        stats::log($project,128+2+1,"unable to filter $rawfn through $prefilter!");
+        stats::log($project,128+2+1,"unable to process $rawfn through $logmod!");
         die;
     }
   }
@@ -502,7 +502,7 @@ while ($respawn and not -e 'stop') {
       die;
     }
 
-    my $prefilter = $statsconf::prefilter{$project};
+    my $logmod = $statsconf::logmod{$project};
 
     my $logprefix = $project;
     if(defined($statsconf::logprefix{$project})) {
@@ -635,7 +635,7 @@ while ($respawn and not -e 'stop') {
       } else {
 
         #Now do the real processing
-        my $finalfn = filter( $project, $workdir, $rawfn, $prefilter );
+        my $finalfn = run_logmod( $project, $workdir, $rawfn, $logmod );
 
         my @databases = ();
         unshift (@databases, $statsconf::database);
