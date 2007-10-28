@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.144 2007/10/28 22:47:19 decibel Exp $
+# $Id: hourly.pl,v 1.145 2007/10/28 23:58:00 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -258,64 +258,70 @@ sub run_logmod ($$$$) {
   #
   # Returns
   #   final filename
+  #   number of initial rows
+  #   number of final rows
 
   my $logdir = $statsconf::logdir{$project};
   my $finalfn = "$rawfn.modified";
+  my $input_file = "$workdir$rawfn";
+  my $raw_rows;
+  my $final_rows;
+
+  $raw_rows = `wc -l $workdir$rawfn`;
+  chomp $raw_rows;
+
   if( $logmod eq "" ) {
     stats::log($project,0,"There is no logmod for this project, proceeding to bcp.");
     $finalfn = $rawfn;
+    $final_rows = $raw_rows;
   } else {
-    `echo $rawfn >> $logdir/logmod_$project.err`;
-    `cat $workdir$rawfn | $logmod > $workdir$finalfn 2>> $logdir/logmod_$project.err`;
+    my $output_file = "$workdir$finalfn";
+    my $error_file = "$logdir/logmod_$project.err";
+
+    `echo $rawfn >> $error_file`;
+    `cat $input_file | $logmod > $output_file 2>> $error_file`;
     if ($? == 0) {
         stats::log($project,1,"$rawfn successfully processed by $logmod.");
     } else {
         stats::log($project,128+2+1,"unable to process $rawfn through $logmod!");
         die;
     }
+    $final_rows = `wc -l $output_file`;
+    chomp $final_rows;
   }
-  return $finalfn;
+
+  return $finalfn, $raw_rows, $final_rows;
 }
 
 #
 # bcp
 #
 sub bcp ($$$$) {
-  my ( $project, $workdir, $finalfn, @databases ) = @_;
+  my ( $project, $workdir, $finalfn, $databases ) = @_;
   # Bulk copy data into the database
   #
   # Returns
   #   Number of rows copied
-  my $table = "";
 
-  my $bcprows = `cat $workdir$finalfn | wc -l`;
+  my $bcp_file = "$workdir$finalfn";
+  my $bcprows = `wc -l $bcp_file`;
   $bcprows =~ s/ +//g;
   chomp $bcprows;
 
-  foreach $database (@databases) {
+  my $bcp = `time ./bcp.sh $database $bcp_file 2>&1`;
+  if($? != 0) {
+    print "bcp error: $bcp\n";
+    stats::log($project,128+8+2+1,"Error launching BCP, aborting hourly run.");
+    die;
+  }
 
-    if ($database eq $statsconf::logdatabase) {
-      $table = "import";
-    } else {
-      $table = "import_bcp";
-    }
+  $bcp =~ /([0123456789.]+)/;
+  my $rate = int($bcprows / $1);
 
-    my $bcp = `time ./bcp.sh $database $workdir$finalfn $table 2>&1`;
-    if($? != 0) {
-      print "bcp error: $bcp\n";
-      stats::log($project,128+8+2+1,"Error launching BCP, aborting hourly run.");
-      die;
-    }
-
-    $bcp =~ /([0123456789.]+)/;
-    my $rate = int($bcprows / $1);
-
+  if($bcprows == 0) {
+    stats::log($project,128+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+  } else {
     stats::log($project,1,"$finalfn successfully BCP'd into $database; $bcprows rows at $rate rows/second.");
-
-
-    if($bcprows == 0) {
-      stats::log($project,128+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
-    }
   }
 
   return $bcprows;
@@ -633,19 +639,20 @@ while ($respawn and not -e 'stop') {
       if( $rawfn eq "" ) {
         stats::log($project,128+8+2+1,"$basefn failed decompression!");
       } else {
+        # If we're doing log_db stuff, do it first because of daily respawn...
+        if ($logdb) {
+          my $finalfn, $raw_rows, $logmod_rows = run_logmod( $project, $workdir, $rawfn, $logmod, $logdb );
+          my $bcprows = bcp( $project, $workdir, $finalfn, $statsconf::logdatabase );
 
-        #Now do the real processing
-        my $finalfn = run_logmod( $project, $workdir, $rawfn, $logmod );
+          # Note that process_log checks to make sure that logmod_rows equals select count(*) from import
+          $logdbh->do( "SELECT process_log( $yyyymmdd, $hh, uc($project), $raw_rows, $logmod_rows )" );
 
-        my @databases = ();
-        unshift (@databases, $statsconf::database);
-        if ($logdb) { unshift (@databases, $statsconf::logdatabase) }
-        my $bcprows = bcp( $project, $workdir, $finalfn, @databases );
-
-        if ($statsconf::logdb) {
-          $logdbh->do(SELECT process_log($yyyymmdd,$hh,uc($project)));
+          # Cleanup, but don't nuke the raw file!
+          unlink "$workdir$finalfn";
         }
 
+        my $finalfn, $raw_rows, $logmod_rows = run_logmod( $project, $workdir, $rawfn, $logmod, 0 );
+        my $bcprows = bcp( $project, $workdir, $finalfn, $statsconf::database );
         my ( $sqlrows, $skippedrows ) = process( $project, $workdir, $basefn, $yyyymmdd, $hh );
 
         # perform sanity checking here
