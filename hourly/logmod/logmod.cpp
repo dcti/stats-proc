@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.28 2007/10/25 21:13:08 nerf Exp $
+ * $Id: logmod.cpp,v 1.29 2007/10/28 19:47:24 nerf Exp $
  */
 
 #include <assert.h>
@@ -347,16 +347,48 @@ void process_line(int project, int line, const char *origbuf)
         *p = '.';
     }
 
+/* import table:
+*
+Table "public.import"
+Column      |            Type             | Modifiers 
+-----------------+-----------------------------+-----------
+return_time     | timestamp without time zone | not null
+os_type         | integer                     | not null
+cpu_type        | integer                     | not null
+version         | integer                     | not null
+core            | integer                     | 
+rc5_cmc_count   | integer                     | 
+project_id      | smallint                    | not null
+real_project_id | smallint                    | 
+rc5_iter        | smallint                    | 
+ogr_status      | smallint                    | 
+rc5_cmc_ok      | smallint                    | 
+ogr_nodecount   | bigint                      | 
+workunit_tid    | text                        | not null
+email           | character varying(64)       | not null
+rc5_cmc_last    | text                        | 
+ip_address      | text                        | 
+bad_ip_address  | text                        | 
+*/
+
+	    /* The idea here is that each row output can be imported directly
+	     * into the import table.  This means outputting null values for
+	     * fields that aren't used in a particular project.
+	     *
+	     * If any changes are made to the import table, they should be
+	     * reflected here as well.
+	     */
+
     if ( logdb ) {
         switch (project) {
             case OGR:
-                printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", date, ip, email, projectid, workunit_id, size, os, cpu, version, status);
+                printf("%s,%s,%s,%s,,,%s,,,%s,,%s,%s,%s,,%s,\n", date, os, cpu, version, projectid, status, size, workunit_id, email, ip);
                 break;
             case OGRP2:
-                printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", date, ip, email, real_project_id, workunit_id, size, os, cpu, version, status);
+                printf("%s,%s,%s,%s,,,%s,%s,,%s,,%s,%s,%s,,%s,\n", date, os, cpu, version, projectid, real_project_id, status, size, workunit_id, email, ip);
                 break;
             case RC572:
-                printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", date, ip, email, projectid, workunit_id, size, os, cpu, version, core, cmc_last, cmc_ok, status);
+                printf("%s,%s,%s,%s,%s,%s,%s,,%s,,%s,,%s,%s,%s,%s,\n",date,os,cpu,version,core,cmc_ok,projectid,status,cmc_ok,workunit_id,email,cmc_last,ip);
                 break;
             default:
                 error(line, "unexpected project", origbuf);
