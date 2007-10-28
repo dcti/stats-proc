@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.142 2007/10/25 04:29:44 nerf Exp $
+# $Id: hourly.pl,v 1.143 2007/10/28 22:11:22 nerf Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -281,31 +281,41 @@ sub filter ($$$$) {
 # bcp
 #
 sub bcp ($$$$) {
-  my ( $project, $workdir, $finalfn, $database ) = @_;
+  my ( $project, $workdir, $finalfn, @databases ) = @_;
   # Bulk copy data into the database
   #
   # Returns
   #   Number of rows copied
+  my $table = "";
 
   my $bcprows = `cat $workdir$finalfn | wc -l`;
   $bcprows =~ s/ +//g;
   chomp $bcprows;
 
-  my $bcp = `time ./bcp.sh $database $workdir$finalfn 2>&1`;
-  if($? != 0) {
-    print "bcp error: $bcp\n";
-    stats::log($project,128+8+2+1,"Error launching BCP, aborting hourly run.");
-    die;
-  }
+  foreach $database (@databases) {
 
-  $bcp =~ /([0123456789.]+)/;
-  my $rate = int($bcprows / $1);
+    if ($database eq $statsconf::logdatabase) {
+      $table = "import";
+    } else {
+      $table = "import_bcp";
+    }
 
-  stats::log($project,1,"$finalfn successfully BCP'd into $database; $bcprows rows at $rate rows/second.");
+    my $bcp = `time ./bcp.sh $database $workdir$finalfn $table 2>&1`;
+    if($? != 0) {
+      print "bcp error: $bcp\n";
+      stats::log($project,128+8+2+1,"Error launching BCP, aborting hourly run.");
+      die;
+    }
+
+    $bcp =~ /([0123456789.]+)/;
+    my $rate = int($bcprows / $1);
+
+    stats::log($project,1,"$finalfn successfully BCP'd into $database; $bcprows rows at $rate rows/second.");
 
 
-  if($bcprows == 0) {
-    stats::log($project,128+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+    if($bcprows == 0) {
+      stats::log($project,128+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
+    }
   }
 
   return $bcprows;
@@ -627,7 +637,14 @@ while ($respawn and not -e 'stop') {
         #Now do the real processing
         my $finalfn = filter( $project, $workdir, $rawfn, $prefilter );
 
-        my $bcprows = bcp( $project, $workdir, $finalfn, $statsconf::database );
+        my @databases = ();
+        unshift (@databases, $statsconf::database);
+        if ($logdb) { unshift (@databases, $statsconf::logdatabase) }
+        my $bcprows = bcp( $project, $workdir, $finalfn, @databases );
+
+        if ($statsconf::logdb) {
+          $logdbh->do(SELECT process_log($yyyymmdd,$hh,uc($project)));
+        }
 
         my ( $sqlrows, $skippedrows ) = process( $project, $workdir, $basefn, $yyyymmdd, $hh );
 
