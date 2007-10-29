@@ -1,8 +1,8 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.53 2007/06/06 17:40:30 decibel Exp $
+# $Id: integrate.sql,v 1.54 2007/10/29 00:20:45 decibel Exp $
 #
-# Move data from the import_bcp table to the daytables
+# Move data from the import table to the daytables
 #
 # Arguments:
 #       ProjectType (OGR, RC5, etc.)
@@ -26,7 +26,7 @@ BEGIN;
 /* Create a temp table that lets us know what project(s) we're working on here */
 /* [BW] If this step wasn't here, it would be possible to run integrate without
 **    importing any data, which could be useful if we can get data in
-**    Email_Contrib_Today format but not import_bcp format.
+**    Email_Contrib_Today format but not import format.
 */
 \echo Updating LAST_STATS_DATE for :ProjectType
 select p.PROJECT_ID, coalesce(min(TIME_STAMP), :LogDate ::date) as STATS_DATE
@@ -34,7 +34,7 @@ select p.PROJECT_ID, coalesce(min(TIME_STAMP), :LogDate ::date) as STATS_DATE
         , coalesce(sum(WORK_UNITS),0) * min(WORK_UNIT_IMPORT_MULTIPLIER) as TOTAL_WORK
         , count(i.*) as TOTAL_ROWS
     into TEMP TEMP_Projects
-    from import_bcp i RIGHT JOIN Projects p ON p.PROJECT_ID = i.PROJECT_ID
+    from import i RIGHT JOIN Projects p ON p.PROJECT_ID = i.PROJECT_ID
     where lower(p.PROJECT_TYPE) = lower(:ProjectType)
         and p.STATUS = 'O'
     group by p.PROJECT_ID
@@ -56,7 +56,7 @@ update TEMP_Projects
 select p.PROJECT_ID
         , count(i.*) as TOTAL_ROWS
     into TEMP TEMP_closed_Projects
-    from import_bcp i JOIN Projects p ON p.PROJECT_ID = i.PROJECT_ID
+    from import i JOIN Projects p ON p.PROJECT_ID = i.PROJECT_ID
     where lower(p.PROJECT_TYPE) = lower(:ProjectType)
         and p.STATUS != 'O'
     group by p.PROJECT_ID
@@ -77,7 +77,7 @@ update Project_statsrun
     where Project_statsrun.PROJECT_ID = p.PROJECT_ID
 ;
 
-\echo Rolling up data from import_bcp
+\echo Rolling up data from import
 create TEMP table TEMP_import
 (
     PROJECT_ID    smallint        not NULL,
@@ -92,7 +92,7 @@ insert into TEMP_import (PROJECT_ID, EMAIL, WORK_UNITS)
                                 from Projects p
                                 where p.PROJECT_ID = i.PROJECT_ID
                                 )
-    from import_bcp i, Project_statsrun ps, TEMP_Projects tp
+    from import i, Project_statsrun ps, TEMP_Projects tp
     where i.PROJECT_ID = ps.PROJECT_ID
         and i.PROJECT_ID = tp.PROJECT_ID
         and i.TIME_STAMP = ps.LAST_DATE
@@ -232,10 +232,10 @@ insert into TEMP_Email_Contrib_Today (PROJECT_ID, EMAIL, ID, WORK_UNITS)
 \echo Rolling up platform contributions
 
 /* First, make sure we don't have any crap in the logs */
-update import_bcp set CPU = 0
+update import set CPU = 0
     where CPU NOT BETWEEN 0 AND (select max(CPU)+20 from STATS_cpu)
 ;
-update import_bcp set OS = 0
+update import set OS = 0
     where OS NOT BETWEEN 0 AND (select max(OS)+20 from STATS_os)
 ;
 
@@ -256,7 +256,7 @@ insert into TEMP_Platform_Contrib_Today (PROJECT_ID, CPU, OS, VER, WORK_UNITS)
                                         where p.PROJECT_ID = i.PROJECT_ID
                                     )
 
-    from import_bcp i, Project_statsrun p
+    from import i, Project_statsrun p
     where i.PROJECT_ID = p.PROJECT_ID
         and i.TIME_STAMP = p.LAST_DATE
     group by i.PROJECT_ID, i.CPU, i.OS, i.VER
@@ -316,7 +316,7 @@ insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
 ;
 
 commit;
-TRUNCATE import_bcp;
+TRUNCATE import;
 
 -- Finally, report how many rows we handled
 SELECT 'Total rows: ' || sum(total_rows) FROM TEMP_Projects;
