@@ -1,5 +1,5 @@
 /*
-# $Id: yoyo_join.sql,v 1.1 2008/04/29 08:46:47 thejet Exp $
+# $Id: yoyo_join.sql,v 1.2 2008/05/01 03:50:09 thejet Exp $
 #
 # Accomodate yoyo@home wrapper client.  Auto-join participants
 # who have no team affiliation and whose email address is
@@ -8,7 +8,7 @@
 # Yoyo@home Team ID = 31743
 #
 # Arguments:
-#       ProjectID
+#      StatsDate 
 */
 \set ON_ERROR_STOP 1
 
@@ -17,11 +17,11 @@
 -- This query will only get yoyo participants who have never joined
 -- a team.
 \echo Building temporary tables
-SELECT par.id, ps.last_date AS join_date 
+SELECT par.id, :StatsDate::date AS join_date
     INTO TEMP new_yoyo
-    FROM stats_participant par, Project_statsrun ps
-    WHERE ps.project_id = :ProjectID
-        AND par.email LIKE '%@yoyo.rechenkraft.net'
+    FROM stats_participant par
+    WHERE 
+        par.email LIKE '%@yoyo.rechenkraft.net'
         AND NOT EXISTS(SELECT * FROM team_joins WHERE id = par.id)
 ;
 
