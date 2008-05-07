@@ -1,6 +1,8 @@
+# $Id: crontab,v 1.5 2008/05/07 11:02:17 thejet Exp $
 #
 # If you make changes to this crontab, make sure to commit them to
 # the crontab file in the stats-proc repository.  Thanks
 #
 3	*	*	*	*	cd /usr/home/statproc/dfmon && ./dfmon
 18	*	*	*	*	/home/statproc/stats-proc/misc/hourly.sh
+30	1	*	*	*	/home/statproc/stats-proc/misc/ogr_status_update
