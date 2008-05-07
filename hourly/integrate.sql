@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.54 2007/10/29 00:20:45 decibel Exp $
+# $Id: integrate.sql,v 1.55 2008/05/07 14:51:35 decibel Exp $
 #
 # Move data from the import table to the daytables
 #
@@ -217,6 +217,16 @@ update TEMP_Email_Contrib_Today
         and lower(de.EMAIL) = lower(TEMP_Email_Contrib_Today.EMAIL)
 ;
 
+-- For yoyo participants, automagically join them to the yoyo team.
+INSERT INTO team_joins( id, team_id, join_date )
+SELECT id, 31743, current_date
+    FROM stats_participant sp
+        JOIN TEMP_dayemails de ON( lower(de.email) = lower(sp.email) )
+    WHERE de.email ILIKE '%@yoyo.rechenkraft.net'
+        -- There is a race condition here, so ensure there's no existing team_join record
+        AND NOT EXISTS( SELECT * FROM team_joins WHERE id = sp.id )
+;
+
 /* Now, add the stuff from the previous hourly runs */
 \echo Copying Email_Contrib_Today into temptable
 
@@ -315,7 +325,7 @@ insert into Log_Info(PROJECT_ID, LOG_TIMESTAMP, WORK_UNITS, LINES, ERROR)
     from TEMP_Projects
 ;
 
-commit;
+COMMIT;
 TRUNCATE import;
 
 -- Finally, report how many rows we handled
