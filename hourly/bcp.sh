@@ -1,6 +1,22 @@
 #!/bin/sh
-# $Id: bcp.sh,v 1.5 2007/10/28 23:58:00 decibel Exp $
+# $Id: bcp.sh,v 1.6 2008/05/08 17:35:41 decibel Exp $
 database=$1
 filename=$2
+project=$3
 
-psql -d $database -c "copy import FROM stdin WITH NULL AS ''  DELIMITER ','" < $filename
+if [ "${database}x" != "logdbx" ]
+then
+	cat $filename | psql -d $database -c "copy import FROM stdin DELIMITER ','"
+else
+	case "$project" in
+		"ogr" )
+		cat $filename | psql -d $database -c "copy import_ogr(return_time,ip_address,email,stub_marks,nodecount,os_type,cpu_type,version,status,project_id) FROM stdin DELIMITER ','"
+		;;
+		"r72" )
+		cat $filename | psql -d $database -c "copy import_r72(return_time,ip_address,email,workunit_tid,iter,os_type,cpu_type,version,core,cmc_last,cmc_count,cmc_ok,project_id) FROM stdin DELIMITER ','"
+		;;
+		* )
+		echo "ERROR:: No bcp handler for project $project"
+		exit 100
+	esac
+fi
