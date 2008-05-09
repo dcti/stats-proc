@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.55 2008/05/07 14:51:35 decibel Exp $
+# $Id: integrate.sql,v 1.56 2008/05/09 13:28:32 decibel Exp $
 #
 # Move data from the import table to the daytables
 #
@@ -219,7 +219,7 @@ update TEMP_Email_Contrib_Today
 
 -- For yoyo participants, automagically join them to the yoyo team.
 INSERT INTO team_joins( id, team_id, join_date )
-SELECT id, 31743, current_date
+SELECT sp.id, 31743, current_date
     FROM stats_participant sp
         JOIN TEMP_dayemails de ON( lower(de.email) = lower(sp.email) )
     WHERE de.email ILIKE '%@yoyo.rechenkraft.net'
