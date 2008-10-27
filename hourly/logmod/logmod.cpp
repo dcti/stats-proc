@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.29 2007/10/28 19:47:24 nerf Exp $
+ * $Id: logmod.cpp,v 1.30 2008/10/27 14:20:08 decibel Exp $
  */
 
 #include <assert.h>
@@ -14,6 +14,7 @@ enum Project {
     RC564,
     OGR,
     OGRP2,
+    OGRNG,
     RC572
 };
 bool pproxy;
@@ -21,7 +22,7 @@ bool logdb;
 
 void usage()
 {
-    fprintf(stderr, "Usage: logmod [-rc5 | -ogr | -ogrp2 | -rc572] [-pproxy] [-logdb] \n");
+    fprintf(stderr, "Usage: logmod [-rc5 | -ogr | -ogrp2 |-ogrng | -rc572] [-pproxy] [-logdb] \n");
     exit(1);
 }
 
@@ -118,6 +119,7 @@ void process_line(int project, int line, const char *origbuf)
         break;
     case OGR:
     case OGRP2:
+    case OGRNG:
         if (pproxy) {
             sane = (trailing == 5);
         } else {
@@ -201,6 +203,18 @@ void process_line(int project, int line, const char *origbuf)
             version     = fields[4];
             status      = (trailing == 6 ? fields[5] : (char*)"-32767");
             break;
+        case OGRNG:
+            projectid = fields[0];
+            projectid[2] = 0;
+
+            // strip off leading ruler length
+            workunit_id = fields[0]+3;
+            size        = fields[1];
+            os          = fields[2];
+            cpu         = fields[3];
+            version     = fields[4];
+            status      = (trailing == 6 ? fields[5] : (char*)"-32767");
+            break;
         default:
             error(line, "unexpected project", origbuf);
             abort();
@@ -231,6 +245,7 @@ void process_line(int project, int line, const char *origbuf)
           break;
         case OGR:
         case OGRP2:
+        // No un-sane NG clients
           if (pproxy) {
               wantedfields = 4;  // size,cpu,os,version
           } else {
@@ -278,6 +293,7 @@ void process_line(int project, int line, const char *origbuf)
             break;
         case OGR:
         case OGRP2:
+        // No un-sane NG clients
             if (pproxy) {
                 size    = endfieldptrs[3];
                 os      = endfieldptrs[2];
@@ -314,6 +330,7 @@ void process_line(int project, int line, const char *origbuf)
             break;
         case OGR:
         case OGRP2:
+        // No un-sane NG clients
             projectid = q+1;
             projectid[2] = 0;
             if (atoi(projectid) == 26) {
@@ -385,6 +402,7 @@ bad_ip_address  | text                        |
                 printf("%s,%s,%s,%s,,,%s,,,%s,,%s,%s,%s,,%s,\n", date, os, cpu, version, projectid, status, size, workunit_id, email, ip);
                 break;
             case OGRP2:
+            case OGRNG:
                 printf("%s,%s,%s,%s,,,%s,%s,,%s,,%s,%s,%s,,%s,\n", date, os, cpu, version, projectid, real_project_id, status, size, workunit_id, email, ip);
                 break;
             case RC572:
@@ -405,6 +423,7 @@ bad_ip_address  | text                        |
             }
             break;
         case OGRP2:
+        case OGRNG:
             if ( !pproxy && !(nstatus >= -1) ) {
                 error(line, "status not -1 or greater", origbuf);
                 return;
@@ -445,6 +464,8 @@ int main(int argc, char *argv[])
         project = OGR;
     } else if (strcmp(argv[1], "-ogrp2") == 0) {
         project = OGRP2;
+    } else if (strcmp(argv[1], "-ogrng") == 0) {
+        project = OGRNG;
     } else if (strcmp(argv[1], "-rc572") == 0) {
         project = RC572;
     } else {

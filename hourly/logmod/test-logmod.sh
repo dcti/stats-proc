@@ -31,6 +31,7 @@ make
 run_test rc572
 run_test ogr
 run_test ogrp2
+run_test ogrng
 #run_test rc572 logdb
 #run_test ogr logdb
 #run_test ogrp2 logdb
