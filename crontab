@@ -4,7 +4,7 @@ PATH = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 #* * * * * psql -f $HOME/stats-proc/misc/minute.sql stats 2>&1 | tee $HOME/log/minute.sql.log | egrep 'ERROR|WARNING'
 18 * * * * /home/statproc/stats-proc/misc/hourly.sh
-30 1 * * * sudo /home/statproc/stats-proc/misc/ogr_status_update 25 > /dev/null
+30 1 * * * sudo /home/statproc/stats-proc/misc/ogr_status_update 26 > /dev/null
 
 
 #47 * * * * cd /home/nerf/dnet/stats-proc/ogr-verification && ./OGRhourly.pl >> /home/statproc/log/lastrun.OGRhourly  2>> /home/statproc/log/lastrun.OGRhourly.err
