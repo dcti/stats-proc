@@ -1,7 +1,7 @@
 /*
  * Format log file entries
  *
- * $Id: logmod.cpp,v 1.30 2008/10/27 14:20:08 decibel Exp $
+ * $Id: logmod.cpp,v 1.31 2009/01/28 09:07:26 jlawson Exp $
  */
 
 #include <assert.h>
@@ -406,6 +406,7 @@ bad_ip_address  | text                        |
                 printf("%s,%s,%s,%s,,,%s,%s,,%s,,%s,%s,%s,,%s,\n", date, os, cpu, version, projectid, real_project_id, status, size, workunit_id, email, ip);
                 break;
             case RC572:
+                // TODO: this output needs to include the 'size' value too
                 printf("%s,%s,%s,%s,%s,%s,%s,,%s,,%s,,%s,%s,%s,%s,\n",date,os,cpu,version,core,cmc_ok,projectid,status,cmc_ok,workunit_id,email,cmc_last,ip);
                 break;
             default:
