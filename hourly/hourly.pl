@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.146 2007/10/29 00:11:11 decibel Exp $
+# $Id: hourly.pl,v 1.147 2009/01/29 23:29:06 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -253,7 +253,7 @@ sub uncompress ($$$$) {
 # run_logmod
 #
 sub run_logmod ($$$$) {
-  my ( $project, $workdir, $rawfn, $logmod ) = @_;
+  my ( $project, $workdir, $rawfn, $logdb ) = @_;
   # Runs a raw logfile through logmod
   #
   # Returns
@@ -262,6 +262,7 @@ sub run_logmod ($$$$) {
   #   number of final rows
 
   my $logdir = $statsconf::logdir{$project};
+  my $logmod = $statsconf::logmod{$project};
   my $finalfn = "$rawfn.modified";
   my $input_file = "$workdir$rawfn";
   my $raw_rows;
@@ -277,9 +278,13 @@ sub run_logmod ($$$$) {
   } else {
     my $output_file = "$workdir$finalfn";
     my $error_file = "$logdir/logmod_$project.err";
+    my $options = '';
+    if( $logdb ) {
+      $options = '-logdb';
+    }
 
     `echo $rawfn >> $error_file`;
-    `cat $input_file | $logmod > $output_file 2>> $error_file`;
+    `cat $input_file | $logmod $options > $output_file 2>> $error_file`;
     if ($? == 0) {
         stats::log($project,1,"$rawfn successfully processed by $logmod.");
     } else {
@@ -297,7 +302,7 @@ sub run_logmod ($$$$) {
 # bcp
 #
 sub bcp ($$$$) {
-  my ( $project, $workdir, $finalfn, $databases ) = @_;
+  my ( $project, $workdir, $finalfn, $database ) = @_;
   # Bulk copy data into the database
   #
   # Returns
@@ -482,6 +487,9 @@ stats::debug( 1, "CONFIG: " . ($statsconf::dailyonly ? "don't " : "") . "expect 
 $statsconf::allow_missing_logs = 0 if ! defined $statsconf::allow_missing_logs;
 stats::debug( 1, "CONFIG: " . ($statsconf::allow_missing_logs ? "don't " : "") . "allow missing logs (statsconf::allow_missing_logs=$statsconf::allow_missing_logs)\n" );
 
+$statsconf::logdb = 0 if ! defined $statsconf::logdb;
+stats::debug( 1, "CONFIG: " . ($statsconf::logdb ? "don't " : "") . "add logs to log database (statsconf::logdb=$statsconf::logdb)\n" );
+
 my $respawn = 1;
 
 ($ENV{'HOME'} . '/workdir/hourly/') =~ /([A-Za-z0-9_\-\/]+)/;
@@ -507,8 +515,6 @@ while ($respawn and not -e 'stop') {
       #next RUNPROJECTS;
       die;
     }
-
-    my $logmod = $statsconf::logmod{$project};
 
     my $logprefix = $project;
     if(defined($statsconf::logprefix{$project})) {
@@ -640,18 +646,18 @@ while ($respawn and not -e 'stop') {
         stats::log($project,128+8+2+1,"$basefn failed decompression!");
       } else {
         # If we're doing log_db stuff, do it first because of daily respawn...
-        if ($logdb) {
-          my $finalfn, $raw_rows, $logmod_rows = run_logmod( $project, $workdir, $rawfn, $logmod, $logdb );
+        if ($statsconf::logdb) {
+          my ( $finalfn, $raw_rows, $logmod_rows ) = run_logmod( $project, $workdir, $rawfn, 1 );
           my $bcprows = bcp( $project, $workdir, $finalfn, $statsconf::logdatabase );
 
           # Note that process_log checks to make sure that logmod_rows equals select count(*) from import
-          $logdbh->do( "SELECT process_log( $yyyymmdd, $hh, uc($project), $raw_rows, $logmod_rows )" );
+          $stats::logdbh->do( "SELECT process_log( $yyyymmdd, $hh, uc($project), $raw_rows, $logmod_rows )" );
 
           # Cleanup, but don't nuke the raw file!
           unlink "$workdir$finalfn";
         }
 
-        my $finalfn, $raw_rows, $logmod_rows = run_logmod( $project, $workdir, $rawfn, $logmod, 0 );
+        my ( $finalfn, $raw_rows, $logmod_rows ) = run_logmod( $project, $workdir, $rawfn, 0 );
         my $bcprows = bcp( $project, $workdir, $finalfn, $statsconf::database );
         my ( $sqlrows, $skippedrows ) = process( $project, $workdir, $basefn, $yyyymmdd, $hh );
 
