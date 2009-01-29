@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.147 2009/01/29 23:29:06 decibel Exp $
+# $Id: hourly.pl,v 1.148 2009/01/29 23:34:39 decibel Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -249,6 +249,16 @@ sub uncompress ($$$$) {
   return $rawfn;
 }
 
+sub linecount ($) {
+  my ( $filename ) = @_;
+  # Gets a count of how many lines are in a file using wc
+
+  my $lines = `cat $filename | wc -l`; # Note that if you don't use cat you'll get the filename as well, which causes problems.
+  chomp $lines;
+
+  return $lines;
+}
+
 #
 # run_logmod
 #
@@ -268,8 +278,7 @@ sub run_logmod ($$$$) {
   my $raw_rows;
   my $final_rows;
 
-  $raw_rows = `wc -l $workdir$rawfn`;
-  chomp $raw_rows;
+  $raw_rows = linecount( $workdir$rawfn );
 
   if( $logmod eq "" ) {
     stats::log($project,0,"There is no logmod for this project, proceeding to bcp.");
@@ -291,8 +300,7 @@ sub run_logmod ($$$$) {
         stats::log($project,128+2+1,"unable to process $rawfn through $logmod!");
         die;
     }
-    $final_rows = `wc -l $output_file`;
-    chomp $final_rows;
+    $final_rows = linecount( $output_file );
   }
 
   return $finalfn, $raw_rows, $final_rows;
@@ -309,9 +317,7 @@ sub bcp ($$$$) {
   #   Number of rows copied
 
   my $bcp_file = "$workdir$finalfn";
-  my $bcprows = `wc -l $bcp_file`;
-  $bcprows =~ s/ +//g;
-  chomp $bcprows;
+  my $bcprows = linecount( $bcp_file );
 
   my $bcp = `time ./bcp.sh $database $bcp_file 2>&1`;
   if($? != 0) {
