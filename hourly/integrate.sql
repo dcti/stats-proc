@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.56 2008/05/09 13:28:32 decibel Exp $
+# $Id: integrate.sql,v 1.57 2009/01/29 22:06:17 decibel Exp $
 #
 # Move data from the import table to the daytables
 #
@@ -20,6 +20,13 @@ Accept BCPcount as an argument and puke if our rowcounts don't match
 
 \t
 \set ON_ERROR_STOP 1
+
+/*
+INSERT INTO import_log
+    SELECT :ProjectType, :LogDate ::date + interval '1 hour' * :HourNumber, *
+        FROM import
+;
+*/
 
 BEGIN;
 
