@@ -1,10 +1,10 @@
 #!/bin/sh
-# $Id: bcp.sh,v 1.6 2008/05/08 17:35:41 decibel Exp $
+# $Id: bcp.sh,v 1.7 2009/04/22 06:42:41 nerf Exp $
 database=$1
 filename=$2
 project=$3
 
-if [ "${database}x" != "logdbx" ]
+if [ "${database}x" != "logsx" ]
 then
 	cat $filename | psql -d $database -c "copy import FROM stdin DELIMITER ','"
 else
