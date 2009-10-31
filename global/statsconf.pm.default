@@ -1,5 +1,5 @@
 #
-# $Id: statsconf.pm.default,v 1.24 2007/10/28 22:47:19 decibel Exp $
+# $Id: statsconf.pm.default,v 1.25 2009/10/31 02:13:55 jlawson Exp $
 #
 # Stats global configuration
 #
@@ -42,6 +42,7 @@ $lockfile = "$homedir/log/statsrun.lck";
 %logprefix = (
         "r72"   => "pproxyrc572",
         "ogr"   => "pproxyogr",
+);
 
 %logmod = (
 	"r72"	=> "./logmod/logmod -rc572 -pproxy",
