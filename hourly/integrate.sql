@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.57 2009/01/29 22:06:17 decibel Exp $
+# $Id: integrate.sql,v 1.58 2010/05/03 03:53:49 jlawson Exp $
 #
 # Move data from the import table to the daytables
 #
@@ -230,6 +230,16 @@ SELECT sp.id, 31743, current_date
     FROM stats_participant sp
         JOIN TEMP_dayemails de ON( lower(de.email) = lower(sp.email) )
     WHERE de.email ILIKE '%@yoyo.rechenkraft.net'
+        -- There is a race condition here, so ensure there's no existing team_join record
+        AND NOT EXISTS( SELECT * FROM team_joins WHERE id = sp.id )
+;
+
+-- For dnetc.net participants, automagically join them to the dnetc.net team.
+INSERT INTO team_joins( id, team_id, join_date )
+SELECT sp.id, 31955, current_date
+    FROM stats_participant sp
+        JOIN TEMP_dayemails de ON( lower(de.email) = lower(sp.email) )
+    WHERE de.email ILIKE '%@dnetc.net'
         -- There is a race condition here, so ensure there's no existing team_join record
         AND NOT EXISTS( SELECT * FROM team_joins WHERE id = sp.id )
 ;
