@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw -I../global
 #
-# $Id: hourly.pl,v 1.148 2009/01/29 23:34:39 decibel Exp $
+# $Id: hourly.pl,v 1.149 2010/05/04 01:10:05 jlawson Exp $
 #
 # For now, I'm just cronning this activity.  It's possible that we'll find we want to build our
 # own scheduler, however.
@@ -278,7 +278,7 @@ sub run_logmod ($$$$) {
   my $raw_rows;
   my $final_rows;
 
-  $raw_rows = linecount( $workdir$rawfn );
+  $raw_rows = linecount( "$workdir$rawfn" );
 
   if( $logmod eq "" ) {
     stats::log($project,0,"There is no logmod for this project, proceeding to bcp.");
