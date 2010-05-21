@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.40 2005/09/05 15:08:27 decibel Exp $
+# $Id: stats.pm,v 1.41 2010/05/21 05:30:59 jlawson Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -144,7 +144,7 @@ sub DCTIeventsay ($$$$) {
 			debug (9,"DCTIeventsay: $paddr $password: ($statsconf::logtag/$project) $message\n");
 			close S;	
 		} else {
-			print "Could not reach $paddr";
+			print "Could not reach $iaddr";
 		}
 		alarm 0;
 	};
