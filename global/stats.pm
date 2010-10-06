@@ -1,5 +1,5 @@
 #
-# $Id: stats.pm,v 1.41 2010/05/21 05:30:59 jlawson Exp $
+# $Id: stats.pm,v 1.42 2010/10/06 04:54:30 jlawson Exp $
 #
 # Stats global perl definitions/routines
 #
@@ -156,7 +156,9 @@ sub DCTIeventsay ($$$$) {
 			$@ = "";
 		} else {
 			alarm 0;
-			die;
+			print "Send to $statsconf::dctievent failed - $@\n";
+			print STDERR "Send t to $statsconf::dctievent failed - $@ trying to report ($statsconf::logtag/$project) $message\n";
+			#die;
 		}
 	}
 }
