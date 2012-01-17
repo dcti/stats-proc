@@ -1,29 +1,29 @@
--- $Id: audit.sql,v 1.45 2005/05/11 18:13:27 decibel Exp $
+-- $Id: audit.sql,v 1.46 2012/01/17 07:31:31 jlawson Exp $
 \set ON_ERROR_STOP 1
 \t
 
 CREATE TEMP TABLE audit (
     date        date,
-    ECTsum        numeric(20) default 0,
-    ECTblcksum    numeric(20) default 0,
-    ECTteamsum    numeric(20) default 0,
-    PCTsum        numeric(20) default 0,
-    PCsum        numeric(20) default 0,
-    PCsumtoday    numeric(20) default 0,
-    DSsum         numeric(20) default 0,
-    DSunits        numeric(20) default 0,
+    ECTsum        numeric(22) default 0,
+    ECTblcksum    numeric(22) default 0,
+    ECTteamsum    numeric(22) default 0,
+    PCTsum        numeric(22) default 0,
+    PCsum        numeric(22) default 0,
+    PCsumtoday    numeric(22) default 0,
+    DSsum         numeric(22) default 0,
+    DSunits        numeric(22) default 0,
     DSusers        int default 0,
-    ECsum        numeric(20) default 0,
-    ECsumtoday    numeric(20) default 0,
-    ECblcksumtdy    numeric(20) default 0,
-    ECblcksum    numeric(20) default 0,
-    ECteamsum    numeric(20) default 0,
-    ERsumtoday    numeric(20) default 0,
-    ERsum        numeric(20) default 0,
-    TMsumtoday    numeric(20) default 0,
-    TMsum        numeric(20) default 0,
-    TRsumtoday    numeric(20) default 0,
-    TRsum        numeric(20) default 0
+    ECsum        numeric(22) default 0,
+    ECsumtoday    numeric(22) default 0,
+    ECblcksumtdy    numeric(22) default 0,
+    ECblcksum    numeric(22) default 0,
+    ECteamsum    numeric(22) default 0,
+    ERsumtoday    numeric(22) default 0,
+    ERsum        numeric(22) default 0,
+    TMsumtoday    numeric(22) default 0,
+    TMsum        numeric(22) default 0,
+    TRsumtoday    numeric(22) default 0,
+    TRsum        numeric(22) default 0
 ) WITHOUT OIDs
 ;
 INSERT INTO audit (date)

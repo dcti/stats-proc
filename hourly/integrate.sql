@@ -1,6 +1,6 @@
 /*
 # vi: tw=100
-# $Id: integrate.sql,v 1.58 2010/05/03 03:53:49 jlawson Exp $
+# $Id: integrate.sql,v 1.59 2012/01/17 07:31:35 jlawson Exp $
 #
 # Move data from the import table to the daytables
 #
@@ -89,7 +89,7 @@ create TEMP table TEMP_import
 (
     PROJECT_ID    smallint        not NULL,
     EMAIL        varchar (64)    not NULL,
-    WORK_UNITS    numeric(20, 0)    not NULL
+    WORK_UNITS    numeric(22, 0)    not NULL
 ) WITHOUT OIDS;
 
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
@@ -162,7 +162,7 @@ create TEMP table TEMP_Email_Contrib_Today
     PROJECT_ID    smallint        not NULL,
     EMAIL        varchar (64)    not NULL,
     ID        int        not NULL,
-    WORK_UNITS    numeric(20, 0)    not NULL
+    WORK_UNITS    numeric(22, 0)    not NULL
 ) WITHOUT OIDS
 ;
 create temporary sequence Email;
@@ -272,7 +272,7 @@ create TEMP table TEMP_Platform_Contrib_Today
     CPU         smallint        not NULL,
     OS          smallint        not NULL,
     VER         smallint        not NULL,
-    WORK_UNITS  numeric(20, 0)  not NULL
+    WORK_UNITS  numeric(22, 0)  not NULL
 ) WITHOUT OIDS
 ;
 /* Subselect is probably better than multiply inside the sum, which is the only other alternative. You *don't*
