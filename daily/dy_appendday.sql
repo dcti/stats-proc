@@ -8,7 +8,7 @@
 */
 \set ON_ERROR_STOP 1
 
-\echo !! Appending day's activity to master tables
+\echo !! Appending day of activity to master tables
 
 \echo ::  Assigning CREDIT_ID and TEAM in Email_Contrib_Today
 
