@@ -12,8 +12,8 @@ do_wget ( ) {
     if wget -O${2}.new "http://localhost/${1}"; then
         chmod 644 ${2}.new
         chown cvsup:www ${2}.new
-        mv ${2} ${2}.old
-        mv ${2}.new ${2}
+        mv -f ${2} ${2}.old
+        mv -f ${2}.new ${2}
         return
     else
         echo "Error fetching ${1}"
