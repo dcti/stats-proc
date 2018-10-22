@@ -2,7 +2,7 @@
 all: logmod
 
 logmod: logmod.cpp
-	g++ -g -O2 -o logmod logmod.cpp
+	c++ -g -O2 -o logmod logmod.cpp
 
 .PHONY: test
 test: test-logmod.sh logmod
