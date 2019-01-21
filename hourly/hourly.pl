@@ -327,7 +327,7 @@ sub bcp ($$$$) {
   }
 
   $bcp =~ /([0123456789.]+)/;
-  my $rate = int($bcprows / $1);
+  my $rate = $1 != 0 ? int($bcprows / $1) : 0;
 
   if($bcprows == 0) {
     stats::log($project,128+2+1,"No rows were imported for $finalfn;  Unless this was intentional, there's probably a problem.  I'm not going to abort, though.");
