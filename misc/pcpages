@@ -9,7 +9,7 @@ export PATH=$PATH:/usr/sbin
 cd /htdocs
 
 do_wget ( ) {
-    if wget -O${2}.new "http://localhost/${1}"; then
+    if wget --no-check-certificate -O${2}.new "https://localhost/${1}"; then
         if grep 'DB Query Failed' ${2}.new; then
             echo "Database error in ${1}"
             exit 3

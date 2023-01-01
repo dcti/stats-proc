@@ -9,7 +9,7 @@ export PATH=$PATH:/usr/sbin
 cd /htdocs
 
 do_wget ( ) {
-    if wget -O${2}.new "http://localhost/${1}"; then
+    if wget --no-check-certificate -O${2}.new "https://localhost/${1}"; then
         chmod 644 ${2}.new
         chown cvsup:www ${2}.new
         mv -f ${2} ${2}.old

@@ -13,7 +13,7 @@ for ID in `psql -tqc "SELECT id FROM stats_participant WHERE password=''" stats 
 do
     [ $quiet = n ] && echo -n "Processing $ID "
 
-    wget -q -O $TMPFILE http://stats.distributed.net/participant/ppass.php?id=$ID 
+    wget -q -O $TMPFILE https://stats.distributed.net/participant/ppass.php?id=$ID
     RESULT=`grep "<\!-- Error:" $TMPFILE`
     if [ "$RESULT" = "" ]; then
         [ $quiet = n ] && echo " OK"
