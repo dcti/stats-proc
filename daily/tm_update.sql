@@ -128,7 +128,7 @@ BEGIN;
         WHERE project_id = :ProjectID        /* all records */
     ;
 
-    \echo  Populate today's work
+    \echo  Populate work for today
     UPDATE team_members
         SET work_today = tmw.work_units,
             work_total = work_total + tmw.work_units,
