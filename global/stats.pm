@@ -117,7 +117,7 @@ sub log ($$$) {
 	if ($dest & 8) {
         #pagers
 
-        if (!$statsconf::pagers eq '') {
+        if ($statsconf::pagers ne '') {
             open PAGER, "|mail \"-s$statsconf::logtag/$project\" $statsconf::pagers";
             print PAGER "$message\n";
             close PAGER;
